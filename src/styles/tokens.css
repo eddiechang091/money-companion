@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --bg: #fdf8f3;
   --surface: #ffffff;
   --surface-2: #f6f0e9;
@@ -43,6 +44,7 @@
 /* Cozy Home is the default (:root). The rest override the tokens. */
 
 [data-theme="cyberpunk"] {
+  color-scheme: dark;
   --bg: #0d0918;
   --surface: #171130;
   --surface-2: #1f1740;
@@ -87,6 +89,7 @@
 }
 
 [data-theme="starry"] {
+  color-scheme: dark;
   --bg: #080f24;
   --surface: #101a38;
   --surface-2: #16224a;
@@ -113,6 +116,7 @@
 }
 
 [data-theme="ocean"] {
+  color-scheme: dark;
   --bg: #052029;
   --surface: #0a2e3c;
   --surface-2: #0e3a4b;
