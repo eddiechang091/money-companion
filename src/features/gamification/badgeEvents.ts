@@ -1,30 +1,57 @@
 import type { BadgeDef } from "./badges";
+import type { CatItem } from "@/services/cat/types";
 
 // ---------------------------------------------------------------------------
-// Badge events — lets any action site celebrate unlocks immediately,
-// wherever the user is. The global BadgeHost (App root) renders them.
+// Celebration events — lets any action site celebrate unlocks immediately,
+// wherever the user is. The global BadgeHost (App root) renders them as a
+// sequenced queue: badges first, then cat reward bundles. Each slide
+// auto-dismisses after 3s unless the user advances manually.
 // ---------------------------------------------------------------------------
 
-type BadgeListener = (badges: BadgeDef[]) => void;
+export interface RewardBundle {
+  title: string;
+  items: CatItem[];
+}
 
-const listeners = new Set<BadgeListener>();
+export interface Celebration {
+  badges: BadgeDef[];
+  rewards: RewardBundle[];
+}
 
-/** Subscribe to badge unlocks. Returns an unsubscribe function. */
-export function onBadgeUnlock(fn: BadgeListener): () => void {
+export const CELEBRATION_SLIDE_MS = 3000;
+
+type CelebrationListener = (c: Celebration) => void;
+
+const listeners = new Set<CelebrationListener>();
+
+/** Subscribe to celebrations. Returns an unsubscribe function. */
+export function onCelebration(fn: CelebrationListener): () => void {
   listeners.add(fn);
   return () => {
     listeners.delete(fn);
   };
 }
 
-/** Notify all subscribers of newly unlocked badges. */
-export function emitBadgeUnlock(badges: BadgeDef[]): void {
-  if (badges.length === 0) return;
+/** Notify all subscribers of a new celebration (badges and/or rewards). */
+export function emitCelebration(c: Celebration): void {
+  if (c.badges.length === 0 && c.rewards.length === 0) return;
   for (const fn of [...listeners]) {
     try {
-      fn(badges);
+      fn(c);
     } catch {
       // A broken listener must not break awarding.
     }
   }
+}
+
+/** Back-compat: badge-only celebrations. */
+export function emitBadgeUnlock(badges: BadgeDef[]): void {
+  emitCelebration({ badges, rewards: [] });
+}
+
+/** Back-compat listener for badge-only subscribers. */
+export function onBadgeUnlock(fn: (badges: BadgeDef[]) => void): () => void {
+  return onCelebration((c) => {
+    if (c.badges.length > 0) fn(c.badges);
+  });
 }

@@ -8,15 +8,28 @@ export function BadgesRow({
   onSelect?: (badge: BadgeDef) => void;
 }) {
   const unlockedCount = BADGE_DEFS.filter((b) => unlockedIds.has(b.id)).length;
+  const pct = Math.round((unlockedCount / BADGE_DEFS.length) * 100);
   return (
-    <div className="badges">
-      <div className="badges-head">
-        <h3 className="badges-title">Badges</h3>
-        <span className="muted badges-count">
-          {unlockedCount}/{BADGE_DEFS.length}
-        </span>
+    <div className="badge-wall">
+      <div className="badge-wall-head">
+        <div>
+          <h3 className="badge-wall-title">Badge Wall</h3>
+          <p className="muted badge-wall-sub">
+            {unlockedCount} of {BADGE_DEFS.length} unlocked
+          </p>
+        </div>
+        <div
+          className="badge-wall-progress"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Badges unlocked"
+        >
+          <div className="badge-wall-progress-fill" style={{ width: `${pct}%` }} />
+        </div>
       </div>
-      <div className="badges-row" role="list" aria-label="Achievement badges">
+      <div className="badge-wall-grid" role="list" aria-label="Achievement badges">
         {BADGE_DEFS.map((b) => {
           const unlocked = unlockedIds.has(b.id);
           const clickable = unlocked && onSelect;
@@ -24,12 +37,10 @@ export function BadgesRow({
             <div
               key={b.id}
               role={clickable ? "button" : "listitem"}
-              title={
-                unlocked
-                  ? `${b.name} — unlocked!${onSelect ? " Click to share." : ""}`
-                  : `${b.name}: ${b.hint}`
-              }
-              className={`badge${unlocked ? " is-unlocked" : " is-locked"}${clickable ? " is-clickable" : ""}`}
+              title={unlocked ? `${b.name} — unlocked!` : `${b.name}: ${b.hint}`}
+              className={`badge-card${unlocked ? " is-unlocked" : " is-locked"}${
+                clickable ? " is-clickable" : ""
+              }`}
               {...(clickable
                 ? {
                     onClick: () => onSelect(b),
@@ -43,10 +54,11 @@ export function BadgesRow({
                   }
                 : {})}
             >
-              <span className="badge-emoji" aria-hidden="true">
+              <span className="badge-card-emoji" aria-hidden="true">
                 {unlocked ? b.emoji : "🔒"}
               </span>
-              <span className="badge-name">{b.name}</span>
+              <span className="badge-card-name">{b.name}</span>
+              <span className="badge-card-hint">{unlocked ? b.hint : "Locked"}</span>
             </div>
           );
         })}

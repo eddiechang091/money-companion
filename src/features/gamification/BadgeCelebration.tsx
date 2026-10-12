@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { BadgeDef } from "./badges";
+import { CELEBRATION_SLIDE_MS } from "./badgeEvents";
 
 export function BadgeCelebration({
   badges,
@@ -16,8 +17,6 @@ export function BadgeCelebration({
     setIndex(0);
   }, [badges]);
 
-  if (!badge) return null;
-
   const next = () => {
     if (index + 1 < badges.length) {
       setIndex(index + 1);
@@ -25,6 +24,16 @@ export function BadgeCelebration({
       onDone();
     }
   };
+
+  // Auto-dismiss after 3s unless the user advances manually.
+  useEffect(() => {
+    if (!badge) return;
+    const t = window.setTimeout(next, CELEBRATION_SLIDE_MS);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [badge, index]);
+
+  if (!badge) return null;
 
   return (
     <div

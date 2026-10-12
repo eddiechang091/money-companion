@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { CatItem } from "@/services/cat/types";
+import { CELEBRATION_SLIDE_MS } from "@/features/gamification/badgeEvents";
 
 function itemPurpose(item: CatItem): string {
   switch (item.kind) {
@@ -27,7 +28,7 @@ export function RewardCelebration({
   items,
   onDone,
 }: {
-  /** Milestone title, e.g. "7-Day Logger". */
+  /** Reward title, e.g. "7-Day Logger". */
   title: string;
   /** Items won, revealed one at a time. */
   items: CatItem[];
@@ -40,16 +41,20 @@ export function RewardCelebration({
     setIndex(0);
   }, [items]);
 
-  useEffect(() => {
-    // Little pop each time a new item is revealed.
-  }, [index]);
-
-  if (!item) return null;
-
   const next = () => {
     if (index + 1 < items.length) setIndex(index + 1);
     else onDone();
   };
+
+  // Auto-advance after 3s unless the user advances manually.
+  useEffect(() => {
+    if (!item) return;
+    const t = window.setTimeout(next, CELEBRATION_SLIDE_MS);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item, index]);
+
+  if (!item) return null;
 
   return (
     <div
@@ -60,7 +65,7 @@ export function RewardCelebration({
       onClick={next}
     >
       <div className="celebration-card" onClick={(e) => e.stopPropagation()}>
-        <p className="celebration-kicker">🎁 Milestone reward — {title}</p>
+        <p className="celebration-kicker">🎁 {title}</p>
         <div key={item.id} className="celebration-emoji" aria-hidden="true">
           {item.emoji}
         </div>

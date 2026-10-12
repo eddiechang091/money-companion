@@ -11,13 +11,76 @@ import {
   type BadgeDef,
   type BadgeContext,
 } from "./badges";
-import { emitBadgeUnlock } from "./badgeEvents";
+import { emitCelebration, type RewardBundle } from "./badgeEvents";
+import { randomItems } from "@/services/cat/items";
+import { historyRarityBoost } from "@/services/cat/milestones";
 
 const CAT_STATE_KEY = "cat:companion_state";
 
 interface CatStateLike {
   checkinStreak?: unknown;
   lastCheckinDate?: unknown;
+  inventory?: Record<string, number>;
+}
+
+/**
+ * Cat items granted automatically when these badges unlock.
+ * (Replaces the old claimable milestone rewards.)
+ */
+const BADGE_REWARD_SIZES: Record<string, number> = {
+  "streak-3": 2,
+  "streak-7": 3,
+  "streak-30": 6,
+  "streak-100": 8,
+  "expenses-50": 3,
+  "checkin-7": 4,
+  "months-3": 3,
+  "months-6": 4,
+  "months-12": 6,
+  "months-60": 10,
+};
+
+/**
+ * Grants cat items for freshly unlocked badges and returns the reward
+ * bundles to celebrate. Best effort — never throws.
+ */
+async function grantBadgeRewards(
+  freshIds: string[],
+  stats: { longestStreak: number; totalExpenses: number }
+): Promise<RewardBundle[]> {
+  const rewardIds = freshIds.filter((id) => BADGE_REWARD_SIZES[id]);
+  if (rewardIds.length === 0) return [];
+  try {
+    const boost = historyRarityBoost({
+      streakDays: 0,
+      longestStreak: stats.longestStreak,
+      totalExpenses: stats.totalExpenses,
+    });
+    const store = await getKvStore();
+    const saved = await store.get<CatStateLike>(CAT_STATE_KEY).catch(() => null);
+    const inventory: Record<string, number> = { ...(saved?.inventory ?? {}) };
+    const bundles: RewardBundle[] = [];
+    for (const id of rewardIds) {
+      const items = randomItems(BADGE_REWARD_SIZES[id], boost);
+      for (const item of items) inventory[item.id] = (inventory[item.id] ?? 0) + 1;
+      const def = badgeDefById(id);
+      bundles.push({
+        title: def ? `${def.name} reward` : "Badge reward",
+        items,
+      });
+    }
+    await store
+      .set(CAT_STATE_KEY, { ...(saved ?? {}), inventory, updatedAt: Date.now() })
+      .catch(() => {});
+    return bundles;
+  } catch {
+    return [];
+  }
+}
+
+/** Emits a rewards-only celebration (for items granted outside badges). */
+export function celebrateRewards(rewards: RewardBundle[]): void {
+  emitCelebration({ badges: [], rewards });
 }
 
 async function loadUnlocked(): Promise<Record<string, string>> {
@@ -38,6 +101,7 @@ function toDefs(ids: string[]): BadgeDef[] {
  * Awards a single event badge (theme change, status set, import, export).
  * Pure events carry no state to recompute — the action site calls this
  * directly after the action succeeds. Returns true when newly awarded.
+ * Badges with cat rewards (e.g. checkin-7) also grant and celebrate items.
  */
 export async function awardBadge(id: string): Promise<boolean> {
   const def = badgeDefById(id);
@@ -46,7 +110,9 @@ export async function awardBadge(id: string): Promise<boolean> {
   if (unlocked[id]) return false;
   unlocked[id] = new Date().toISOString();
   await persistUnlocked(unlocked);
-  emitBadgeUnlock([def]);
+  // Reward stats for single-event badges: streak/count unknown here, use 0.
+  const rewards = await grantBadgeRewards([id], { longestStreak: 0, totalExpenses: 0 });
+  emitCelebration({ badges: [def], rewards });
   return true;
 }
 
@@ -107,7 +173,11 @@ export async function refreshBadges(): Promise<void> {
     const now = new Date().toISOString();
     for (const id of fresh) unlocked[id] = now;
     await persistUnlocked(unlocked);
-    emitBadgeUnlock(toDefs(fresh));
+    const rewards = await grantBadgeRewards(fresh, {
+      longestStreak: ctx.streak.longest,
+      totalExpenses: ctx.expenseCount,
+    });
+    emitCelebration({ badges: toDefs(fresh), rewards });
   } catch {
     // Badges must never break the action that triggered them.
   }
