@@ -20,11 +20,17 @@ export const STORAGE_KEYS = {
 } as const;
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: "food", name: "Food", icon: "\uD83C\uDF5C", color: "#ff8a5b", isDefault: true },
+  { id: "food", name: "Food & Dining", icon: "\uD83C\uDF5C", color: "#ff8a5b", isDefault: true },
   { id: "transport", name: "Transport", icon: "\uD83D\uDE97", color: "#5b9bff", isDefault: true },
   { id: "shopping", name: "Shopping", icon: "\uD83D\uDECD", color: "#c17bff", isDefault: true },
-  { id: "bills", name: "Bills", icon: "\uD83C\uDFE0", color: "#4fc3a1", isDefault: true },
-  { id: "fun", name: "Fun", icon: "\uD83C\uDFAE", color: "#f5b642", isDefault: true },
+  { id: "housing", name: "Mortgage & Rent", icon: "\uD83C\uDFE0", color: "#e07a3f", isDefault: true },
+  { id: "utilities", name: "Utilities", icon: "\uD83D\uDCA1", color: "#f5d142", isDefault: true },
+  { id: "internet", name: "Internet & TV", icon: "\uD83D\uDCFA", color: "#4fd1c5", isDefault: true },
+  { id: "insurance", name: "Insurance", icon: "\uD83D\uDEE1\uFE0F", color: "#6b8cff", isDefault: true },
+  { id: "bills", name: "Bills", icon: "\uD83E\uDDFE", color: "#4fc3a1", isDefault: true },
+  { id: "fun", name: "Fun & Games", icon: "\uD83C\uDFAE", color: "#f5b642", isDefault: true },
   { id: "health", name: "Health", icon: "\uD83D\uDC8A", color: "#ff7aa8", isDefault: true },
+  { id: "kids", name: "Kids & Family", icon: "\uD83E\uDDF8", color: "#ff9ecb", isDefault: true },
+  { id: "travel", name: "Travel", icon: "\u2708\uFE0F", color: "#7bc96f", isDefault: true },
   { id: "other", name: "Other", icon: "\uD83D\uDCE6", color: "#9aa3b2", isDefault: true },
 ];
