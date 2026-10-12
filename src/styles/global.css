@@ -346,6 +346,34 @@ select option {
 /* ─── Phase 3: Spending chart ─────────────────────────────────────────────── */
 
 .chart-wrap { width: 100%; height: 130px; }
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.segmented-btn {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.segmented-btn.is-active {
+  background: var(--surface-1);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+/* ─── Theme-controlled dropdown ─────────────────────────────────────────── */
 .chart-tooltip {
   background: var(--text);
   color: var(--text-inverse);
@@ -1228,4 +1256,82 @@ select option {
   font-size: 14px;
   font-weight: 700;
   color: var(--primary);
+}
+/* ─── Theme-controlled dropdown ─────────────────────────────────────────── */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+.dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 10px 5px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dropdown-btn:hover {
+  border-color: var(--border-strong);
+}
+.dropdown-btn:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.dropdown-chevron {
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.dropdown-chevron.is-open {
+  transform: rotate(180deg);
+}
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  min-width: 160px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  animation: dropdown-pop var(--dur-fast) var(--ease);
+}
+@keyframes dropdown-pop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dropdown-item:hover {
+  background: var(--surface-2);
+}
+.dropdown-item.is-selected {
+  background: var(--primary-soft);
+  color: var(--text);
+  font-weight: 700;
 }

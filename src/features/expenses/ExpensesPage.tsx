@@ -1,5 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { LoadingState } from "@/components/ui/States";
 import {
   currentMonthKey,
@@ -62,37 +63,27 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
         ))}
       </div>
       {chartMode === "month" ? (
-        <select
-          className="chart-select"
-          aria-label="Select month"
+        <Dropdown
+          ariaLabel="Select month"
           value={activeMonth}
-          onChange={(e) => setMonthKey(e.target.value)}
-        >
-          {months.includes(activeMonth) ? null : (
-            <option value={activeMonth}>{formatMonthLabel(activeMonth)}</option>
-          )}
-          {months.map((k) => (
-            <option key={k} value={k}>
-              {formatMonthLabel(k)}
-            </option>
-          ))}
-        </select>
+          onChange={setMonthKey}
+          options={[
+            ...(months.includes(activeMonth)
+              ? []
+              : [{ value: activeMonth, label: formatMonthLabel(activeMonth) }]),
+            ...months.map((k) => ({ value: k, label: formatMonthLabel(k) })),
+          ]}
+        />
       ) : (
-        <select
-          className="chart-select"
-          aria-label="Select year"
+        <Dropdown
+          ariaLabel="Select year"
           value={activeYear}
-          onChange={(e) => setYearKey(e.target.value)}
-        >
-          {years.includes(activeYear) ? null : (
-            <option value={activeYear}>{activeYear}</option>
-          )}
-          {years.map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
+          onChange={setYearKey}
+          options={[
+            ...(years.includes(activeYear) ? [] : [{ value: activeYear, label: activeYear }]),
+            ...years.map((y) => ({ value: y, label: y })),
+          ]}
+        />
       )}
     </div>
   );
