@@ -11,6 +11,8 @@ import {
   parseCsv,
   detectColumns,
   normalizeRows,
+  isWealthsimpleExport,
+  normalizeWealthsimpleRows,
   type ColumnMapping,
   type CsvRow,
   type NormalizedRow,
@@ -79,6 +81,8 @@ export function ImportDialog({
 
   const normalized: NormalizedRow[] = useMemo(() => {
     if (!mapping || rows.length === 0) return [];
+    // Wealthsimple exports get dedicated parsing (sub-type aware).
+    if (isWealthsimpleExport(rows)) return normalizeWealthsimpleRows(rows);
     return normalizeRows(rows, mapping, { positiveIsExpense: flipSign });
   }, [rows, mapping, flipSign]);
 
@@ -95,7 +99,7 @@ export function ImportDialog({
   const categoryOf = (s: ScoredRow) =>
     overrides[s.key] && overrides[s.key] !== "skip"
       ? overrides[s.key]
-      : (guessCategoryId(s.row.description) ?? "other");
+      : (s.row.categoryHint ?? guessCategoryId(s.row.description) ?? "other");
 
   const includedCount = selectable.filter(isIncluded).length;
 

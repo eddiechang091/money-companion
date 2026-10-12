@@ -302,6 +302,8 @@ export interface NormalizedRow {
   amount: number;
   /** True when the row looks like income/a credit (skipped for expenses). */
   isCredit: boolean;
+  /** Pre-computed category from format-specific parsing (e.g. Wealthsimple). */
+  categoryHint?: string | null;
   raw: CsvRow;
 }
 
@@ -352,4 +354,68 @@ export function normalizeRows(
 export function importKeyOf(date: string, amount: number, description: string): string {
   const norm = description.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
   return `${date}|${Math.round(amount * 100)}|${norm}`;
+}
+
+/* ─── Wealthsimple activity export ───────────────────────────────────────
+ * Wealthsimple's activity CSV has no merchant names — descriptions are
+ * generic ("Pre-authorized Debit", "Online bill payment"). But it has
+ * `activity_sub_type` which tells us the transaction kind, so we can:
+ *  - skip internal TRANSFERs (not expenses) and income rows
+ *  - map bill-like sub-types (OBP_OUT, AFT_OUT) to the bills category
+ *  - clean up "(executed at ...)" noise from descriptions
+ */
+
+const WS_SUBTYPE_COL = "activity_sub_type";
+const WS_AMOUNT_COL = "net_cash_amount";
+const WS_DATE_COL = "effective_date";
+
+/** Sub-types that are internal money moves, never expenses. */
+const WS_SKIP_SUBTYPES = new Set(["TRANSFER"]);
+
+/** Sub-type -> category hint for expense rows. */
+const WS_CATEGORY_HINTS: Record<string, string> = {
+  OBP_OUT: "bills", // Online bill payment
+  AFT_OUT: "bills", // Pre-authorized debit (recurring bills)
+};
+
+/** True when the parsed rows look like a Wealthsimple activity export. */
+export function isWealthsimpleExport(rows: CsvRow[]): boolean {
+  if (rows.length === 0) return false;
+  const header = rows[0].map((c) => c.trim().toLowerCase());
+  return header.includes(WS_SUBTYPE_COL) && header.includes(WS_AMOUNT_COL);
+}
+
+function cleanWsDescription(raw: string): string {
+  // "Online bill payment (executed at 2026-07-23)" -> "Online bill payment"
+  return raw.replace(/\s*\(executed at [^)]*\)\s*/i, "").trim() || "(no description)";
+}
+
+/** Normalize Wealthsimple activity rows into expense rows. */
+export function normalizeWealthsimpleRows(rows: CsvRow[]): NormalizedRow[] {
+  const header = rows[0].map((c) => c.trim().toLowerCase());
+  const subIdx = header.indexOf(WS_SUBTYPE_COL);
+  const amtIdx = header.indexOf(WS_AMOUNT_COL);
+  const dateIdx = header.indexOf(WS_DATE_COL);
+  const descIdx = header.indexOf("description");
+  const out: NormalizedRow[] = [];
+  for (const r of rows.slice(1)) {
+    const subType = (r[subIdx] ?? "").trim().toUpperCase();
+    if (WS_SKIP_SUBTYPES.has(subType)) continue;
+    const rawAmount = parseAmountLoose(r[amtIdx] ?? "");
+    if (rawAmount === null || rawAmount === 0) continue;
+    // Wealthsimple convention: negative = money out.
+    if (rawAmount > 0) continue; // income — not an expense
+    const date = parseDateLoose(r[dateIdx] ?? "");
+    if (!date) continue;
+    const description = cleanWsDescription(r[descIdx] ?? "");
+    out.push({
+      date,
+      description,
+      amount: Math.abs(rawAmount),
+      isCredit: false,
+      categoryHint: WS_CATEGORY_HINTS[subType] ?? null,
+      raw: r,
+    });
+  }
+  return out;
 }

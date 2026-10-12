@@ -37,13 +37,38 @@ const RULES: Array<{ categoryId: string; keywords: string[] }> = [
     ],
   },
   {
-    categoryId: "bills",
+    categoryId: "housing",
+    keywords: [
+      "mortgage", "rent", "property tax", "landlord", "apartment",
+      "condo fee", "strata",
+    ],
+  },
+  {
+    categoryId: "utilities",
+    keywords: [
+      "maritime electric", "pei energy", "hydro", "electric bill", "power bill",
+      "water bill", "sewer", "heating", "furnace oil", "propane",
+      "natural gas", "utility",
+    ],
+  },
+  {
+    categoryId: "internet",
     keywords: [
       "bell", "rogers", "telus", "koodo", "fido", "virgin mobile", "eastlink",
-      "maritime electric", "pei energy", "hydro", "water bill", "sewer",
-      "property tax", "insurance", "manulife", "sun life", "canada life",
-      "mortgage", "rent", "netflix", "spotify", "disney", "prime video",
-      "youtube premium", "icloud", "google one", "dropbox",
+      "internet", "wifi", "cable",
+    ],
+  },
+  {
+    categoryId: "insurance",
+    keywords: [
+      "insurance", "manulife", "sun life", "canada life", "desjardins",
+      "intact", "td insurance", "rbc insurance",
+    ],
+  },
+  {
+    categoryId: "bills",
+    keywords: [
+      "bill payment", "pre-authorized debit", "preauthorized",
     ],
   },
   {
@@ -51,7 +76,8 @@ const RULES: Array<{ categoryId: string; keywords: string[] }> = [
     keywords: [
       "cineplex", "theatre", "cinema", "golf", "bowling", "arcade", "steam",
       "playstation", "xbox", "nintendo", "roblox", "concert", "ticketmaster",
-      "museum", "zoo", "park",
+      "museum", "zoo", "park", "netflix", "spotify", "disney", "prime video",
+      "youtube premium", "icloud", "google one", "dropbox",
     ],
   },
   {
@@ -60,6 +86,19 @@ const RULES: Array<{ categoryId: string; keywords: string[] }> = [
       "shoppers drug", "pharmasave", "pharmacy", "dental", "dentist",
       "clinic", "hospital", "optical", "eyecare", "physio", "massage",
       "gym", "goodlife", "planet fitness",
+    ],
+  },
+  {
+    categoryId: "kids",
+    keywords: [
+      "toys r us", "carters", "oshkosh", "daycare", "childcare", "babysitter",
+      "kids", "children's place",
+    ],
+  },
+  {
+    categoryId: "travel",
+    keywords: [
+      "hotel", "airbnb", "booking.com", "expedia", "airline", "flight",
     ],
   },
 ];
