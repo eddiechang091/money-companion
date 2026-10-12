@@ -105,6 +105,49 @@ export interface DayTotal {
   total: number;
 }
 
+/** Distinct YYYY-MM keys that have expenses, newest first. */
+export function availableMonths(expenses: Expense[]): string[] {
+  const keys = new Set<string>();
+  for (const expense of expenses) {
+    const key = expense.date.slice(0, 7);
+    if (/^\d{4}-\d{2}$/.test(key)) keys.add(key);
+  }
+  return [...keys].sort().reverse();
+}
+
+/** Distinct years that have expenses, newest first. */
+export function availableYears(expenses: Expense[]): string[] {
+  const years = new Set<string>();
+  for (const expense of expenses) {
+    const year = expense.date.slice(0, 4);
+    if (/^\d{4}$/.test(year)) years.add(year);
+  }
+  return [...years].sort().reverse();
+}
+
+/** Per-month totals for a year (12 bars, Jan–Dec). */
+export function monthlyTotals(
+  expenses: Expense[],
+  year: string
+): Array<{ date: string; label: string; total: number }> {
+  if (!/^\d{4}$/.test(year)) return [];
+  const totals = new Map<string, number>();
+  for (const expense of expenses) {
+    if (expense.date.slice(0, 4) !== year) continue;
+    if (!Number.isFinite(expense.amount) || expense.amount < 0) continue;
+    const key = expense.date.slice(0, 7);
+    totals.set(key, (totals.get(key) ?? 0) + expense.amount);
+  }
+  const months: Array<{ date: string; label: string; total: number }> = [];
+  for (let m = 1; m <= 12; m += 1) {
+    const key = `${year}-${String(m).padStart(2, "0")}`;
+    const label = new Date(Number(year), m - 1, 1).toLocaleString("en", { month: "short" });
+    const raw = totals.get(key) ?? 0;
+    months.push({ date: key, label, total: Math.round(raw * 100) / 100 });
+  }
+  return months;
+}
+
 export function dailyTotals(expenses: Expense[], key: string): DayTotal[] {
   if (!/^\d{4}-\d{2}$/.test(key)) return [];
   const year = Number(key.slice(0, 4));
