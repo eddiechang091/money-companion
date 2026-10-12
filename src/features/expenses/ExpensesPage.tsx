@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { useExpenses } from "@/services/expenses/useExpenses";
 import { useBudgets } from "@/services/budgets/useBudgets";
+import { ImportDialog } from "@/features/import/ImportDialog";
 import { useProfile } from "@/services/profile/useProfile";
 import { ExpenseList } from "./ExpenseList";
 import { ExportDialog } from "./ExportDialog";
@@ -19,6 +20,7 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const currency = expenses[0]?.currency ?? profile.currency ?? "USD";
   const monthExpenses = filterByMonth(expenses, currentMonthKey());
   const chartData = dailyTotals(monthExpenses, currentMonthKey());
@@ -36,6 +38,9 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
             <Button variant="secondary" size="sm" onClick={() => setExportOpen(true)}>
               Export
             </Button>
+            <Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
+              Import
+            </Button>
           </div>
         }
       />
@@ -51,6 +56,12 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
         onClose={() => setExportOpen(false)}
         expenses={expenses}
         budgets={budgets}
+      />
+      <ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        expenses={expenses}
+        onImported={() => void refresh()}
       />
       <ExpenseList
         status={status}
