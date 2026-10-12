@@ -1,7 +1,15 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { LoadingState } from "@/components/ui/States";
-import { currentMonthKey, dailyTotals, filterByMonth } from "@/lib/analytics";
+import {
+  currentMonthKey,
+  dailyTotals,
+  filterByMonth,
+  availableMonths,
+  availableYears,
+  monthlyTotals,
+} from "@/lib/analytics";
+import { formatMonthLabel } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { useExpenses } from "@/services/expenses/useExpenses";
@@ -22,8 +30,72 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const currency = expenses[0]?.currency ?? profile.currency ?? "USD";
-  const monthExpenses = filterByMonth(expenses, currentMonthKey());
-  const chartData = dailyTotals(monthExpenses, currentMonthKey());
+
+  // Chart controls: month/year view + period picker.
+  const [chartMode, setChartMode] = useState<"month" | "year">("month");
+  const [monthKey, setMonthKey] = useState<string | null>(null);
+  const [yearKey, setYearKey] = useState<string | null>(null);
+  const months = useMemo(() => availableMonths(expenses), [expenses]);
+  const years = useMemo(() => availableYears(expenses), [expenses]);
+  const activeMonth = monthKey ?? currentMonthKey();
+  const activeYear = yearKey ?? String(new Date().getFullYear());
+  const chartData =
+    chartMode === "month"
+      ? dailyTotals(filterByMonth(expenses, activeMonth), activeMonth)
+      : monthlyTotals(expenses, activeYear);
+  const hasChartData = chartData.some((d) => d.total > 0);
+
+  const chartControls = (
+    <div className="chart-controls">
+      <div className="segmented" role="tablist" aria-label="Chart view">
+        {(["month", "year"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={chartMode === m}
+            className={`segmented-btn${chartMode === m ? " is-active" : ""}`}
+            onClick={() => setChartMode(m)}
+          >
+            {m === "month" ? "Month" : "Year"}
+          </button>
+        ))}
+      </div>
+      {chartMode === "month" ? (
+        <select
+          className="chart-select"
+          aria-label="Select month"
+          value={activeMonth}
+          onChange={(e) => setMonthKey(e.target.value)}
+        >
+          {months.includes(activeMonth) ? null : (
+            <option value={activeMonth}>{formatMonthLabel(activeMonth)}</option>
+          )}
+          {months.map((k) => (
+            <option key={k} value={k}>
+              {formatMonthLabel(k)}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <select
+          className="chart-select"
+          aria-label="Select year"
+          value={activeYear}
+          onChange={(e) => setYearKey(e.target.value)}
+        >
+          {years.includes(activeYear) ? null : (
+            <option value={activeYear}>{activeYear}</option>
+          )}
+          {years.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -44,8 +116,11 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
           </div>
         }
       />
-      {monthExpenses.length > 0 ? (
-        <Card title="Daily spending">
+      {hasChartData ? (
+        <Card
+          title={chartMode === "month" ? "Daily spending" : "Monthly spending"}
+          action={chartControls}
+        >
           <Suspense fallback={<LoadingState label="Loading chart…" />}>
             <SpendingChart data={chartData} currency={currency} />
           </Suspense>

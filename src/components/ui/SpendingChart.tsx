@@ -6,18 +6,25 @@ import {
   ResponsiveContainer,
   type TooltipProps,
 } from "recharts";
-import type { DayTotal } from "@/lib/analytics";
 import { money } from "@/lib/utils";
+
+export interface ChartDatum {
+  date: string;
+  label: string;
+  total: number;
+}
 
 export default function SpendingChart({
   data,
   currency = "USD",
 }: {
-  data: DayTotal[];
+  data: ChartDatum[];
   currency?: string;
 }) {
   const hasData = data.some((d) => d.total > 0);
   if (!hasData) return null;
+  // Dense daily view (28–31 bars): thin out labels. Year view (12 bars): show all.
+  const labelInterval = data.length > 15 ? 6 : 0;
 
   function renderTooltip({ active, payload }: TooltipProps<number, string>) {
     if (!active || !payload || payload.length === 0) return null;
@@ -25,7 +32,7 @@ export default function SpendingChart({
     if (!item || item.value === undefined) return null;
     return (
       <div className="chart-tooltip">
-        <span className="chart-tooltip-date">{(item.payload as DayTotal).date}</span>
+        <span className="chart-tooltip-date">{(item.payload as ChartDatum).date}</span>
         <span className="chart-tooltip-amount">{money(item.value as number, currency)}</span>
       </div>
     );
@@ -40,7 +47,7 @@ export default function SpendingChart({
             tick={{ fontSize: 11, fill: "var(--text-muted)" }}
             tickLine={false}
             axisLine={false}
-            interval={6}
+            interval={labelInterval}
           />
           <Tooltip
             content={renderTooltip}

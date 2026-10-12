@@ -8,6 +8,9 @@ import {
   filterByMonth,
   sumExpenses,
   totalsByCategory,
+  availableMonths,
+  availableYears,
+  monthlyTotals,
 } from "@/lib/analytics";
 import type { Expense } from "@/lib/types";
 
@@ -470,5 +473,38 @@ describe("calculateBudgetProgress", () => {
     expect(result.spent).toBe(0);
     expect(result.remaining).toBe(100);
     expect(result.status).toBe("on-track");
+  });
+});
+
+describe("chart period helpers", () => {
+  const sample: Expense[] = [
+    makeExpense({ id: "a", date: "2026-08-05", amount: 10 }),
+    makeExpense({ id: "b", date: "2026-10-02", amount: 20 }),
+    makeExpense({ id: "c", date: "2026-10-09", amount: 30 }),
+    makeExpense({ id: "d", date: "2025-12-25", amount: 40 }),
+  ];
+
+  it("availableMonths lists newest first", () => {
+    expect(availableMonths(sample)).toEqual(["2026-10", "2026-08", "2025-12"]);
+  });
+
+  it("availableYears lists newest first", () => {
+    expect(availableYears(sample)).toEqual(["2026", "2025"]);
+  });
+
+  it("monthlyTotals aggregates 12 months", () => {
+    const totals = monthlyTotals(sample, "2026");
+    expect(totals).toHaveLength(12);
+    expect(totals[7].label).toBe("Aug");
+    expect(totals[7].total).toBe(10);
+    expect(totals[9].label).toBe("Oct");
+    expect(totals[9].total).toBe(50);
+    expect(totals[0].total).toBe(0);
+    expect(totals[11].date).toBe("2026-12");
+  });
+
+  it("monthlyTotals rejects bad year keys", () => {
+    expect(monthlyTotals(sample, "2026-10")).toEqual([]);
+    expect(monthlyTotals(sample, "")).toEqual([]);
   });
 });
