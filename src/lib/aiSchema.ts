@@ -60,6 +60,44 @@ function normalizeConfidence(value: unknown): number {
   return Math.max(0, Math.min(1, n));
 }
 
+/**
+ * Salvages a usable reply from truncated JSON — the model stopped
+ * mid-object, so JSON.parse fails. Extracts only complete
+ * "key": "value" string pairs (a truncated value has no closing quote
+ * and is skipped by the pattern). Only headline is required, so a
+ * reply with a good headline and partial fields still renders instead
+ * of erroring the whole chat.
+ */
+function salvageTruncatedJson(text: string): InsightResponse | null {
+  const fields: Record<string, string> = {};
+  const pairRe = /"([A-Za-z]+)"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = pairRe.exec(text)) !== null) {
+    try {
+      fields[m[1]] = JSON.parse(`"${m[2]}"`) as string;
+    } catch {
+      // Skip values with broken escapes.
+    }
+  }
+  const headline = fields.headline?.trim();
+  if (!headline) return null;
+  const opt = (k: string): string | null => {
+    const v = fields[k]?.trim();
+    return v ? v : null;
+  };
+  return {
+    mode: normalizeMode(fields.mode),
+    tone: normalizeTone(fields.tone),
+    headline,
+    smallTalk: opt("smallTalk"),
+    context: opt("context"),
+    financialObservation: opt("financialObservation"),
+    suggestion: opt("suggestion"),
+    followUpQuestion: opt("followUpQuestion"),
+    confidence: normalizeConfidence(fields.confidence),
+  };
+}
+
 export function normalizeInsightResponse(raw: unknown): InsightResponse | null {
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
@@ -101,5 +139,7 @@ export function parseInsightResponse(text: string): InsightResponse | null {
       continue;
     }
   }
-  return null;
+  // Last resort: the model stopped mid-JSON. Use whatever complete
+  // fields it managed to emit rather than failing the whole reply.
+  return salvageTruncatedJson(text);
 }

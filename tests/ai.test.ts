@@ -111,6 +111,27 @@ describe("parseInsightResponse", () => {
     expect(parseInsightResponse(JSON.stringify({ ...VALID_RESPONSE, headline: "" }))).toBeNull();
     expect(parseInsightResponse(JSON.stringify({ ...VALID_RESPONSE, headline: "   " }))).toBeNull();
   });
+
+  it("salvages complete fields from truncated JSON", () => {
+    // Production case: the model stopped mid-object and the JSON never
+    // closes. The reply should still render from the complete fields
+    // instead of erroring the chat.
+    const truncated =
+      '{\n  "mode": "conversation",\n  "tone": "playful",\n' +
+      '  "headline": "Haha, I run on electricity and data, so no real meals for me!",\n' +
+      '  "smallTalk": "Though if digital snacks were a thing, I\'"';
+    const result = parseInsightResponse(truncated);
+    expect(result).not.toBeNull();
+    expect(result!.headline).toBe(
+      "Haha, I run on electricity and data, so no real meals for me!"
+    );
+    expect(result!.mode).toBe("conversation");
+    expect(result!.tone).toBe("playful");
+  });
+
+  it("returns null for truncated JSON with no complete headline", () => {
+    expect(parseInsightResponse('{"mode": "conversation", "headl')).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
