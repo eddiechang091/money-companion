@@ -18,7 +18,7 @@ import { CAT_ITEMS, getItem } from "@/services/cat/items";
 import type { CatItem, ItemKind } from "@/services/cat/types";
 import { RewardCelebration } from "./RewardCelebration";
 import { playHappy, playSnore, playYawn, playPop } from "@/services/cat/sounds";
-import { awardBadge } from "@/features/gamification/awardBadges";
+import { awardBadge, celebrateRewards } from "@/features/gamification/awardBadges";
 import { useExpenses } from "@/services/expenses/useExpenses";
 import { useBudgets } from "@/services/budgets/useBudgets";
 import { useConversation } from "@/features/ai/useConversation";
@@ -81,7 +81,6 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
   const [bubble, setBubble] = useState("Let's make today a great logging day!");
   const [picker, setPicker] = useState<PickerKind>(null);
   const [dropNotice, setDropNotice] = useState<CatItem | null>(null);
-  const [checkinItems, setCheckinItems] = useState<CatItem[] | null>(null);
   const [rewardShow, setRewardShow] = useState<{ title: string; items: CatItem[] } | null>(null);
   const [chatInput, setChatInput] = useState("");
   const poseTimer = useRef<number | null>(null);
@@ -93,7 +92,6 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
       setPose(state.asleep ? "sleep" : "idle");
       setPicker(null);
       setDropNotice(null);
-      setCheckinItems(null);
       setBubble(state.asleep ? "Zzz… (the lucky cat is asleep)" : "Let's make today a great logging day!");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,16 +137,21 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
   const doCheckIn = () => {
     const res = checkIn();
     if (res.ok) {
-      setCheckinItems(res.items);
       setBubble(`Check-in day ${res.streak}! The lucky cat got ${res.items.length} gift${res.items.length > 1 ? "s" : ""}!`);
       playPop();
       setPose("play");
       revertPose();
-      window.setTimeout(() => setCheckinItems(null), 5000);
       // Celebrate check-in badges immediately, using the fresh streak
       // (the persisted cat state saves async, so read it from res).
-      if (res.streak === 1) void awardBadge("checkin-1");
-      if (res.streak >= 7) void awardBadge("checkin-7");
+      // Badge popups come first, then the gift rewards, each auto-closing.
+      const celebrate = async () => {
+        if (res.streak === 1) await awardBadge("checkin-1");
+        if (res.streak >= 7) await awardBadge("checkin-7");
+        if (res.items.length > 0) {
+          celebrateRewards([{ title: "Check-in gifts", items: res.items }]);
+        }
+      };
+      void celebrate();
     }
   };
 
@@ -266,11 +269,6 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
             {dropNotice && (
               <div className="cat-notice" role="status">
                 🎁 Lucky drop: {dropNotice.emoji} {dropNotice.name}
-              </div>
-            )}
-            {checkinItems && checkinItems.length > 0 && (
-              <div className="cat-notice" role="status">
-                🎁 Check-in gifts: {checkinItems.map((i) => `${i.emoji} ${i.name}`).join(", ")}
               </div>
             )}
 

@@ -17,7 +17,7 @@ import { getKvStore } from "@/services/anna/storage";
 import type { CatItem, CatState, ExpenseStats, Inventory } from "./types";
 import { DEFAULT_CAT_STATE } from "./types";
 import { getItem, randomItem, randomItems } from "./items";
-import { historyRarityBoost, rollMilestoneRewards } from "./milestones";
+import { historyRarityBoost } from "./milestones";
 
 const CAT_STATE_KEY = "cat:companion_state";
 
@@ -99,8 +99,6 @@ export interface CatContextValue {
   toggleSleep: () => void;
   /** Grant items (check-in, drops, milestones). */
   grantItems: (items: CatItem[]) => void;
-  /** Claim a milestone reward; returns the rolled items or null. */
-  claimMilestone: (milestoneId: string, stats: ExpenseStats) => CatItem[] | null;
   /** Maybe drop a random item when the cat is very happy. */
   maybeHappyDrop: (stats: ExpenseStats) => CatItem | null;
 }
@@ -237,24 +235,6 @@ export function CatProvider({ children }: { children: ReactNode }) {
     [persist, state]
   );
 
-  const claimMilestone = useCallback(
-    (milestoneId: string, stats: ExpenseStats): CatItem[] | null => {
-      if (state.claimedMilestones.includes(milestoneId)) return null;
-      const itemIds = rollMilestoneRewards(milestoneId, stats);
-      const items = itemIds
-        .map((id) => getItem(id))
-        .filter((i): i is CatItem => !!i);
-      persist({
-        ...state,
-        claimedMilestones: [...state.claimedMilestones, milestoneId],
-        inventory: addToInventory(state.inventory, items),
-        happiness: Math.min(100, state.happiness + 6),
-      });
-      return items;
-    },
-    [persist, state]
-  );
-
   const maybeHappyDrop = useCallback(
     (stats: ExpenseStats): CatItem | null => {
       const now = Date.now();
@@ -284,7 +264,6 @@ export function CatProvider({ children }: { children: ReactNode }) {
       cleanLitter,
       toggleSleep,
       grantItems,
-      claimMilestone,
       maybeHappyDrop,
     }),
     [
@@ -298,7 +277,6 @@ export function CatProvider({ children }: { children: ReactNode }) {
       cleanLitter,
       toggleSleep,
       grantItems,
-      claimMilestone,
       maybeHappyDrop,
     ]
   );

@@ -1,25 +1,48 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BadgeCelebration } from "./BadgeCelebration";
-import { onBadgeUnlock } from "./badgeEvents";
+import { RewardCelebration } from "@/features/cat/RewardCelebration";
+import { onCelebration, type RewardBundle } from "./badgeEvents";
 import type { BadgeDef } from "./badges";
 
+type Slide =
+  | { kind: "badge"; badge: BadgeDef }
+  | { kind: "reward"; bundle: RewardBundle };
+
 /**
- * Global badge celebration host — render once at the App root so unlocks
- * celebrate immediately wherever the user is, not only on the dashboard.
+ * Global celebration host — render once at the App root so unlocks
+ * celebrate immediately wherever the user is. Slides are sequenced:
+ * badges first, then cat reward bundles. Each slide auto-dismisses
+ * after 3s unless the user advances manually.
  */
 export function BadgeHost() {
-  const [badges, setBadges] = useState<BadgeDef[]>([]);
+  const [slides, setSlides] = useState<Slide[]>([]);
 
   useEffect(() => {
-    return onBadgeUnlock((fresh) => {
-      setBadges((prev) => {
-        const ids = new Set(prev.map((b) => b.id));
-        const next = fresh.filter((b) => !ids.has(b.id));
-        return next.length > 0 ? [...prev, ...next] : prev;
-      });
+    return onCelebration((c) => {
+      const fresh: Slide[] = [
+        ...c.badges.map((badge): Slide => ({ kind: "badge", badge })),
+        ...c.rewards.map((bundle): Slide => ({ kind: "reward", bundle })),
+      ];
+      if (fresh.length === 0) return;
+      setSlides((prev) => [...prev, ...fresh]);
     });
   }, []);
 
-  if (badges.length === 0) return null;
-  return <BadgeCelebration badges={badges} onDone={() => setBadges([])} />;
+  const advance = useCallback(() => {
+    setSlides((prev) => prev.slice(1));
+  }, []);
+
+  const current = slides[0];
+  if (!current) return null;
+
+  if (current.kind === "badge") {
+    return <BadgeCelebration badges={[current.badge]} onDone={advance} />;
+  }
+  return (
+    <RewardCelebration
+      title={current.bundle.title}
+      items={current.bundle.items}
+      onDone={advance}
+    />
+  );
 }
