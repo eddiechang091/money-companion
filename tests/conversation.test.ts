@@ -53,7 +53,7 @@ describe("buildConversationContext", () => {
     const ctx = buildConversationContext(expenses, [], "CAD", expense, MONTH);
     expect(ctx.currentExpense).not.toBeNull();
     expect(ctx.currentExpense!.amount).toBe(128.40);
-    expect(ctx.currentExpense!.category).toBe("Food");
+    expect(ctx.currentExpense!.category).toBe("Food & Dining");
   });
 
   it("allows null activeExpense for general conversation", () => {

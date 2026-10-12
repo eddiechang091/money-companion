@@ -192,14 +192,14 @@ describe("buildInsightContext", () => {
   it("includes the current expense details", () => {
     const ctx = buildInsightContext(expense, expenses, budgets, MONTH);
     expect(ctx.currentExpense.amount).toBe(128.40);
-    expect(ctx.currentExpense.category).toBe("Food");
+    expect(ctx.currentExpense.category).toBe("Food & Dining");
     expect(ctx.currentExpense.description).toBe("Sushi restaurant");
   });
 
   it("includes top category totals for the current month", () => {
     const ctx = buildInsightContext(expense, expenses, budgets, MONTH);
     expect(ctx.financialSummary.topCategories.length).toBeGreaterThan(0);
-    const food = ctx.financialSummary.topCategories.find((c) => c.category === "Food");
+    const food = ctx.financialSummary.topCategories.find((c) => c.category === "Food & Dining");
     expect(food).toBeDefined();
     expect(food!.total).toBeGreaterThan(0);
   });
@@ -251,7 +251,7 @@ describe("buildFallbackResponse", () => {
 
   it("includes the category name", () => {
     const result = buildFallbackResponse(expense, ctx);
-    expect(result.headline).toContain("Food");
+    expect(result.headline).toContain("Food & Dining");
   });
 
   it("returns mode 'casual'", () => {
@@ -299,7 +299,7 @@ describe("buildInsightMessages", () => {
 
   it("includes category in the user message", () => {
     const messages = buildInsightMessages(ctx);
-    expect(messages[1].content).toContain("Food");
+    expect(messages[1].content).toContain("Food & Dining");
   });
 
   it("system prompt contains the JSON schema instruction", () => {
