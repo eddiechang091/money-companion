@@ -21,6 +21,10 @@ export interface Expense {
   originalAmount?: number;
   originalCurrency?: string;
   fxRate?: number;
+  /** "import" for bank-CSV imports, undefined/"manual" otherwise. */
+  source?: "manual" | "import";
+  /** Stable dedupe key for imports: date|amount_cents|normalized description. */
+  importKey?: string;
 }
 
 export interface MonthlyBudget {

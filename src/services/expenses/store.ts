@@ -16,6 +16,8 @@ export interface NewExpenseInput {
   originalAmount?: number;
   originalCurrency?: string;
   fxRate?: number;
+  source?: "manual" | "import";
+  importKey?: string;
 }
 
 export interface ExpensePatch {
@@ -29,6 +31,8 @@ export interface ExpensePatch {
   originalAmount?: number;
   originalCurrency?: string;
   fxRate?: number;
+  source?: "manual" | "import";
+  importKey?: string;
 }
 
 export type ExpenseStoreErrorCode = "not-found" | "storage" | "too-large";
@@ -126,6 +130,8 @@ export function sanitizeNewExpense(input: NewExpenseInput): NewExpenseInput {
     originalAmount: input.originalAmount,
     originalCurrency: input.originalCurrency?.toUpperCase(),
     fxRate: input.fxRate,
+    source: input.source === "import" ? "import" : undefined,
+    importKey: input.importKey?.trim() ? input.importKey.trim() : undefined,
   };
 }
 
@@ -165,6 +171,8 @@ export async function buildExpense(id: string, input: NewExpenseInput): Promise<
     date: clean.date,
     paymentMethod: clean.paymentMethod,
     notes: clean.notes,
+    source: clean.source,
+    importKey: clean.importKey,
     createdAt: now,
     updatedAt: now,
   };
