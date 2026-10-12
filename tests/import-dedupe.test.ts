@@ -68,7 +68,7 @@ describe("guessCategoryId", () => {
     expect(guessCategoryId("TIM HORTONS #1234")).toBe("food");
     expect(guessCategoryId("SHELL CANADA")).toBe("transport");
     expect(guessCategoryId("AMAZON.CA")).toBe("shopping");
-    expect(guessCategoryId("BELL MOBILITY")).toBe("bills");
+    expect(guessCategoryId("BELL MOBILITY")).toBe("internet");
     expect(guessCategoryId("CINEPLEX ODEON")).toBe("fun");
     expect(guessCategoryId("SHOPPERS DRUG MART")).toBe("health");
   });
