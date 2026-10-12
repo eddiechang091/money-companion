@@ -18,6 +18,7 @@ import { CAT_ITEMS, getItem } from "@/services/cat/items";
 import type { CatItem, ItemKind } from "@/services/cat/types";
 import { RewardCelebration } from "./RewardCelebration";
 import { playHappy, playSnore, playYawn, playPop } from "@/services/cat/sounds";
+import { awardBadge } from "@/features/gamification/awardBadges";
 import { useExpenses } from "@/services/expenses/useExpenses";
 import { useBudgets } from "@/services/budgets/useBudgets";
 import { useConversation } from "@/features/ai/useConversation";
@@ -144,6 +145,10 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
       setPose("play");
       revertPose();
       window.setTimeout(() => setCheckinItems(null), 5000);
+      // Celebrate check-in badges immediately, using the fresh streak
+      // (the persisted cat state saves async, so read it from res).
+      if (res.streak === 1) void awardBadge("checkin-1");
+      if (res.streak >= 7) void awardBadge("checkin-7");
     }
   };
 

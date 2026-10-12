@@ -8,6 +8,7 @@ import {
 import type { Expense, MonthlyBudget } from "@/lib/types";
 import { parseInsightResponse, type InsightResult } from "@/lib/aiSchema";
 import { getLlmService } from "@/services/anna/llm";
+import { refreshBadges } from "@/features/gamification/awardBadges";
 import { DEFAULT_CURRENCY } from "@/lib/constants";
 import { buildConversationContext } from "./conversationContext";
 import { buildConversationMessages, buildConversationRepairMessages } from "./conversationPrompts";
@@ -228,7 +229,9 @@ export function useConversation(
         const allMessages = [...historyBeforeSend, userMsg, reply];
         const suggestions = buildSuggestedQuestions(ctx, true, userTexts(allMessages), allMessages);
         dispatch({ type: "send-ok", reply, suggestions });
-        void saveConversation(allMessages);
+        await saveConversation(allMessages);
+        // Celebrate badge unlocks immediately (good talk, chatterbox…).
+        await refreshBadges();
       } catch (err) {
         const msg = (err as Error).message;
         if (msg === "unavailable") {

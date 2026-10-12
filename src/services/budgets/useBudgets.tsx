@@ -11,6 +11,7 @@ import type { MonthlyBudget } from "@/lib/types";
 import { BudgetStoreError, getBudgetRepository, type BudgetInput } from "./repository";
 import { useToast } from "@/components/ui/Toast";
 import { DEFAULT_CURRENCY } from "@/lib/constants";
+import { refreshBadges } from "@/features/gamification/awardBadges";
 
 export type BudgetsStatus = "loading" | "ready" | "error";
 
@@ -103,6 +104,8 @@ export function BudgetsProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "optimistic-upsert", budget: saved });
         // Refresh from storage to ensure consistency
         void load();
+        // Celebrate badge unlocks immediately (goal setter…).
+        void refreshBadges();
         return saved;
       } catch (error) {
         dispatch({ type: "rollback-restore", snapshot });
