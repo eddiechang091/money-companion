@@ -18,6 +18,7 @@ import {
   type NewExpenseInput,
 } from "./repository";
 import { useToast } from "@/components/ui/Toast";
+import { refreshBadges } from "@/features/gamification/awardBadges";
 
 export type ExpensesStatus = "loading" | "ready" | "error";
 
@@ -163,6 +164,8 @@ export function ExpensesProvider({ children }: { children: ReactNode }) {
         const repository = await getExpenseRepository();
         const saved = await repository.create(input);
         dispatch({ type: "commit-add", tempId: optimistic.id, expense: saved });
+        // Celebrate badge unlocks immediately (first expense, streaks…).
+        void refreshBadges();
         return saved;
       } catch (error) {
         dispatch({ type: "rollback-add", tempId: optimistic.id });

@@ -4,8 +4,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { awardBadge } from "@/features/gamification/awardBadges";
 import type { ReactNode } from "react";
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -56,7 +58,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
+
   const setTheme = useCallback((id: ThemeId) => {
+    const changed = id !== themeRef.current;
     setThemeState(id);
     applyThemeAttribute(id);
     (async () => {
@@ -67,6 +73,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         /* non-fatal */
       }
     })();
+    // Celebrate the first real theme change immediately.
+    if (changed) void awardBadge("theme-changer");
   }, []);
 
   const value = useMemo(

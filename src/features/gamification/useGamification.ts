@@ -3,29 +3,23 @@ import type { Expense } from "@/lib/types";
 import { computeStreak, buildHeatmap, type StreakInfo, type HeatmapDay } from "@/lib/streak";
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS } from "@/lib/constants";
-import { loadConversation } from "@/features/ai/conversationStorage";
-import {
-  checkBadgeUnlocks,
-  badgeDefById,
-  type BadgeDef,
-} from "./badges";
+import { refreshBadges } from "./awardBadges";
+import { onBadgeUnlock } from "./badgeEvents";
 
 export interface Gamification {
   streak: StreakInfo;
   heatmap: HeatmapDay[][];
   unlockedIds: Set<string>;
-  /** Badges unlocked during this session (for celebration). */
-  newlyUnlocked: BadgeDef[];
 }
 
 /**
- * Compute streak + heatmap from expenses, check badge unlocks against
- * persisted state, persist new unlocks. New unlocks are returned once
- * so the UI can celebrate them.
+ * Computes streak + heatmap and exposes unlocked badge ids for display.
+ * Celebration is global now (BadgeHost at the App root): actions award
+ * badges immediately via awardBadges, and a mount-time refreshBadges()
+ * catches up on anything earned before this feature existed.
  */
-export function useGamification(expenses: Expense[], budgetCount: number): Gamification {
+export function useGamification(expenses: Expense[], _budgetCount: number): Gamification {
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
-  const [newlyUnlocked, setNewlyUnlocked] = useState<BadgeDef[]>([]);
   const checkedRef = useRef(false);
 
   const streak = useMemo(() => computeStreak(expenses), [expenses]);
@@ -35,41 +29,23 @@ export function useGamification(expenses: Expense[], budgetCount: number): Gamif
     if (checkedRef.current) return;
     checkedRef.current = true;
     (async () => {
+      // Safety net: award anything the current data already earns
+      // (e.g. existing users). New unlocks celebrate via BadgeHost.
+      await refreshBadges();
       const store = await getKvStore();
       const persisted =
         (await store.get<Record<string, string>>(STORAGE_KEYS.badgesUnlocked)) ?? {};
-      const already = new Set(Object.keys(persisted));
-
-      // Persist longest streak as a safety net (survives expense deletion).
-      const persistedLongest = (await store.get<number>(STORAGE_KEYS.longestStreak)) ?? 0;
-      const longest = Math.max(streak.longest, persistedLongest);
-      if (longest > persistedLongest) {
-        await store.set(STORAGE_KEYS.longestStreak, longest);
-      }
-
-      const conversation = await loadConversation().catch(() => null);
-      const hasChatted = !!conversation && conversation.messages.length > 0;
-
-      const fresh = checkBadgeUnlocks(already, {
-        streak: { ...streak, longest },
-        expenseCount: expenses.length,
-        budgetCount,
-        hasChatted,
-      });
-
-      if (fresh.length > 0) {
-        const now = new Date().toISOString();
-        const next = { ...persisted };
-        for (const id of fresh) next[id] = now;
-        await store.set(STORAGE_KEYS.badgesUnlocked, next);
-        const defs = fresh
-          .map(badgeDefById)
-          .filter((d): d is BadgeDef => !!d);
-        setNewlyUnlocked(defs);
-      }
-      setUnlockedIds(new Set([...already, ...fresh]));
+      setUnlockedIds(new Set(Object.keys(persisted)));
     })();
-  }, [expenses, budgetCount, streak]);
+    // Keep the displayed set fresh as badges unlock mid-session.
+    return onBadgeUnlock((fresh) => {
+      setUnlockedIds((prev) => {
+        const next = new Set(prev);
+        for (const b of fresh) next.add(b.id);
+        return next;
+      });
+    });
+  }, []);
 
-  return { streak, heatmap, unlockedIds, newlyUnlocked };
+  return { streak, heatmap, unlockedIds };
 }

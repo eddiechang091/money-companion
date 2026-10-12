@@ -13,6 +13,7 @@ import { ProfileProvider } from "@/services/profile/useProfile";
 import { CurrencyGate } from "@/components/ui/CurrencyGate";
 import { BudgetsProvider } from "@/services/budgets/useBudgets";
 import { CatProvider } from "@/services/cat/useCat";
+import { BadgeHost } from "@/features/gamification/BadgeHost";
 import { ThemeProvider, useTheme } from "@/services/theme/useTheme";
 
 function ThemedBackground() {
@@ -44,6 +45,7 @@ export function App() {
           <AppShell route={route} onNavigate={navigate}>
             {renderRoute(route, navigate)}
           </AppShell>
+          <BadgeHost />
           </CatProvider>
         </BudgetsProvider>
       </ExpensesProvider>

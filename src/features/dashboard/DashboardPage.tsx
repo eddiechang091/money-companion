@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -23,7 +23,6 @@ import { CatLauncher } from "@/features/cat/CatLauncher";
 import { CatCompanionModal } from "@/features/cat/CatCompanionModal";
 import { DailyDelightCard } from "@/features/delight/DailyDelightCard";
 import { useGamification } from "@/features/gamification/useGamification";
-import { BadgeCelebration } from "@/features/gamification/BadgeCelebration";
 
 function periodText(delta: number, direction: string, currency: string): string {
   const amount = money(Math.abs(delta), currency);
@@ -63,16 +62,8 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   const recentExpenses = sortExpensesByRecency(monthExpenses).slice(0, 4);
   // Badge unlocks are checked here so they fire wherever the user is;
   // the badges themselves live on the profile page.
-  const { streak, newlyUnlocked } = useGamification(expenses, budgets.length);
-  const [celebration, setCelebration] = useState(newlyUnlocked);
+  const { streak } = useGamification(expenses, budgets.length);
   const [catOpen, setCatOpen] = useState(false);
-
-  // Collect newly unlocked badges for the celebration modal.
-  useEffect(() => {
-    if (newlyUnlocked.length > 0) {
-      setCelebration((prev) => [...prev, ...newlyUnlocked]);
-    }
-  }, [newlyUnlocked]);
 
   if (isLoading) {
     return (
@@ -170,12 +161,6 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
         </Card>
       ) : null}
 
-      {celebration.length > 0 ? (
-        <BadgeCelebration
-          badges={celebration}
-          onDone={() => setCelebration([])}
-        />
-      ) : null}
     </>
   );
 }

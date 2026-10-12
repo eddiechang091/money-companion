@@ -16,6 +16,7 @@ import {
   yearStats,
 } from "@/lib/streak";
 import { BadgesRow } from "@/features/gamification/BadgesRow";
+import { awardBadge } from "@/features/gamification/awardBadges";
 import { MilestoneRewards } from "@/features/cat/MilestoneRewards";
 import { Avatar } from "@/components/ui/Avatar";
 import { AVATARS } from "@/services/profile/avatars";
@@ -203,7 +204,13 @@ export function ProfilePage() {
                 key={s.id}
                 type="button"
                 className={`status-chip${profile.status === s.id ? " is-active" : ""}`}
-                onClick={() => update({ status: s.id as ProfileStatus })}
+                onClick={() => {
+                  if (s.id !== profile.status) {
+                    update({ status: s.id as ProfileStatus });
+                    // Celebrate the first status set immediately.
+                    void awardBadge("status-set");
+                  }
+                }}
                 title={s.label}
               >
                 <span aria-hidden="true">{s.emoji}</span> {s.label}

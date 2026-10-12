@@ -6,6 +6,7 @@ import { currentMonthKey, filterByMonth, monthKeyOfIsoDate } from "@/lib/analyti
 import { exportExpensesExcel } from "@/services/export/excel";
 import { exportMonthlyStatement } from "@/services/export/pdf";
 import { useProfile } from "@/services/profile/useProfile";
+import { awardBadge } from "@/features/gamification/awardBadges";
 import { useTheme } from "@/services/theme/useTheme";
 
 function monthLabel(key: string): string {
@@ -78,6 +79,8 @@ export function ExportDialog({
       });
       notify("PDF statement downloaded.");
     }
+    // Celebrate the first export immediately.
+    void awardBadge("first-export");
     onClose();
   }
 
