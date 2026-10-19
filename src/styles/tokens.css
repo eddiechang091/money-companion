@@ -33,7 +33,7 @@
   --dur-celebrate: 520ms;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --nav-width: 232px;
-  --bottom-nav-height: 64px;
+  --bottom-nav-height: 76px;
   --content-max: 1080px;
   --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   /* Subtle AI-generated page background (set per theme via inline style). */
