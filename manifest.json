@@ -62,6 +62,9 @@
     "haptics",
     "camera_capture"
    ]
-  }
+  },
+  "form_factors": [
+   "mobile"
+  ]
  }
 }
