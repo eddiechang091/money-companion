@@ -420,7 +420,7 @@ select option {
 
 
 
-/* ─── Phase 5: Money Buddy chat ──────────────────────────────────────────── */
+/* ─── Phase 5: Lucky Cat chat ──────────────────────────────────────────── */
 
 /* Welcome / unavailable states */
 .chat-welcome,
@@ -645,7 +645,7 @@ select option {
   border-radius: var(--radius-pill);
 }
 
-/* ─── Phase 6.5: Lucky Cat / Money Buddy Voice ───────────────────────────── */
+/* ─── Phase 6.5: Lucky Cat / Lucky Cat Voice ───────────────────────────── */
 /* 3D companion: fixed bottom-right like the BrightNest panda — it stays
    on screen while the page scrolls. */
 .lucky-cat-3d-wrap {
