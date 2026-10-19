@@ -24,7 +24,7 @@ export function BottomNav({
               onNavigate(item.path);
             }}
           >
-            <Icon size={20} aria-hidden="true" />
+            <Icon size={24} aria-hidden="true" />
             <span>{item.label}</span>
           </a>
         );

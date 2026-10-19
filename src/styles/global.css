@@ -202,7 +202,7 @@ select option {
   .app-shell { grid-template-columns: minmax(0, 1fr); }
   .side-nav { display: none; }
   .bottom-nav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; height: var(--bottom-nav-height); background: var(--surface); border-top: 1px solid var(--border); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
-  .bottom-nav .nav-link { flex: 1; flex-direction: column; gap: 2px; padding: 6px 2px; font-size: 11px; justify-content: center; }
+  .bottom-nav .nav-link { flex: 1; flex-direction: column; gap: 4px; padding: 10px 2px; font-size: 12px; justify-content: center; min-height: 56px; }
 }
 
 /* Dashboard */
