@@ -75,9 +75,9 @@ export function ChatComposer({
           className="composer-input"
           value={text}
           rows={1}
-          placeholder="Ask Money Buddy…"
+          placeholder="Ask Lucky Cat…"
           disabled={disabled}
-          aria-label="Message to Money Buddy"
+          aria-label="Message to Lucky Cat"
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
         />

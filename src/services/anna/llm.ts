@@ -19,7 +19,7 @@ export interface LlmResult {
 }
 
 export class LlmUnavailableError extends Error {
-  constructor(message = "Money Buddy is taking a tiny break") {
+  constructor(message = "Lucky Cat is taking a tiny break") {
     super(message);
     this.name = "LlmUnavailableError";
   }

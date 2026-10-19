@@ -35,7 +35,7 @@ function AIContent({ result }: { result: InsightResult }) {
 
 function TypingBubble() {
   return (
-    <div className="bubble-row bubble-row--ai" aria-live="polite" aria-label="Money Buddy is thinking">
+    <div className="bubble-row bubble-row--ai" aria-live="polite" aria-label="Lucky Cat is thinking">
       <span className="bubble-avatar" aria-hidden="true">💬</span>
       <div className="bubble bubble--ai">
         <span className="typing-dots" aria-hidden="true">
@@ -55,7 +55,7 @@ export function MessageBubble({ message }: { message: ConversationMessage }) {
       ) : null}
       <div
         className={`bubble ${isUser ? "bubble--user" : "bubble--ai"}`}
-        aria-label={isUser ? "Your message" : "Money Buddy's response"}
+        aria-label={isUser ? "Your message" : "Lucky Cat's response"}
       >
         {isUser ? (
           <p className="bubble-text">{message.text}</p>

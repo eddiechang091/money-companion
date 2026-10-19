@@ -239,7 +239,7 @@ export function useConversation(
             type: "send-error",
             error:
               "The AI isn't available in this session. " +
-              "In the harness, restart without --no-llm to enable Money Buddy.",
+              "In the harness, restart without --no-llm to enable Lucky Cat.",
           });
         } else {
           dispatch({ type: "send-error", error: "Something went sideways. Tap to retry." });

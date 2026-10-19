@@ -39,7 +39,7 @@ export interface UserProfile {
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
-  // Default display name. "Money Buddy" is the AI companion's name, so it
+  // Default display name. "Lucky Cat" is the AI companion's name, so it
   // must not be the user's. The Anna host SDK exposes no user-info API, so
   // there is no user id to default to. The user can rename in Profile settings.
   displayName: "Adam Smith",

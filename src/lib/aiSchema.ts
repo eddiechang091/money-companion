@@ -1,4 +1,4 @@
-// Versioned structured output shape for Money Buddy insight responses.
+// Versioned structured output shape for Lucky Cat insight responses.
 // Bump INSIGHT_SCHEMA_VERSION when the shape changes in a breaking way.
 export const INSIGHT_SCHEMA_VERSION = "1.0";
 

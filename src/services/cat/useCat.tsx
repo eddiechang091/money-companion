@@ -1,8 +1,10 @@
 // Interactive lucky cat — shared companion state (Anna Storage persisted).
 //
-// Happiness decays ~2 points per hour while away. Feeding / playing /
-// grooming raise it. A very happy cat (>80) may drop a random item after
-// an interaction (rate-limited to one drop per 10 minutes).
+// Stats decay while away using an accelerating (quadratic) curve: slow at
+// first, faster the longer you're gone. ~72 hours (3 days) of neglect fully
+// depletes a stat from 100. Feeding / playing / grooming raise stats.
+// A very happy cat (>80) may drop a random item after an interaction
+// (rate-limited to one drop per 10 minutes).
 
 import {
   createContext,
@@ -21,8 +23,20 @@ import { historyRarityBoost } from "./milestones";
 
 const CAT_STATE_KEY = "cat:companion_state";
 
-const HAPPINESS_DECAY_PER_HOUR = 2;
 const DROP_HAPPINESS_THRESHOLD = 80;
+
+/** Hours of neglect to fully deplete a stat from 100. */
+const FULL_DECAY_HOURS = 72;
+
+/**
+ * Accelerating decay: slow at first, faster over time.
+ * Quadratic curve — 12h: ~3pts, 24h: ~11pts, 36h: 25pts, 48h: ~44pts,
+ * 60h: ~69pts, 72h: 100pts (fully depleted).
+ */
+function acceleratedDecay(hoursAway: number): number {
+  const t = Math.min(Math.max(0, hoursAway), FULL_DECAY_HOURS) / FULL_DECAY_HOURS;
+  return Math.floor(100 * t * t);
+}
 const DROP_COOLDOWN_MS = 10 * 60 * 1000;
 
 function todayLocal(): string {
@@ -42,20 +56,18 @@ async function loadCatState(): Promise<CatState> {
     if (!saved) return { ...DEFAULT_CAT_STATE };
     const now = Date.now();
     const hoursAway = Math.max(0, (now - (saved.updatedAt || now)) / 3_600_000);
-    const decay = Math.floor(hoursAway * HAPPINESS_DECAY_PER_HOUR);
-    // New stats decay too; sleeping restores energy instead of draining it.
-    const satietyDecay = Math.floor(hoursAway * 2);
-    const cleanlinessDecay = Math.floor(hoursAway * 1);
+    const decay = acceleratedDecay(hoursAway);
+    // Sleeping restores energy instead of draining it.
     const energyDelta = saved.asleep
       ? Math.floor(hoursAway * 10) // sleeping restores
-      : -Math.floor(hoursAway * 1);
+      : -decay;
     const clamp = (v: number) => Math.max(0, Math.min(100, v));
     return {
       ...DEFAULT_CAT_STATE,
       ...saved,
       happiness: clamp(saved.happiness - decay),
-      satiety: clamp((saved.satiety ?? 60) - satietyDecay),
-      cleanliness: clamp((saved.cleanliness ?? 60) - cleanlinessDecay),
+      satiety: clamp((saved.satiety ?? 60) - decay),
+      cleanliness: clamp((saved.cleanliness ?? 60) - decay),
       energy: clamp((saved.energy ?? 80) + energyDelta),
       inventory: saved.inventory ?? {},
       claimedMilestones: saved.claimedMilestones ?? [],

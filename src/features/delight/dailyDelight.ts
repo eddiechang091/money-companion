@@ -16,7 +16,7 @@ export interface DailyDelight {
   fallback: boolean;
 }
 
-const SYSTEM = `You are Money Buddy, a warm friend who notices life's small joys.
+const SYSTEM = `You are Lucky Cat, a warm friend who notices life's small joys.
 Write one short daily delight for the user.
 
 Pick ONE of these two forms:

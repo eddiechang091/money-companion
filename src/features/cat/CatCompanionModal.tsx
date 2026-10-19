@@ -2,7 +2,7 @@
 //
 // Floating modal over the Dashboard: stat bars (satiety/mood/cleanliness/
 // energy), a cozy cat-room scene with pose changes, AI chat integrated
-// directly (Money Buddy conversation), action buttons with sound effects,
+// directly (Lucky Cat conversation), action buttons with sound effects,
 // inventory, happiness meter, and daily check-in.
 //
 // AI replies appear in the speech bubble (trimmed to 2-3 sentences) and in
@@ -62,7 +62,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
   const { theme } = useTheme();
   const themeArt = THEME_CAT_ART[theme] ?? null;
 
-  // AI chat (Money Buddy conversation, merged into the modal).
+  // AI chat (Lucky Cat conversation, merged into the modal).
   const { expenses } = useExpenses();
   const { budgets } = useBudgets();
   const {
@@ -335,7 +335,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
               <div className="cat-chat-history cat-chat-history--desktop" ref={chatScrollRef}>
                 {messages.length === 0 && (
                   <div className="cat-chat-empty">
-                    <p className="cat-chat-empty-title">Hey, I'm your Money Buddy! 🐱</p>
+                    <p className="cat-chat-empty-title">Hey, I'm your Lucky Cat! 🐱</p>
                     <p className="muted">Ask me about your spending, budgets, or money habits.</p>
                   </div>
                 )}
