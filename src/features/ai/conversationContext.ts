@@ -67,6 +67,13 @@ export function buildConversationContext(
               totalSpent: comparison.previousTotal,
               delta: comparison.delta,
               deltaPct: comparison.deltaPct,
+              topCategories: totalsByCategory(previousMonthExpenses)
+                .slice(0, MAX_CATEGORIES)
+                .map((t) => ({
+                  category: getCategoryById(t.categoryId)?.name ?? "Uncategorized",
+                  total: t.total,
+                  count: t.count,
+                })),
             }
           : null,
       budget: overallBudget

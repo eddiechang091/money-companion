@@ -23,7 +23,12 @@ export interface FinancialSummaryContext {
   month: string;
   totalSpent: number;
   topCategories: Array<{ category: string; total: number; count: number }>;
-  previousMonth: { totalSpent: number; delta: number; deltaPct: number | null } | null;
+  previousMonth: {
+    totalSpent: number;
+    delta: number;
+    deltaPct: number | null;
+    topCategories: Array<{ category: string; total: number; count: number }>;
+  } | null;
   budget: { limit: number; remaining: number; pct: number; status: string } | null;
   changes: Array<{ kind: string; category: string; delta: number }>;
 }
@@ -80,6 +85,13 @@ export function buildInsightContext(
               totalSpent: comparison.previousTotal,
               delta: comparison.delta,
               deltaPct: comparison.deltaPct,
+              topCategories: totalsByCategory(previousMonthExpenses)
+                .slice(0, MAX_CATEGORIES)
+                .map((t) => ({
+                  category: getCategoryById(t.categoryId)?.name ?? "Uncategorized",
+                  total: t.total,
+                  count: t.count,
+                })),
             }
           : null,
       budget:

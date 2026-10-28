@@ -41,10 +41,20 @@ function buildContextSummary(ctx: ConversationContext): string {
     parts.push(`Top spending: ${cats}`);
   }
   if (s.previousMonth) {
-    const dir = s.previousMonth.delta >= 0 ? "+" : "";
+    const pm = s.previousMonth;
+    const dir = pm.delta >= 0 ? "+" : "-";
+    const pct = pm.deltaPct != null ? ` (${dir}${Math.abs(pm.deltaPct).toFixed(1)}%)` : "";
     parts.push(
-      `vs last month: ${dir}${ctx.user.currency}${Math.abs(s.previousMonth.delta).toFixed(2)}`
+      `Last month total: ${ctx.user.currency}${pm.totalSpent.toFixed(2)}, ` +
+        `change vs last month: ${dir}${ctx.user.currency}${Math.abs(pm.delta).toFixed(2)}${pct}`
     );
+    if (pm.topCategories.length > 0) {
+      const cats = pm.topCategories
+        .slice(0, 3)
+        .map((c) => `${c.category}: ${ctx.user.currency}${c.total.toFixed(2)}`)
+        .join(", ");
+      parts.push(`Last month top spending: ${cats}`);
+    }
   }
   return parts.join("\n");
 }
