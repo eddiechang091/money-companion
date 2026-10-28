@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -19,10 +18,7 @@ import { DEFAULT_CURRENCY } from "@/lib/constants";
 import { sortExpensesByRecency } from "@/lib/categories";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { RecentExpenses } from "./RecentExpenses";
-import { CatLauncher } from "@/features/cat/CatLauncher";
-import { CatCompanionModal } from "@/features/cat/CatCompanionModal";
 import { DailyDelightCard } from "@/features/delight/DailyDelightCard";
-import { useGamification } from "@/features/gamification/useGamification";
 
 function periodText(delta: number, direction: string, currency: string): string {
   const amount = money(Math.abs(delta), currency);
@@ -45,7 +41,7 @@ function budgetSummaryText(spent: number, limit: number, currency: string): stri
 
 export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { status: expStatus, expenses } = useExpenses();
-  const { status: budgetStatus, monthlyBudget, budgets } = useBudgets();
+  const { status: budgetStatus, monthlyBudget } = useBudgets();
   const isLoading = expStatus === "loading" || budgetStatus === "loading";
 
   const now = currentMonthKey();
@@ -62,8 +58,6 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   const recentExpenses = sortExpensesByRecency(monthExpenses).slice(0, 4);
   // Badge unlocks are checked here so they fire wherever the user is;
   // the badges themselves live on the profile page.
-  const { streak } = useGamification(expenses, budgets.length);
-  const [catOpen, setCatOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -133,21 +127,6 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
         </Card>
       ) : null}
 
-      {/* Interactive 2D lucky cat companion */}
-      {monthExpenses.length > 0 ? (
-        <>
-          <CatLauncher onOpen={() => setCatOpen(true)} />
-          <CatCompanionModal
-            open={catOpen}
-            onClose={() => setCatOpen(false)}
-            expenseStats={{
-              streakDays: streak.current,
-              longestStreak: streak.longest,
-              totalExpenses: expenses.length,
-            }}
-          />
-        </>
-      ) : null}
 
       {/* Prompt to set a budget if none exists */}
       {!monthlyBudget && monthExpenses.length > 0 ? (
