@@ -9,7 +9,11 @@ import { getExpenseRepository } from "@/services/expenses/repository";
 import { awardBadge } from "@/features/gamification/awardBadges";
 import {
   parseCsv,
+  sniffDelimiter,
+  decodeFileBytes,
+  findHeaderRow,
   detectColumns,
+  detectColumnsByHeader,
   normalizeRows,
   isWealthsimpleExport,
   normalizeWealthsimpleRows,
@@ -17,6 +21,8 @@ import {
   type CsvRow,
   type NormalizedRow,
 } from "./csv";
+import { detectPreset, type Preset } from "./presets";
+import { looksLikeWorkbook, readWorkbookSheets } from "./workbook";
 import { scoreRows, type ScoredRow } from "./dedupe";
 import { guessCategoryId } from "./guess";
 
@@ -51,6 +57,8 @@ export function ImportDialog({
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<CsvRow[]>([]);
   const [mapping, setMapping] = useState<ColumnMapping | null>(null);
+  const [preset, setPreset] = useState<Preset | null>(null);
+  const [sourceLabel, setSourceLabel] = useState("");
   const [flipSign, setFlipSign] = useState(false);
   const [currency, setCurrency] = useState(profile.currency ?? "CAD");
   const [error, setError] = useState("");
@@ -65,6 +73,8 @@ export function ImportDialog({
       setFileName("");
       setRows([]);
       setMapping(null);
+      setPreset(null);
+      setSourceLabel("");
       setFlipSign(false);
       setCurrency(profile.currency ?? "CAD");
       setError("");
@@ -80,11 +90,14 @@ export function ImportDialog({
   }, [open, onClose, profile.currency]);
 
   const normalized: NormalizedRow[] = useMemo(() => {
-    if (!mapping || rows.length === 0) return [];
+    if (rows.length === 0) return [];
     // Wealthsimple exports get dedicated parsing (sub-type aware).
     if (isWealthsimpleExport(rows)) return normalizeWealthsimpleRows(rows);
+    // Named expense-app presets (YNAB, Mint, Monarch, Copilot, 钱迹, 随手记).
+    if (preset) return preset.normalize(rows);
+    if (!mapping) return [];
     return normalizeRows(rows, mapping, { positiveIsExpense: flipSign });
-  }, [rows, mapping, flipSign]);
+  }, [rows, mapping, flipSign, preset]);
 
   const scored: ScoredRow[] = useMemo(() => scoreRows(normalized, expenses), [normalized, expenses]);
 
@@ -103,37 +116,84 @@ export function ImportDialog({
 
   const includedCount = selectable.filter(isIncluded).length;
 
+  interface Analyzed {
+    rows: CsvRow[];
+    mapping: ColumnMapping | null;
+    preset: Preset | null;
+    sourceLabel: string;
+  }
+
+  /** Try to make sense of one candidate table (one CSV file or one sheet). */
+  function analyzeRows(parsed: CsvRow[]): Analyzed | null {
+    if (parsed.length < 2) return null;
+    // Strip preamble/title rows before the header (e.g. 随手记 exports).
+    const headerIdx = findHeaderRow(parsed);
+    const rows = headerIdx > 0 ? parsed.slice(headerIdx) : parsed;
+    if (rows.length < 2) return null;
+    if (isWealthsimpleExport(rows)) {
+      if (normalizeWealthsimpleRows(rows).length === 0) return null;
+      return { rows, mapping: null, preset: null, sourceLabel: "Wealthsimple" };
+    }
+    const detectedPreset = detectPreset(rows);
+    if (detectedPreset) {
+      if (detectedPreset.normalize(rows).length === 0) return null;
+      return { rows, mapping: null, preset: detectedPreset, sourceLabel: detectedPreset.name };
+    }
+    const byHeader = detectColumnsByHeader(rows);
+    if (byHeader && normalizeRows(rows, byHeader).length > 0) {
+      return { rows, mapping: byHeader, preset: null, sourceLabel: "CSV" };
+    }
+    const detected = detectColumns(rows);
+    if (!detected || normalizeRows(rows, detected).length === 0) return null;
+    return { rows, mapping: detected, preset: null, sourceLabel: "Bank CSV" };
+  }
+
   function handleFile(file: File | undefined) {
     if (!file) return;
     setError("");
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const text = String(reader.result ?? "");
-        const parsed = parseCsv(text);
-        if (parsed.length < 2) {
-          setError("Couldn't find any data rows in this file. Is it a bank CSV export?");
-          return;
+    void file
+      .arrayBuffer()
+      .then((buf) => {
+        try {
+          const candidates: CsvRow[][] = [];
+          if (looksLikeWorkbook(file.name, buf)) {
+            const sheets = readWorkbookSheets(buf);
+            if (sheets.length === 0) {
+              setError("Couldn't find any data in this spreadsheet.");
+              return;
+            }
+            candidates.push(...sheets);
+          } else {
+            const text = decodeFileBytes(buf);
+            candidates.push(parseCsv(text, sniffDelimiter(text)));
+          }
+          for (const parsed of candidates) {
+            const analyzed = analyzeRows(parsed);
+            if (analyzed) {
+              setFileName(file.name);
+              setRows(analyzed.rows);
+              setMapping(analyzed.mapping);
+              setPreset(analyzed.preset);
+              setSourceLabel(analyzed.sourceLabel);
+              setOverrides({});
+              setStep("review");
+              return;
+            }
+          }
+          setError(
+            "Couldn't recognize the columns. Make sure the file has a date, description and amount column."
+          );
+        } catch {
+          setError("Couldn't read this file. Try a CSV or Excel export from your bank or expense app.");
         }
-        const detected = detectColumns(parsed);
-        if (!detected) {
-          setError("Couldn't recognize the columns. Make sure the CSV has a date, description and amount column.");
-          return;
-        }
-        setFileName(file.name);
-        setRows(parsed);
-        setMapping(detected);
-        setOverrides({});
-        setStep("review");
-      } catch {
-        setError("Couldn't read this file. Try a CSV export from your bank.");
-      }
-    };
-    reader.onerror = () => setError("Couldn't read this file.");
-    reader.readAsText(file);
+      })
+      .catch(() => setError("Couldn't read this file."));
   }
 
-  function setMappingCol(field: "date" | "description" | "amount" | "debit" | "credit", value: number) {
+  function setMappingCol(
+    field: "date" | "description" | "amount" | "debit" | "credit" | "outflow" | "inflow",
+    value: number
+  ) {
     setMapping((m) => (m ? { ...m, [field]: value } : m));
   }
 
@@ -185,7 +245,13 @@ export function ImportDialog({
 
   if (!open) return null;
   const cols = columnOptions();
-  const usePair = (mapping?.debit ?? -1) >= 0;
+  const useDebitPair = (mapping?.debit ?? -1) >= 0;
+  const useOutflowPair = (mapping?.outflow ?? -1) >= 0 && (mapping?.inflow ?? -1) >= 0;
+  const usePair = useDebitPair || useOutflowPair;
+  // The Sign flip only applies to a single signed-amount column with no
+  // explicit direction column (presets and direction columns decide themselves).
+  const showSign =
+    !!mapping && mapping.amount >= 0 && !usePair && mapping.direction < 0;
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
@@ -193,41 +259,44 @@ export function ImportDialog({
         className="dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="Import bank statement"
+        aria-label="Import expenses"
         onClick={(event) => event.stopPropagation()}
         style={{ maxWidth: 640 }}
       >
-        <p className="dialog-title">Import bank statement</p>
+        <p className="dialog-title">Import expenses</p>
 
         {step === "upload" && (
           <div className="stack" style={{ margin: "12px 0", gap: 12 }}>
             <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              Download a CSV statement from your bank (RBC, TD, Scotia, BMO and CIBC all
-              offer this), then pick the file here. Amounts are imported as expenses;
-              income rows are skipped.
+              Download a CSV or Excel export from your bank or expense app (YNAB, Mint,
+              Monarch, Copilot, 钱迹, 随手记, Wealthsimple, RBC, TD, Scotia, BMO, CIBC),
+              then pick the file here. Amounts are imported as expenses; income rows
+              are skipped.
             </p>
             <input
               ref={fileRef}
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,.xls,text/csv"
               style={{ display: "none" }}
               onChange={(e) => handleFile(e.target.files?.[0])}
             />
             <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-              Choose CSV file
+              Choose CSV or Excel file
             </Button>
             {error && <p style={{ fontSize: 13, color: "var(--danger, #c0392b)" }}>{error}</p>}
           </div>
         )}
 
-        {step === "review" && mapping && (
+        {step === "review" && (
           <div className="stack" style={{ margin: "12px 0", gap: 12 }}>
             <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              {fileName} — {selectable.length} new, {dupCount} duplicate{dupCount === 1 ? "" : "s"} skipped
+              {fileName}
+              {sourceLabel ? ` — detected ${sourceLabel} format` : ""} — {selectable.length} new, {dupCount} duplicate{dupCount === 1 ? "" : "s"} skipped
               {skippedIncome > 0 ? `, ${skippedIncome} income row${skippedIncome === 1 ? "" : "s"} skipped` : ""}.
-              Check the column mapping below.
+              {mapping ? " Check the column mapping below." : " Columns were mapped automatically."}
             </p>
 
+            {mapping && (
             <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
               <label style={{ fontSize: 12, fontWeight: 600 }}>
                 Date
@@ -261,8 +330,10 @@ export function ImportDialog({
                     Debit (out)
                     <select
                       className="input"
-                      value={mapping.debit}
-                      onChange={(e) => setMappingCol("debit", Number(e.target.value))}
+                      value={useDebitPair ? mapping.debit : mapping.outflow}
+                      onChange={(e) =>
+                        setMappingCol(useDebitPair ? "debit" : "outflow", Number(e.target.value))
+                      }
                       style={{ display: "block", marginTop: 4, minWidth: 110 }}
                     >
                       {cols.map((c) => (
@@ -274,8 +345,10 @@ export function ImportDialog({
                     Credit (in)
                     <select
                       className="input"
-                      value={mapping.credit}
-                      onChange={(e) => setMappingCol("credit", Number(e.target.value))}
+                      value={useDebitPair ? mapping.credit : mapping.inflow}
+                      onChange={(e) =>
+                        setMappingCol(useDebitPair ? "credit" : "inflow", Number(e.target.value))
+                      }
                       style={{ display: "block", marginTop: 4, minWidth: 110 }}
                     >
                       {cols.map((c) => (
@@ -299,6 +372,7 @@ export function ImportDialog({
                       ))}
                     </select>
                   </label>
+                  {showSign && (
                   <label style={{ fontSize: 12, fontWeight: 600 }}>
                     Sign
                     <select
@@ -311,8 +385,13 @@ export function ImportDialog({
                       <option value="pos">Positive = expense</option>
                     </select>
                   </label>
+                  )}
                 </>
               )}
+            </div>
+            )}
+
+            <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
               <label style={{ fontSize: 12, fontWeight: 600 }}>
                 Currency
                 <select
