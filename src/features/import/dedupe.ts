@@ -20,7 +20,7 @@ function tokens(s: string): Set<string> {
   return new Set(
     s
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, " ")
       .trim()
       .split(/\s+/)
       .filter((t) => t.length > 1)

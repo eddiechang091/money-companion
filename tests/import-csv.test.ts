@@ -112,3 +112,35 @@ describe("importKeyOf", () => {
     expect(a).toBe(b);
   });
 });
+
+const WS_OFFICIAL_CSV = `transaction_date,settlement_date,account_id,account_type,activity_type,activity_sub_type,description,direction,symbol,name,currency,quantity,unit_price,commission,net_cash_amount
+2026-10-01,2026-10-03,abc123,TFSA,BUY,FILL,Buy 10 AAPL @ 150.00,out,AAPL,Apple Inc.,USD,10,150.00,0,-1500.00
+2026-10-02,2026-10-02,abc123,Chequing,SPEND,PURCHASE,Starbucks,out,,,CAD,,,,-5.67
+2026-10-03,2026-10-03,abc123,Chequing,DEPOSIT,EFT,Payroll deposit,in,,,CAD,,,,2500.00
+2026-10-04,2026-10-04,abc123,Chequing,TRANSFER,INTERNAL,Move to savings,out,,,CAD,,,,-500.00
+`;
+
+describe("Wealthsimple official export", () => {
+  it("uses net_cash_amount and flags investment/transfer rows", async () => {
+    const { detectCurrency } = await import("@/features/import/csv");
+    const rows = parseCsv(WS_OFFICIAL_CSV);
+    const mapping = detectColumns(rows);
+    expect(mapping).not.toBeNull();
+    expect(mapping!.currencyCol).toBeGreaterThanOrEqual(0);
+    expect(mapping!.activityTypeCol).toBeGreaterThanOrEqual(0);
+    // Most common currency is CAD (3 of 4 rows)
+    expect(detectCurrency(rows, mapping!)).toBe("CAD");
+
+    const out = normalizeRows(rows, mapping!);
+    expect(out).toHaveLength(4);
+    // BUY row: full cash amount, flagged as investment
+    expect(out[0]).toMatchObject({ amount: 1500, isCredit: false, currency: "USD", skipReason: "investment" });
+    // Spend row: expense in CAD
+    expect(out[1]).toMatchObject({ date: "2026-10-02", amount: 5.67, isCredit: false, currency: "CAD" });
+    expect(out[1].skipReason).toBeUndefined();
+    // Deposit: income
+    expect(out[2]).toMatchObject({ amount: 2500, isCredit: true });
+    // Internal transfer: flagged
+    expect(out[3]).toMatchObject({ skipReason: "transfer" });
+  });
+});
