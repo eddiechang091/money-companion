@@ -38,8 +38,11 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
   const [yearKey, setYearKey] = useState<string | null>(null);
   const months = useMemo(() => availableMonths(expenses), [expenses]);
   const years = useMemo(() => availableYears(expenses), [expenses]);
-  const activeMonth = monthKey ?? currentMonthKey();
-  const activeYear = yearKey ?? String(new Date().getFullYear());
+  // Default to the most recent month/year that actually has expenses,
+  // so the chart shows whenever any records exist — not only when the
+  // current month has data. An explicit picker selection still wins.
+  const activeMonth = monthKey ?? months[0] ?? currentMonthKey();
+  const activeYear = yearKey ?? years[0] ?? String(new Date().getFullYear());
   const chartData =
     chartMode === "month"
       ? dailyTotals(filterByMonth(expenses, activeMonth), activeMonth)
