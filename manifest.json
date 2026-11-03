@@ -63,6 +63,7 @@
     "camera_capture"
    ]
   },
+  "browser_permissions": ["microphone"],
   "form_factors": [
    "mobile"
   ]

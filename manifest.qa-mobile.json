@@ -24,6 +24,7 @@
       "llm": ["complete"],
       "storage": ["get", "set", "delete", "list"],
       "window": ["set_title", "ready"]
-    }
+    },
+    "browser_permissions": ["microphone"]
   }
 }
