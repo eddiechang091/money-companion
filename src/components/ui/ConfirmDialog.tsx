@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 export function ConfirmDialog({
   open,
@@ -31,7 +32,10 @@ export function ConfirmDialog({
 
   if (!open) return null;
 
-  return (
+  // Portal to <body>: rendered inside a list row, the fixed backdrop would
+  // otherwise be trapped by an ancestor stacking context (e.g. the row's
+  // entrance animation) and painted over by the rows below it.
+  return createPortal(
     <div className="dialog-backdrop" onClick={onCancel}>
       <div
         className="dialog"
@@ -51,6 +55,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
