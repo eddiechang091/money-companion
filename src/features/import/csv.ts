@@ -7,6 +7,7 @@
  */
 
 import { HEADER_ALIASES, directionOf, findAliasColumn, mapCategoryName, normalizeHeaderCell } from "./fields";
+import type { RecordKind } from "@/lib/types";
 
 /** A raw data row (header stripped when detected). */
 export type CsvRow = string[];
@@ -638,11 +639,13 @@ export function normalizeRows(
     }
     if (amount === null || amount <= 0) continue;
     // Category hint from the category/subcategory columns (leaf wins).
+    // Income rows consult income aliases, so "Salary" lands on Main Paycheck.
     let categoryHint: string | null = null;
     if (mapping.subcategory >= 0 || mapping.category >= 0) {
       const sub = mapping.subcategory >= 0 ? (r[mapping.subcategory] ?? "").trim() : "";
       const cat = mapping.category >= 0 ? (r[mapping.category] ?? "").trim() : "";
-      categoryHint = mapCategoryName(sub || undefined) ?? mapCategoryName(cat || undefined);
+      const hintKind = isCredit ? "income" : "expense";
+      categoryHint = mapCategoryName(sub || undefined, hintKind) ?? mapCategoryName(cat || undefined, hintKind);
     }
     const currency = mapping.currencyCol >= 0 ? (r[mapping.currencyCol] ?? "").trim() || undefined : undefined;
     const skipReason =
@@ -652,19 +655,31 @@ export function normalizeRows(
   return out;
 }
 
-/** Stable key for dedupe: date + amount (cents) + normalized description. Keeps CJK characters so Chinese descriptions dedupe correctly. */
-export function importKeyOf(date: string, amount: number, description: string): string {
+/**
+ * Stable key for dedupe: kind + date + amount (cents) + normalized description.
+ * Keeps CJK characters so Chinese descriptions dedupe correctly. When `kind`
+ * is omitted the legacy kind-less format is produced, so rows imported before
+ * income support still dedupe (dedupe.ts checks both formats).
+ */
+export function importKeyOf(
+  date: string,
+  amount: number,
+  description: string,
+  kind?: RecordKind
+): string {
   const norm = description.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, " ").trim().replace(/\s+/g, " ");
-  return `${date}|${Math.round(amount * 100)}|${norm}`;
+  const base = `${date}|${Math.round(amount * 100)}|${norm}`;
+  return kind ? `${kind}|${base}` : base;
 }
 
 /* ─── Wealthsimple activity export ───────────────────────────────────────
  * Wealthsimple's activity CSV has no merchant names — descriptions are
  * generic ("Pre-authorized Debit", "Online bill payment"). But it has
  * `activity_sub_type` which tells us the transaction kind, so we can:
- *  - skip internal TRANSFERs (not expenses) and income rows
+ *  - skip internal TRANSFERs (not expenses, not income)
  *  - map bill-like sub-types (OBP_OUT, AFT_OUT) to the bills category
  *  - clean up "(executed at ...)" noise from descriptions
+ * Positive amounts are income (money in); negative amounts are expenses.
  */
 
 const WS_SUBTYPE_COL = "activity_sub_type";
@@ -676,8 +691,8 @@ const WS_SKIP_SUBTYPES = new Set(["TRANSFER"]);
 
 /** Sub-type -> category hint for expense rows. */
 const WS_CATEGORY_HINTS: Record<string, string> = {
-  OBP_OUT: "bills", // Online bill payment
-  AFT_OUT: "bills", // Pre-authorized debit (recurring bills)
+  OBP_OUT: "nest-utilities", // Online bill payment
+  AFT_OUT: "nest-utilities", // Pre-authorized debit (recurring bills)
 };
 
 /** True when the parsed rows look like a Wealthsimple *activities* export (effective_date). The official export (transaction_date) is handled by the generic path with currency/activity-type detection. */
@@ -692,7 +707,7 @@ function cleanWsDescription(raw: string): string {
   return raw.replace(/\s*\(executed at [^)]*\)\s*/i, "").trim() || "(no description)";
 }
 
-/** Normalize Wealthsimple activity rows into expense rows. */
+/** Normalize Wealthsimple activity rows into money rows (expenses + income). */
 export function normalizeWealthsimpleRows(rows: CsvRow[]): NormalizedRow[] {
   const header = rows[0].map((c) => c.trim().toLowerCase());
   const subIdx = header.indexOf(WS_SUBTYPE_COL);
@@ -705,8 +720,8 @@ export function normalizeWealthsimpleRows(rows: CsvRow[]): NormalizedRow[] {
     if (WS_SKIP_SUBTYPES.has(subType)) continue;
     const rawAmount = parseAmountLoose(r[amtIdx] ?? "");
     if (rawAmount === null || rawAmount === 0) continue;
-    // Wealthsimple convention: negative = money out.
-    if (rawAmount > 0) continue; // income — not an expense
+    // Wealthsimple convention: negative = money out, positive = money in.
+    const isCredit = rawAmount > 0;
     const date = parseDateLoose(r[dateIdx] ?? "");
     if (!date) continue;
     const description = cleanWsDescription(r[descIdx] ?? "");
@@ -714,8 +729,8 @@ export function normalizeWealthsimpleRows(rows: CsvRow[]): NormalizedRow[] {
       date,
       description,
       amount: Math.abs(rawAmount),
-      isCredit: false,
-      categoryHint: WS_CATEGORY_HINTS[subType] ?? null,
+      isCredit,
+      categoryHint: isCredit ? null : (WS_CATEGORY_HINTS[subType] ?? null),
       raw: r,
     });
   }
