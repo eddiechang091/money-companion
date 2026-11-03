@@ -6,8 +6,10 @@ import { CategoryPicker } from "@/components/ui/CategoryPicker";
 import { CURRENCIES, currencyLabel } from "@/lib/currencies";
 import { todayIso, parseAmountInput } from "@/lib/utils";
 import { validateExpenseDraft, type ExpenseFieldErrors } from "@/lib/validation";
+import type { RecordKind } from "@/lib/types";
 
 export interface ExpenseFormValues {
+  kind: RecordKind;
   amount: number;
   currency: string;
   categoryId: string | null;
@@ -35,19 +37,31 @@ export function ExpenseForm({
   onSubmit: (values: ExpenseFormValues) => Promise<void>;
   onCancel?: () => void;
 }) {
+  const initialKind: RecordKind = initial?.kind === "income" ? "income" : "expense";
+  const [kind, setKind] = useState<RecordKind>(initialKind);
   const [amountText, setAmountText] = useState(initial?.amount !== undefined ? String(initial.amount) : "");
   const [currency, setCurrency] = useState(initial?.currency ?? defaultCurrency);
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [date, setDate] = useState(initial?.date ?? todayIso());
-  const [paymentMethod, setPaymentMethod] = useState(initial?.paymentMethod ?? "Card");
+  const [paymentMethod, setPaymentMethod] = useState(
+    initial?.paymentMethod ?? (initialKind === "income" ? "Transfer" : "Card")
+  );
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [errors, setErrors] = useState<ExpenseFieldErrors>({});
   const [touched, setTouched] = useState(false);
 
+  function handleKindChange(next: RecordKind) {
+    if (next === kind) return;
+    setKind(next);
+    // Categories differ per kind; a stale selection would fail validation.
+    setCategoryId("");
+  }
+
   useEffect(() => {
     if (!touched) return;
     const result = validateExpenseDraft({
+      kind,
       amountText,
       categoryId,
       description,
@@ -57,12 +71,13 @@ export function ExpenseForm({
       currency,
     });
     setErrors(result.errors);
-  }, [amountText, categoryId, description, date, paymentMethod, notes, currency, touched]);
+  }, [kind, amountText, categoryId, description, date, paymentMethod, notes, currency, touched]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setTouched(true);
     const result = validateExpenseDraft({
+      kind,
       amountText,
       categoryId,
       description,
@@ -80,6 +95,26 @@ export function ExpenseForm({
 
   return (
     <form className="stack" onSubmit={handleSubmit} noValidate>
+      <Field label="Type">
+        <div className="segmented" role="group" aria-label="Record type">
+          <button
+            type="button"
+            aria-pressed={kind === "expense"}
+            className={`segmented-btn${kind === "expense" ? " is-active" : ""}`}
+            onClick={() => handleKindChange("expense")}
+          >
+            Money out
+          </button>
+          <button
+            type="button"
+            aria-pressed={kind === "income"}
+            className={`segmented-btn${kind === "income" ? " is-active" : ""}`}
+            onClick={() => handleKindChange("income")}
+          >
+            Money in
+          </button>
+        </div>
+      </Field>
       <Field label="Amount" hint={amountPreview !== null ? undefined : "Numbers only, e.g. 12.50"}>
         <AmountInput
           value={amountText}
@@ -105,7 +140,7 @@ export function ExpenseForm({
         </Select>
       </Field>
       <Field label="Category">
-        <CategoryPicker value={categoryId} onChange={setCategoryId} />
+        <CategoryPicker value={categoryId} onChange={setCategoryId} kind={kind} />
         {errors.category ? (
           <span className="field-error" role="alert">
             {errors.category}
@@ -116,7 +151,7 @@ export function ExpenseForm({
         <TextInput
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder="Weekly groceries"
+          placeholder={kind === "income" ? "Monthly salary" : "Weekly groceries"}
           maxLength={140}
           aria-invalid={errors.description ? "true" : undefined}
         />

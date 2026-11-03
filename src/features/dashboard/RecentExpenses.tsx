@@ -1,4 +1,5 @@
 import type { Expense } from "@/lib/types";
+import { recordKind } from "@/lib/types";
 import { getCategoryById } from "@/lib/categories";
 import { money } from "@/lib/utils";
 
@@ -20,10 +21,11 @@ export function RecentExpenses({
   if (expenses.length === 0) return null;
   return (
     <div>
-      <ul className="recent-list" aria-label="Recent expenses">
+      <ul className="recent-list" aria-label="Recent activity">
         {expenses.map((expense) => {
           const cat = getCategoryById(expense.categoryId);
-          const title = expense.description || cat?.name || "Expense";
+          const isIncome = recordKind(expense) === "income";
+          const title = expense.description || cat?.name || (isIncome ? "Income" : "Expense");
           return (
             <li key={expense.id} className="recent-row">
               <span className="recent-icon" aria-hidden="true">{cat?.icon ?? "📦"}</span>
@@ -34,7 +36,9 @@ export function RecentExpenses({
                   {cat ? <span>{cat.name}</span> : null}
                 </span>
               </span>
-              <span className="recent-amount">{money(expense.amount, expense.currency)}</span>
+              <span className={`recent-amount${isIncome ? " is-income" : ""}`}>
+                {isIncome ? `+${money(expense.amount, expense.currency)}` : money(expense.amount, expense.currency)}
+              </span>
             </li>
           );
         })}
@@ -45,7 +49,7 @@ export function RecentExpenses({
           className="btn ghost small"
           onClick={() => onNavigate("/expenses")}
         >
-          View all expenses →
+          View all →
         </button>
       </div>
     </div>
