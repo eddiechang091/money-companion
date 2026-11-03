@@ -23,13 +23,18 @@ function resultToText(result: InsightResult): string {
 function buildContextSummary(ctx: ConversationContext): string {
   const parts: string[] = [];
   if (ctx.currentExpense) {
+    const kindLabel = ctx.currentExpense.kind === "income" ? "Current income" : "Current expense";
     parts.push(
-      `Current expense: ${ctx.currentExpense.description || ctx.currentExpense.category} — ` +
+      `${kindLabel}: ${ctx.currentExpense.description || ctx.currentExpense.category} — ` +
         `${ctx.currentExpense.currency}${ctx.currentExpense.amount.toFixed(2)} on ${ctx.currentExpense.date}`
     );
   }
   const s = ctx.financialSummary;
-  parts.push(`Month: ${s.month}, total spent: ${ctx.user.currency}${s.totalSpent.toFixed(2)}`);
+  parts.push(
+    `Month: ${s.month}, total spent: ${ctx.user.currency}${s.totalSpent.toFixed(2)}, ` +
+      `total income: ${ctx.user.currency}${s.totalIncome.toFixed(2)}, ` +
+      `balance: ${ctx.user.currency}${s.balance.toFixed(2)}`
+  );
   if (s.budget) {
     parts.push(`Budget: ${s.budget.pct}% used (${s.budget.status})`);
   }

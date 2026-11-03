@@ -1,12 +1,16 @@
 import type { Expense, MonthlyBudget } from "@/lib/types";
+import { recordKind } from "@/lib/types";
 import type { ExpenseContext, FinancialSummaryContext } from "@/lib/aiContext";
 import { getCategoryById } from "@/lib/categories";
+import { UNCATEGORIZED_LABEL } from "@/lib/constants";
 import {
   calculateBudgetProgress,
   comparePeriods,
   currentMonthKey,
   detectMeaningfulChanges,
+  filterByKind,
   filterByMonth,
+  sumByKind,
   sumExpenses,
   totalsByCategory,
 } from "@/lib/analytics";
@@ -29,8 +33,10 @@ export function buildConversationContext(
   monthKey?: string
 ): ConversationContext {
   const month = monthKey ?? currentMonthKey();
-  const monthExpenses = filterByMonth(allExpenses, month);
+  const monthRecords = filterByMonth(allExpenses, month);
+  const monthExpenses = filterByKind(monthRecords, "expense");
   const monthTotal = sumExpenses(monthExpenses);
+  const monthIncome = sumByKind(monthRecords, "income");
   const catTotals = totalsByCategory(monthExpenses).slice(0, MAX_CATEGORIES);
   const comparison = comparePeriods(allExpenses, month);
   const previousMonthExpenses = comparison ? filterByMonth(allExpenses, comparison.previousKey) : [];
@@ -41,9 +47,10 @@ export function buildConversationContext(
   if (activeExpense) {
     const cat = getCategoryById(activeExpense.categoryId);
     currentExpense = {
+      kind: recordKind(activeExpense),
       amount: activeExpense.amount,
       currency: activeExpense.currency,
-      category: cat?.name ?? "Uncategorized",
+      category: cat?.name ?? UNCATEGORIZED_LABEL,
       categoryId: activeExpense.categoryId,
       description: activeExpense.description,
       date: activeExpense.date,
@@ -56,8 +63,11 @@ export function buildConversationContext(
     financialSummary: {
       month,
       totalSpent: monthTotal,
+      totalIncome: monthIncome,
+      balance: Math.round((monthIncome - monthTotal) * 100) / 100,
       topCategories: catTotals.map((t) => ({
-        category: getCategoryById(t.categoryId)?.name ?? "Uncategorized",
+        categoryId: t.categoryId,
+        category: getCategoryById(t.categoryId)?.name ?? UNCATEGORIZED_LABEL,
         total: t.total,
         count: t.count,
       })),
@@ -70,7 +80,8 @@ export function buildConversationContext(
               topCategories: totalsByCategory(previousMonthExpenses)
                 .slice(0, MAX_CATEGORIES)
                 .map((t) => ({
-                  category: getCategoryById(t.categoryId)?.name ?? "Uncategorized",
+                  categoryId: t.categoryId,
+                  category: getCategoryById(t.categoryId)?.name ?? UNCATEGORIZED_LABEL,
                   total: t.total,
                   count: t.count,
                 })),
@@ -89,7 +100,7 @@ export function buildConversationContext(
         : null,
       changes: changes.map((c) => ({
         kind: c.kind,
-        category: getCategoryById(c.categoryId)?.name ?? "Uncategorized",
+        category: getCategoryById(c.categoryId)?.name ?? UNCATEGORIZED_LABEL,
         delta: c.delta,
       })),
     },
