@@ -23,6 +23,8 @@ import { useExpenses } from "@/services/expenses/useExpenses";
 import { useBudgets } from "@/services/budgets/useBudgets";
 import { useConversation } from "@/features/ai/useConversation";
 import type { ConversationMessage } from "@/features/ai/conversationTypes";
+import { useDictation } from "@/features/dictation/dictation";
+import { DictationButton } from "@/features/dictation/DictationButton";
 import "./catCompanion.css";
 
 interface CatCompanionModalProps {
@@ -83,6 +85,8 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
   const [dropNotice, setDropNotice] = useState<CatItem | null>(null);
   const [rewardShow, setRewardShow] = useState<{ title: string; items: CatItem[] } | null>(null);
   const [chatInput, setChatInput] = useState("");
+  // Live dictation streams into the chat input while the mic is on.
+  const dictation = useDictation(chatInput, setChatInput);
   const poseTimer = useRef<number | null>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
@@ -372,17 +376,24 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
               )}
 
               <div className="cat-chat-input-row">
-                <input
-                  type="text"
-                  className="cat-chat-input"
-                  placeholder="Ask about your spending…"
-                  value={chatInput}
-                  disabled={!chatReady || sending || state.asleep}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void handleSendChat();
-                  }}
-                />
+                <span className="dictation-wrap">
+                  <input
+                    type="text"
+                    className={dictation.supported ? "cat-chat-input has-dictation" : "cat-chat-input"}
+                    placeholder="Ask about your spending…"
+                    value={chatInput}
+                    disabled={!chatReady || sending || state.asleep}
+                    readOnly={dictation.listening}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void handleSendChat();
+                    }}
+                  />
+                  <DictationButton
+                    {...dictation}
+                    disabled={!chatReady || sending || state.asleep}
+                  />
+                </span>
                 <button
                   type="button"
                   className="cat-chat-send"
