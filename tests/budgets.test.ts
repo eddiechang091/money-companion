@@ -38,7 +38,7 @@ describe("budget repository", () => {
 
     const created = await repo.upsert({ categoryId: "food", amount: 200, currency: "CAD" });
     expect(created.id).toBeTruthy();
-    expect(created.categoryId).toBe("food");
+    expect(created.categoryId).toBe("food-dining"); // legacy id migrates on write
     expect(created.amount).toBe(200);
     expect(created.period).toBe("monthly");
 

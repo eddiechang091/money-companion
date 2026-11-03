@@ -58,9 +58,10 @@ describe("named presets", () => {
     const preset = detectPreset(rows);
     expect(preset?.id).toBe("ynab");
     const out = preset!.normalize(rows);
-    expect(out).toHaveLength(2);
-    expect(out[0]).toMatchObject({ amount: 45.2, categoryHint: "food" });
-    expect(out[1]).toMatchObject({ amount: 60, categoryHint: "transport" });
+    expect(out).toHaveLength(3);
+    expect(out[0]).toMatchObject({ amount: 45.2, isCredit: false, categoryHint: "food-dining" });
+    expect(out[1]).toMatchObject({ amount: 60, isCredit: false, categoryHint: "around-car" });
+    expect(out[2]).toMatchObject({ amount: 2000, isCredit: true, categoryHint: "inc-paycheck" });
   });
 
   it("detects and normalizes Mint (amount + transaction type)", () => {
@@ -68,8 +69,9 @@ describe("named presets", () => {
     const preset = detectPreset(rows);
     expect(preset?.id).toBe("mint");
     const out = preset!.normalize(rows);
-    expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ amount: 5.5, categoryHint: "food" });
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ amount: 5.5, isCredit: false, categoryHint: "food-coffee" });
+    expect(out[1]).toMatchObject({ amount: 2000, isCredit: true, categoryHint: "inc-paycheck" });
   });
 
   it("detects and normalizes Monarch (signed amounts, skips pending)", () => {
@@ -77,8 +79,9 @@ describe("named presets", () => {
     const preset = detectPreset(rows);
     expect(preset?.id).toBe("monarch");
     const out = preset!.normalize(rows);
-    expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ amount: 89.99, categoryHint: "shopping" });
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ amount: 89.99, isCredit: false, categoryHint: "life-apparel" });
+    expect(out[1]).toMatchObject({ amount: 20, isCredit: true, categoryHint: null });
   });
 
   it("detects and normalizes Copilot (type column wins over sign)", () => {
@@ -86,8 +89,9 @@ describe("named presets", () => {
     const preset = detectPreset(rows);
     expect(preset?.id).toBe("copilot");
     const out = preset!.normalize(rows);
-    expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ amount: 60, categoryHint: "transport" });
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ amount: 60, isCredit: false, categoryHint: "around-car" });
+    expect(out[1]).toMatchObject({ amount: 2000, isCredit: true, categoryHint: "inc-paycheck" });
   });
 
   it("detects and normalizes 钱迹 (datetime, 二级分类 wins)", () => {
@@ -95,9 +99,10 @@ describe("named presets", () => {
     const preset = detectPreset(rows);
     expect(preset?.id).toBe("qianji");
     const out = preset!.normalize(rows);
-    expect(out).toHaveLength(2);
-    expect(out[0]).toMatchObject({ date: "2018-04-08", amount: 25.5, categoryHint: "food", description: "午饭" });
-    expect(out[1]).toMatchObject({ date: "2018-04-09", amount: 12, description: "豆浆油条" });
+    expect(out).toHaveLength(3);
+    expect(out[0]).toMatchObject({ date: "2018-04-08", amount: 25.5, isCredit: false, categoryHint: "food-dining", description: "午饭" });
+    expect(out[1]).toMatchObject({ date: "2018-04-09", amount: 12, isCredit: false, description: "豆浆油条" });
+    expect(out[2]).toMatchObject({ date: "2018-04-09", amount: 8000, isCredit: true, categoryHint: "inc-paycheck", description: "发工资" });
   });
 
   it("detects and normalizes 随手记 app CSV with preamble rows", () => {
@@ -107,9 +112,10 @@ describe("named presets", () => {
     const preset = detectPreset(rows);
     expect(preset?.id).toBe("suishouji");
     const out = preset!.normalize(rows);
-    expect(out).toHaveLength(2);
-    expect(out[0]).toMatchObject({ amount: 25.5, categoryHint: "food", description: "午饭" });
-    expect(out[1]).toMatchObject({ amount: 32, categoryHint: "transport", description: "去公司" });
+    expect(out).toHaveLength(3);
+    expect(out[0]).toMatchObject({ amount: 25.5, isCredit: false, categoryHint: "food-dining", description: "午饭" });
+    expect(out[1]).toMatchObject({ amount: 32, isCredit: false, categoryHint: "around-commute", description: "去公司" });
+    expect(out[2]).toMatchObject({ amount: 8000, isCredit: true, categoryHint: "inc-paycheck", description: "发工资" });
   });
 
   it("detects and normalizes 随手记 web .xls headers", () => {
@@ -118,39 +124,45 @@ describe("named presets", () => {
     expect(preset?.id).toBe("suishouji");
     const out = preset!.normalize(rows);
     expect(out).toHaveLength(2);
-    expect(out[0]).toMatchObject({ amount: 25.5, description: "沙县小吃", categoryHint: "food" });
-    expect(out[1]).toMatchObject({ amount: 32, description: "滴滴", categoryHint: "transport" });
+    expect(out[0]).toMatchObject({ amount: 25.5, description: "沙县小吃", categoryHint: "food-dining" });
+    expect(out[1]).toMatchObject({ amount: 32, description: "滴滴", categoryHint: "around-commute" });
   });
 });
 
 describe("category name mapping", () => {
   it("maps English names and Parent:Child", () => {
-    expect(mapCategoryName("Dining Out")).toBe("food");
-    expect(mapCategoryName("Auto & Transport:Gas & Fuel")).toBe("transport");
-    expect(mapCategoryName("Gas & Fuel")).toBe("transport");
-    expect(mapCategoryName("Rent/Mortgage")).toBe("housing");
-    expect(mapCategoryName("Health Insurance")).toBe("insurance");
+    expect(mapCategoryName("Dining Out")).toBe("food-dining");
+    expect(mapCategoryName("Auto & Transport:Gas & Fuel")).toBe("around-car");
+    expect(mapCategoryName("Gas & Fuel")).toBe("around-car");
+    expect(mapCategoryName("Rent/Mortgage")).toBe("nest-home");
+    expect(mapCategoryName("Health Insurance")).toBe("cushion-insurance");
+    expect(mapCategoryName("Paycheck")).toBeNull();
+    expect(mapCategoryName("Paycheck", "income")).toBe("inc-paycheck");
+    expect(mapCategoryName("Salary", "income")).toBe("inc-paycheck");
+    expect(mapCategoryName("Refund", "income")).toBe("inc-refunds");
   });
 
   it("maps Chinese names, leaf wins", () => {
-    expect(mapCategoryName("餐饮")).toBe("food");
-    expect(mapCategoryName("餐饮美食")).toBe("food");
-    expect(mapCategoryName("交通")).toBe("transport");
-    expect(mapCategoryName("水电燃气")).toBe("utilities");
+    expect(mapCategoryName("餐饮")).toBe("food-dining");
+    expect(mapCategoryName("餐饮美食")).toBe("food-dining");
+    expect(mapCategoryName("交通")).toBe("around-commute");
+    expect(mapCategoryName("水电燃气")).toBe("nest-utilities");
     expect(mapCategoryName("其他")).toBeNull();
+    expect(mapCategoryName("工资", "income")).toBe("inc-paycheck");
+    expect(mapCategoryName("工资")).toBeNull();
   });
 });
 
 describe("generic alias import", () => {
   it("sniffs semicolon delimiters and maps headers", () => {
-    const text = "Date;Description;Amount;Category\n2026-10-05;Coffee;5.50;Dining\n";
+    const text = "Date;Description;Amount;Category\n2026-10-05;Coffee;-5.50;Dining\n";
     expect(sniffDelimiter(text)).toBe(";");
     const rows = parseCsv(text, ";");
     const mapping = detectColumnsByHeader(rows);
     expect(mapping).not.toBeNull();
     const out = normalizeRows(rows, mapping!);
     expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ amount: 5.5, categoryHint: "food" });
+    expect(out[0]).toMatchObject({ amount: 5.5, categoryHint: "food-dining" });
   });
 
   it("uses the direction column over amount sign", () => {
@@ -171,7 +183,7 @@ describe("generic alias import", () => {
     );
     const mapping = detectColumnsByHeader(rows);
     const out = normalizeRows(rows, mapping!);
-    expect(out[0].categoryHint).toBe("transport");
+    expect(out[0].categoryHint).toBe("around-car");
   });
 });
 
@@ -204,6 +216,10 @@ describe("Chinese dedupe keys", () => {
     const b = importKeyOf("2026-10-05", 25.5, "晚饭兰州拉面");
     expect(a).not.toBe(b);
     expect(importKeyOf("2026-10-05", 25.5, "午饭沙县小吃")).toBe(a);
+    expect(importKeyOf("2026-10-05", 25.5, "午饭沙县小吃", "income")).not.toBe(a);
+    expect(importKeyOf("2026-10-05", 25.5, "午饭沙县小吃", "income")).toBe(
+      importKeyOf("2026-10-05", 25.5, "午饭沙县小吃", "income")
+    );
   });
 });
 

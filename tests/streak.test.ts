@@ -5,6 +5,7 @@ import type { Expense } from "@/lib/types";
 function expenseOn(date: string, n = 1): Expense[] {
   return Array.from({ length: n }, (_, i) => ({
     id: `${date}-${i}`,
+    kind: "expense",
     amount: 10,
     currency: "CAD",
     categoryId: null,
