@@ -233,6 +233,8 @@ select option {
 
 /* Expense list */
 .expense-item { min-width: 0; }
+/* Breathing room between the spending chart and the first expense row. */
+.expenses-chart-card { margin-bottom: 24px; }
 .expense-wrap { padding: 14px 16px; }
 .expense-card { display: flex; gap: 14px; justify-content: space-between; align-items: flex-start; }
 .expense-card.is-pending { opacity: 0.72; }
@@ -775,6 +777,7 @@ select option {
   border-radius: var(--radius-lg);
   padding: 16px 18px;
   box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
 }
 .delight-label {
   font-size: 12px;
