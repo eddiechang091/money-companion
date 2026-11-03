@@ -12,9 +12,9 @@
   min-width: 0;
 }
 
-/* Room for the mic + language controls inside the field. */
+/* Room for the mic control inside the field. */
 .dictation-wrap .cat-chat-input.has-dictation {
-  padding-right: 74px;
+  padding-right: 44px;
 }
 
 .dictation-controls {
@@ -64,28 +64,6 @@
   50% {
     box-shadow: 0 0 0 6px rgba(229, 72, 77, 0);
   }
-}
-
-.dictation-lang {
-  border: none;
-  background: transparent;
-  color: var(--text-muted, #8a8378);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  padding: 4px 5px;
-  border-radius: 8px;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.dictation-lang:hover:not(:disabled) {
-  background: var(--surface-muted, #f3efe8);
-}
-
-.dictation-lang:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 .dictation-error {

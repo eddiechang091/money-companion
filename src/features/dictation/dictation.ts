@@ -6,13 +6,13 @@
  * (cjpais/Handy) is a Tauri/Rust *desktop* app — a global hotkey that
  * pastes into the focused native app. It has no web component and cannot
  * run inside a web page. The Web Speech API is the browser's equivalent:
- * streaming interim results, no keys, no model download, Chinese and
- * English. Trade-off vs Handy: audio is routed to the browser vendor's
- * recognition service (Google in Chrome, Apple in Safari) instead of
- * staying on-device, and Firefox does not ship it — so the mic button
- * only appears where the API exists.
+ * streaming interim results, no keys, no model download. Dictation is
+ * English-only, matching the chat input it serves. Trade-off vs Handy:
+ * audio is routed to the browser vendor's recognition service (Google in
+ * Chrome, Apple in Safari) instead of staying on-device, and Firefox
+ * does not ship it — so the mic button only appears where the API exists.
  */
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /* ─── Minimal SpeechRecognition shapes ───────────────────────────────────
  * Declared locally so this module does not depend on the TS DOM lib
@@ -73,53 +73,10 @@ function defaultFactory(): SpeechRecognitionLike {
   return new Ctor();
 }
 
-/* ─── Language ─────────────────────────────────────────────────────────── */
-
-export type DictationLang = "en-US" | "zh-CN";
-
-const LANG_STORAGE_KEY = "money-companion:dictation-lang";
-
-/** Default from the browser locale: Chinese locales dictate Chinese, anything else English. */
-export function resolveDefaultDictationLang(navigatorLanguage?: string): DictationLang {
-  const lang = (navigatorLanguage ?? "").toLowerCase();
-  return lang.startsWith("zh") ? "zh-CN" : "en-US";
-}
-
-function readStoredLang(): DictationLang | null {
-  try {
-    const v = window.localStorage.getItem(LANG_STORAGE_KEY);
-    return v === "en-US" || v === "zh-CN" ? v : null;
-  } catch {
-    return null;
-  }
-}
-
-let currentLang: DictationLang =
-  readStoredLang() ??
-  resolveDefaultDictationLang(typeof navigator !== "undefined" ? navigator.language : undefined);
-const langListeners = new Set<() => void>();
-
-function subscribeLang(listener: () => void): () => void {
-  langListeners.add(listener);
-  return () => {
-    langListeners.delete(listener);
-  };
-}
-
-function getLangSnapshot(): DictationLang {
-  return currentLang;
-}
-
-export function setDictationLang(lang: DictationLang): void {
-  if (lang === currentLang) return;
-  currentLang = lang;
-  try {
-    window.localStorage.setItem(LANG_STORAGE_KEY, lang);
-  } catch {
-    // Private mode etc. — the in-memory choice still applies.
-  }
-  for (const l of langListeners) l();
-}
+/* ─── Dictation language ─────────────────────────────────────────────────
+ * English-only: the chat input this serves only supports English.
+ */
+const DICTATION_LANG = "en-US";
 
 /* ─── Transcript joining ───────────────────────────────────────────────── */
 
@@ -210,12 +167,12 @@ export class DictationSession {
     return this.armed;
   }
 
-  start(lang: DictationLang): void {
+  start(): void {
     if (this.armed) return;
     this.armed = true;
     this.finals = "";
     this.recentStarts = [];
-    this.startRecognition(lang);
+    this.startRecognition();
   }
 
   stop(): void {
@@ -235,7 +192,7 @@ export class DictationSession {
     this.callbacks.onListeningChange(false);
   }
 
-  private startRecognition(lang: DictationLang): void {
+  private startRecognition(): void {
     const now = Date.now();
     this.recentStarts = this.recentStarts.filter((t) => now - t < 2000);
     this.recentStarts.push(now);
@@ -256,7 +213,7 @@ export class DictationSession {
       return;
     }
     this.recognition = rec;
-    rec.lang = lang;
+    rec.lang = DICTATION_LANG;
     rec.continuous = true;
     rec.interimResults = true;
     rec.maxAlternatives = 1;
@@ -285,7 +242,7 @@ export class DictationSession {
       // The browser ended the session (pause, blip) — resume while armed.
       this.restartTimer = setTimeout(() => {
         this.restartTimer = null;
-        if (this.armed) this.startRecognition(lang);
+        if (this.armed) this.startRecognition();
       }, 250);
     };
     try {
@@ -302,11 +259,9 @@ export class DictationSession {
 export interface DictationControls {
   supported: boolean;
   listening: boolean;
-  lang: DictationLang;
   error: string | null;
   toggle: () => void;
   stop: () => void;
-  toggleLang: () => void;
 }
 
 /**
@@ -319,7 +274,6 @@ export function useDictation(
   onValueChange: (next: string) => void
 ): DictationControls {
   const supported = isDictationSupported();
-  const lang = useSyncExternalStore(subscribeLang, getLangSnapshot, getLangSnapshot);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -358,21 +312,8 @@ export function useDictation(
       },
     });
     sessionRef.current = session;
-    session.start(getLangSnapshot());
+    session.start();
   }, [supported, stop]);
-
-  const toggleLang = useCallback(() => {
-    // Switching language mid-session restarts dictation in the new language.
-    const next: DictationLang = getLangSnapshot() === "en-US" ? "zh-CN" : "en-US";
-    const wasListening = sessionRef.current?.listening ?? false;
-    if (wasListening) stop();
-    setDictationLang(next);
-    if (wasListening) {
-      // Start fresh in the new language on the next tick, after the old
-      // session has fully stopped.
-      setTimeout(() => toggle(), 50);
-    }
-  }, [stop, toggle]);
 
   // Stop when the field is cleared externally (e.g. the message was sent).
   useEffect(() => {
@@ -395,5 +336,5 @@ export function useDictation(
     return () => clearTimeout(timer);
   }, [error]);
 
-  return { supported, listening, lang, error, toggle, stop, toggleLang };
+  return { supported, listening, error, toggle, stop };
 }

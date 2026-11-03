@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DictationSession,
   joinDictated,
-  resolveDefaultDictationLang,
   type SpeechRecognitionErrorEventLike,
   type SpeechRecognitionLike,
   type SpeechRecognitionResultEventLike,
@@ -66,16 +65,6 @@ describe("joinDictated", () => {
   });
 });
 
-describe("resolveDefaultDictationLang", () => {
-  it("picks Chinese for Chinese locales, English otherwise", () => {
-    expect(resolveDefaultDictationLang("zh-CN")).toBe("zh-CN");
-    expect(resolveDefaultDictationLang("zh-Hant-HK")).toBe("zh-CN");
-    expect(resolveDefaultDictationLang("en-US")).toBe("en-US");
-    expect(resolveDefaultDictationLang(undefined)).toBe("en-US");
-    expect(resolveDefaultDictationLang("")).toBe("en-US");
-  });
-});
-
 describe("DictationSession", () => {
   it("streams interim text and accumulates finals", () => {
     const fake = new FakeRecognition();
@@ -85,7 +74,7 @@ describe("DictationSession", () => {
       onListeningChange: () => {},
       onError: () => {},
     });
-    session.start("en-US");
+    session.start();
     fake.emitResult([{ transcript: "hel", isFinal: false }]);
     expect(onTranscript).toHaveBeenLastCalledWith("", "hel");
     fake.emitResult([{ transcript: "hello ", isFinal: true }]);
@@ -105,7 +94,7 @@ describe("DictationSession", () => {
         onListeningChange: () => {},
         onError: () => {},
       });
-      session.start("zh-CN");
+      session.start();
       expect(fake.startCalls).toBe(1);
       fake.emitEnd();
       vi.advanceTimersByTime(300);
@@ -125,7 +114,7 @@ describe("DictationSession", () => {
         onListeningChange: () => {},
         onError: () => {},
       });
-      session.start("en-US");
+      session.start();
       session.stop();
       fake.emitEnd();
       vi.advanceTimersByTime(1000);
@@ -144,7 +133,7 @@ describe("DictationSession", () => {
       onListeningChange,
       onError,
     });
-    session.start("en-US");
+    session.start();
     fake.emitError("not-allowed");
     expect(onError).toHaveBeenCalledWith("denied");
     expect(onListeningChange).toHaveBeenLastCalledWith(false);
@@ -159,7 +148,7 @@ describe("DictationSession", () => {
       onListeningChange: () => {},
       onError,
     });
-    session.start("en-US");
+    session.start();
     fake.emitError("no-speech");
     expect(onError).not.toHaveBeenCalled();
     expect(session.listening).toBe(true);
@@ -184,7 +173,7 @@ describe("DictationSession", () => {
           onError,
         }
       );
-      crashing.start("en-US");
+      crashing.start();
       for (let i = 0; i < 5; i++) {
         instances[instances.length - 1]?.emitEnd();
         vi.advanceTimersByTime(300);

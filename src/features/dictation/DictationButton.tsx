@@ -3,34 +3,21 @@ import type { DictationControls } from "./dictation";
 import "./dictation.css";
 
 /**
- * Microphone + language controls that sit inside a text field, WeChat-style.
+ * Microphone control that sits inside a text field, WeChat-style.
  * Renders nothing where live dictation is unsupported (e.g. Firefox).
- * All visible strings stay English (app-wide UI rule); the EN/ZH toggle
- * switches the *spoken* language only.
+ * English-only, matching the chat input it serves.
  */
 export function DictationButton({
   supported,
   listening,
-  lang,
   error,
   toggle,
-  toggleLang,
   disabled,
 }: DictationControls & { disabled?: boolean }) {
   if (!supported) return null;
   return (
     <>
       <span className="dictation-controls">
-        <button
-          type="button"
-          className="dictation-lang"
-          onClick={toggleLang}
-          disabled={disabled}
-          aria-label={`Dictation language: ${lang === "en-US" ? "English" : "Chinese"}. Activate to switch.`}
-          title="Dictation language"
-        >
-          {lang === "en-US" ? "EN" : "ZH"}
-        </button>
         <button
           type="button"
           className={listening ? "dictation-mic listening" : "dictation-mic"}
