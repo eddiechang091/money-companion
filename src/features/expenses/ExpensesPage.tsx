@@ -112,6 +112,7 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
       />
       {hasChartData ? (
         <Card
+          className="expenses-chart-card"
           title={chartMode === "month" ? "Daily spending" : "Monthly spending"}
           action={chartControls}
         >

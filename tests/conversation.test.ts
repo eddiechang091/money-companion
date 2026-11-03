@@ -273,3 +273,40 @@ describe("conversation history bounds", () => {
     expect(MAX_LLM_HISTORY_TURNS).toBeLessThanOrEqual(10);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Follow-up suggestion guard: user-voiced, max 10 words
+// ---------------------------------------------------------------------------
+
+describe("isUsableFollowUp / follow-up guard", () => {
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food" });
+  const ctx = buildConversationContext([expense], [], "CAD", expense, MONTH);
+
+  it("drops follow-ups longer than 10 words", () => {
+    const long = makeAssistantMessage({
+      ...MOCK_RESULT,
+      followUpQuestion:
+        "Would you like to set up any upcoming expenses or reminders to keep your budget on track?",
+    });
+    const questions = buildSuggestedQuestions(ctx, true, [], [long]);
+    expect(questions.join(" ")).not.toContain("upcoming expenses");
+  });
+
+  it("drops cat-voiced follow-ups, even short ones", () => {
+    const catVoiced = makeAssistantMessage({
+      ...MOCK_RESULT,
+      followUpQuestion: "How is Lucky Cat feeling today?",
+    });
+    const questions = buildSuggestedQuestions(ctx, true, [], [catVoiced]);
+    expect(questions.join(" ")).not.toContain("Lucky Cat");
+  });
+
+  it("keeps a 10-word user-voiced follow-up", () => {
+    const ok = makeAssistantMessage({
+      ...MOCK_RESULT,
+      followUpQuestion: "How much did I spend on food this week total?",
+    });
+    const questions = buildSuggestedQuestions(ctx, true, [], [ok]);
+    expect(questions).toContain("How much did I spend on food this week total?");
+  });
+});
