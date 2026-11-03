@@ -81,6 +81,24 @@ function wasAsked(candidate: string, asked: string[]): boolean {
 
 import type { ConversationMessage } from "./conversationTypes";
 
+/**
+ * A follow-up only becomes a tappable suggestion if it sounds like the user
+ * asking about their own money: at most 10 words, and never cat-voiced
+ * ("Would you like to set up…", questions about Lucky Cat itself). This is
+ * the backstop for LLM replies that ignore the prompt's follow-up rules;
+ * over-long or cat-directed questions are dropped and the static lists
+ * below fill the slots instead.
+ */
+const MAX_FOLLOW_UP_WORDS = 10;
+const CAT_VOICED_PATTERN =
+  /lucky\s*cat|would you like|do you want|shall i\b|want me to|can i (set|help|arrange)/i;
+
+export function isUsableFollowUp(question: string): boolean {
+  const words = question.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > MAX_FOLLOW_UP_WORDS) return false;
+  return !CAT_VOICED_PATTERN.test(question);
+}
+
 /** Extract follow-up questions from the last N assistant messages. */
 function recentFollowUps(messages: ConversationMessage[], n = 2): string[] {
   const followUps: string[] = [];
@@ -88,7 +106,7 @@ function recentFollowUps(messages: ConversationMessage[], n = 2): string[] {
     const m = messages[i];
     if (m.role === "assistant" && m.result?.followUpQuestion) {
       const q = m.result.followUpQuestion.trim();
-      if (q && !followUps.includes(q)) followUps.push(q);
+      if (q && isUsableFollowUp(q) && !followUps.includes(q)) followUps.push(q);
     }
   }
   return followUps;
