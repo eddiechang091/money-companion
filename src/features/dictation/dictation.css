@@ -1,0 +1,83 @@
+/* Live dictation controls inside a text field (WeChat-style). */
+
+.dictation-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+.dictation-wrap .cat-chat-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Room for the mic control inside the field. */
+.dictation-wrap .cat-chat-input.has-dictation {
+  padding-right: 44px;
+}
+
+.dictation-controls {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.dictation-mic {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted, #8a8378);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dictation-mic:hover:not(:disabled) {
+  background: var(--surface-muted, #f3efe8);
+}
+
+.dictation-mic:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.dictation-mic.listening {
+  background: #e5484d;
+  color: #fff;
+  animation: dictation-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes dictation-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(229, 72, 77, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(229, 72, 77, 0);
+  }
+}
+
+.dictation-error {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  max-width: 260px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--danger, #c0392b);
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e8e2d8);
+  border-radius: 8px;
+  padding: 6px 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  z-index: 5;
+}
