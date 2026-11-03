@@ -1,7 +1,7 @@
 // Interactive lucky cat — shared companion state (Anna Storage persisted).
 //
 // Stats decay while away using an accelerating (quadratic) curve: slow at
-// first, faster the longer you're gone. ~72 hours (3 days) of neglect fully
+// first, faster the longer you're gone. ~168 hours (1 week) of neglect fully
 // depletes a stat from 100. Feeding / playing / grooming raise stats.
 // A very happy cat (>80) may drop a random item after an interaction
 // (rate-limited to one drop per 10 minutes).
@@ -19,24 +19,13 @@ import { getKvStore } from "@/services/anna/storage";
 import type { CatItem, CatState, ExpenseStats, Inventory } from "./types";
 import { DEFAULT_CAT_STATE } from "./types";
 import { getItem, randomItem, randomItems } from "./items";
+import { acceleratedDecay } from "./decay";
 import { historyRarityBoost } from "./milestones";
 
 const CAT_STATE_KEY = "cat:companion_state";
 
 const DROP_HAPPINESS_THRESHOLD = 80;
 
-/** Hours of neglect to fully deplete a stat from 100. */
-const FULL_DECAY_HOURS = 72;
-
-/**
- * Accelerating decay: slow at first, faster over time.
- * Quadratic curve — 12h: ~3pts, 24h: ~11pts, 36h: 25pts, 48h: ~44pts,
- * 60h: ~69pts, 72h: 100pts (fully depleted).
- */
-function acceleratedDecay(hoursAway: number): number {
-  const t = Math.min(Math.max(0, hoursAway), FULL_DECAY_HOURS) / FULL_DECAY_HOURS;
-  return Math.floor(100 * t * t);
-}
 const DROP_COOLDOWN_MS = 10 * 60 * 1000;
 
 function todayLocal(): string {
