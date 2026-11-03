@@ -1,4 +1,7 @@
-import type { Expense } from "./types";
+import type { Expense, RecordKind } from "./types";
+import { recordKind } from "./types";
+import { UNCATEGORIZED_LABEL } from "./constants";
+import { getCategoryById, getGroupOfCategory } from "./categories";
 import { isValidIsoDate, monthKey } from "./utils";
 
 export interface CategoryTotal {
@@ -29,17 +32,40 @@ export function filterByMonth(expenses: Expense[], key: string): Expense[] {
   return expenses.filter((expense) => expense.date.slice(0, 7) === key);
 }
 
+export function filterByYear(expenses: Expense[], year: string): Expense[] {
+  if (!/^\d{4}$/.test(year)) return [];
+  return expenses.filter((expense) => expense.date.slice(0, 4) === year);
+}
+
+/** Records of one money direction. Records written before income support count as expenses. */
+export function filterByKind(expenses: Expense[], kind: RecordKind): Expense[] {
+  return expenses.filter((expense) => recordKind(expense) === kind);
+}
+
+/** Money out only (income records excluded). */
 export function sumExpenses(expenses: Expense[]): number {
+  return sumByKind(expenses, "expense");
+}
+
+/** Money in only. */
+export function sumIncome(expenses: Expense[]): number {
+  return sumByKind(expenses, "income");
+}
+
+export function sumByKind(expenses: Expense[], kind: RecordKind): number {
   let total = 0;
   for (const expense of expenses) {
+    if (recordKind(expense) !== kind) continue;
     if (Number.isFinite(expense.amount) && expense.amount >= 0) total += expense.amount;
   }
   return Math.round(total * 100) / 100;
 }
 
-export function totalsByCategory(expenses: Expense[]): CategoryTotal[] {
+/** Totals per category for one kind (default: expenses). */
+export function totalsByCategory(expenses: Expense[], kind: RecordKind = "expense"): CategoryTotal[] {
   const map = new Map<string | null, { total: number; count: number }>();
   for (const expense of expenses) {
+    if (recordKind(expense) !== kind) continue;
     if (!Number.isFinite(expense.amount) || expense.amount < 0) continue;
     const key = expense.categoryId ?? null;
     const entry = map.get(key) ?? { total: 0, count: 0 };
@@ -78,8 +104,8 @@ export function comparePeriods(
 ): PeriodComparison | null {
   const previous = previousKeyValue ?? previousMonthKey(currentKeyValue);
   if (!previous) return null;
-  const currentExpenses = filterByMonth(expenses, currentKeyValue);
-  const previousExpenses = filterByMonth(expenses, previous);
+  const currentExpenses = filterByKind(filterByMonth(expenses, currentKeyValue), "expense");
+  const previousExpenses = filterByKind(filterByMonth(expenses, previous), "expense");
   const currentTotal = sumExpenses(currentExpenses);
   const previousTotal = sumExpenses(previousExpenses);
   const delta = Math.round((currentTotal - previousTotal) * 100) / 100;
@@ -125,7 +151,7 @@ export function availableYears(expenses: Expense[]): string[] {
   return [...years].sort().reverse();
 }
 
-/** Per-month totals for a year (12 bars, Jan–Dec). */
+/** Per-month expense totals for a year (12 bars, Jan–Dec). */
 export function monthlyTotals(
   expenses: Expense[],
   year: string
@@ -133,6 +159,7 @@ export function monthlyTotals(
   if (!/^\d{4}$/.test(year)) return [];
   const totals = new Map<string, number>();
   for (const expense of expenses) {
+    if (recordKind(expense) !== "expense") continue;
     if (expense.date.slice(0, 4) !== year) continue;
     if (!Number.isFinite(expense.amount) || expense.amount < 0) continue;
     const key = expense.date.slice(0, 7);
@@ -155,6 +182,7 @@ export function dailyTotals(expenses: Expense[], key: string): DayTotal[] {
   const daysInMonth = new Date(year, month, 0).getDate();
   const totals = new Map<string, number>();
   for (const expense of expenses) {
+    if (recordKind(expense) !== "expense") continue;
     if (expense.date.slice(0, 7) !== key) continue;
     if (!Number.isFinite(expense.amount) || expense.amount < 0) continue;
     totals.set(expense.date, (totals.get(expense.date) ?? 0) + expense.amount);
@@ -169,6 +197,72 @@ export function dailyTotals(expenses: Expense[], key: string): DayTotal[] {
 }
 
 export type BudgetStatus = "none" | "on-track" | "watch" | "over";
+
+/** One bucket (day or month) with money out and money in side by side. */
+export interface FlowDatum {
+  date: string;
+  label: string;
+  expense: number;
+  income: number;
+}
+
+function accumulateFlow(expenses: Expense[]): Map<string, { expense: number; income: number }> {
+  const totals = new Map<string, { expense: number; income: number }>();
+  for (const expense of expenses) {
+    if (!Number.isFinite(expense.amount) || expense.amount < 0) continue;
+    const entry = totals.get(expense.date) ?? { expense: 0, income: 0 };
+    if (recordKind(expense) === "income") entry.income += expense.amount;
+    else entry.expense += expense.amount;
+    totals.set(expense.date, entry);
+  }
+  return totals;
+}
+
+/** Per-day money flow for a month (one entry per calendar day). */
+export function dailyFlow(expenses: Expense[], key: string): FlowDatum[] {
+  if (!/^\d{4}-\d{2}$/.test(key)) return [];
+  const year = Number(key.slice(0, 4));
+  const month = Number(key.slice(5, 7));
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const totals = accumulateFlow(expenses.filter((e) => e.date.slice(0, 7) === key));
+  const days: FlowDatum[] = [];
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = `${key}-${String(day).padStart(2, "0")}`;
+    const raw = totals.get(date) ?? { expense: 0, income: 0 };
+    days.push({
+      date,
+      label: String(day),
+      expense: Math.round(raw.expense * 100) / 100,
+      income: Math.round(raw.income * 100) / 100,
+    });
+  }
+  return days;
+}
+
+/** Per-month money flow for a year (12 entries, Jan–Dec). */
+export function monthlyFlow(expenses: Expense[], year: string): FlowDatum[] {
+  if (!/^\d{4}$/.test(year)) return [];
+  const totals = accumulateFlow(expenses.filter((e) => e.date.slice(0, 4) === year));
+  const months: FlowDatum[] = [];
+  for (let m = 1; m <= 12; m += 1) {
+    const key = `${year}-${String(m).padStart(2, "0")}`;
+    const label = new Date(Number(year), m - 1, 1).toLocaleString("en", { month: "short" });
+    let expense = 0;
+    let income = 0;
+    for (const [date, entry] of totals) {
+      if (date.slice(0, 7) !== key) continue;
+      expense += entry.expense;
+      income += entry.income;
+    }
+    months.push({
+      date: key,
+      label,
+      expense: Math.round(expense * 100) / 100,
+      income: Math.round(income * 100) / 100,
+    });
+  }
+  return months;
+}
 
 export interface BudgetProgressInfo {
   limit: number;
@@ -199,19 +293,10 @@ export interface MeaningfulChangesOptions {
   maxResults?: number;
 }
 
-const CHANGE_CATEGORY_LABELS: Record<string, string> = {
-  food: "Food",
-  transport: "Transport",
-  shopping: "Shopping",
-  bills: "Bills",
-  fun: "Fun",
-  health: "Health",
-  other: "Other",
-};
-
 function changeCategoryLabel(categoryId: string | null): string {
-  if (!categoryId) return "Uncategorized";
-  return CHANGE_CATEGORY_LABELS[categoryId] ?? "Uncategorized";
+  const category = getCategoryById(categoryId);
+  if (!category) return UNCATEGORIZED_LABEL;
+  return getGroupOfCategory(category)?.name ?? category.name;
 }
 
 /**
@@ -231,11 +316,13 @@ export function detectMeaningfulChanges(
   const currentByCat = new Map<string | null, number>();
   const previousByCat = new Map<string | null, number>();
   for (const expense of current) {
+    if (recordKind(expense) !== "expense") continue;
     if (!Number.isFinite(expense.amount) || expense.amount < 0) continue;
     const key = expense.categoryId ?? null;
     currentByCat.set(key, (currentByCat.get(key) ?? 0) + expense.amount);
   }
   for (const expense of previous) {
+    if (recordKind(expense) !== "expense") continue;
     if (!Number.isFinite(expense.amount) || expense.amount < 0) continue;
     const key = expense.categoryId ?? null;
     previousByCat.set(key, (previousByCat.get(key) ?? 0) + expense.amount);
@@ -328,6 +415,7 @@ export function detectRecurringExpenses(
   const minOccurrences = options.minOccurrences ?? 3;
   const groups = new Map<string, Expense[]>();
   for (const expense of expenses) {
+    if (recordKind(expense) !== "expense") continue;
     const description = expense.description.trim().replace(/\s+/g, " ").toLowerCase();
     if (!description) continue;
     if (!Number.isFinite(expense.amount) || expense.amount <= 0) continue;
