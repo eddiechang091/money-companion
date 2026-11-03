@@ -2,7 +2,7 @@ import type { KvStore } from "@/services/anna/storage";
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS, STORAGE_VERSION } from "@/lib/constants";
 import { isValidIsoDate } from "@/lib/utils";
-import { normalizeCategoryId } from "@/lib/categories";
+import { normalizeCategoryId, normalizeRecordKind } from "@/lib/categories";
 import type { Expense } from "@/lib/types";
 import {
   ExpenseStoreError,
@@ -42,7 +42,8 @@ async function healIndex(store: KvStore, staleIds: string[]): Promise<void> {
 }
 
 function applyPatch(current: Expense, patch: ExpensePatch): Expense {
-  const merged: Expense = { ...current };
+  const merged: Expense = { ...current, kind: normalizeRecordKind(current.kind) };
+  if (patch.kind !== undefined) merged.kind = normalizeRecordKind(patch.kind);
   if (patch.amount !== undefined) {
     if (!Number.isFinite(patch.amount) || patch.amount <= 0) {
       throw new ExpenseStoreError("storage", "That expense couldn't be saved. Check the amount and try again.");

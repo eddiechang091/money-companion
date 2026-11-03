@@ -2,10 +2,12 @@ import type { KvStore } from "@/services/anna/storage";
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS, STORAGE_VERSION, DEFAULT_CURRENCY } from "@/lib/constants";
 import { isValidIsoDate, newId } from "@/lib/utils";
-import { normalizeCategoryId } from "@/lib/categories";
-import type { Expense } from "@/lib/types";
+import { normalizeCategoryId, normalizeRecordKind } from "@/lib/categories";
+import type { Expense, RecordKind } from "@/lib/types";
 
 export interface NewExpenseInput {
+  /** Money direction; defaults to "expense" when omitted. */
+  kind?: RecordKind;
   amount: number;
   currency: string;
   categoryId: string | null;
@@ -21,6 +23,7 @@ export interface NewExpenseInput {
 }
 
 export interface ExpensePatch {
+  kind?: RecordKind;
   amount?: number;
   currency?: string;
   categoryId?: string | null;
@@ -94,6 +97,7 @@ export function isExpenseRecord(value: unknown): value is Expense {
 export function normalizeRecord(value: Expense): Expense {
   return {
     ...value,
+    kind: normalizeRecordKind(value.kind),
     categoryId: normalizeCategoryId(value.categoryId),
     description: value.description.trim(),
     paymentMethod: value.paymentMethod?.trim() ? value.paymentMethod.trim() : undefined,
@@ -122,6 +126,7 @@ export function sanitizeNewExpense(input: NewExpenseInput): NewExpenseInput {
   return {
     amount: Math.round(input.amount * 100) / 100,
     currency: (input.currency || DEFAULT_CURRENCY).trim().toUpperCase() || DEFAULT_CURRENCY,
+    kind: normalizeRecordKind(input.kind),
     categoryId: normalizeCategoryId(input.categoryId),
     description: (input.description ?? "").trim(),
     date: input.date,
@@ -164,6 +169,7 @@ export async function buildExpense(id: string, input: NewExpenseInput): Promise<
   const now = new Date().toISOString();
   return {
     id: id || newId(),
+    kind: normalizeRecordKind(clean.kind),
     amount: clean.amount,
     currency: clean.currency,
     categoryId: clean.categoryId,
