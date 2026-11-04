@@ -38,6 +38,17 @@ function formatMoney(amount: number, currency: string): string {
 
 const CURRENCIES = ["CAD", "USD", "EUR", "GBP", "CNY", "HKD", "AUD", "JPY"];
 
+const REVIEW_PAGE_SIZE = 20;
+
+function statusLabel(s: ScoredRow): string {
+  if (s.status === "duplicate") return "duplicate";
+  return s.row.isCredit ? "income" : "new";
+}
+
+function statusClassName(s: ScoredRow): string {
+  return s.status === "duplicate" ? "import-status import-status--duplicate" : "import-status";
+}
+
 export function ImportDialog({
   open,
   onClose,
@@ -66,6 +77,7 @@ export function ImportDialog({
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   // Per-row overrides: rowKey -> categoryId | "skip"
   const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     if (open) {
@@ -80,6 +92,7 @@ export function ImportDialog({
       setError("");
       setImporting(false);
       setOverrides({});
+      setPage(0);
       const onKey = (event: KeyboardEvent) => {
         if (event.key === "Escape") onClose();
       };
@@ -181,6 +194,7 @@ export function ImportDialog({
               setPreset(analyzed.preset);
               setSourceLabel(analyzed.sourceLabel);
               setOverrides({});
+              setPage(0);
               setStep("review");
               return;
             }
@@ -254,6 +268,12 @@ export function ImportDialog({
     }
   }
 
+  const pageCount = Math.max(1, Math.ceil(scored.length / REVIEW_PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageStart = safePage * REVIEW_PAGE_SIZE;
+  const pageRows = scored.slice(pageStart, pageStart + REVIEW_PAGE_SIZE);
+  const pageEnd = Math.min(scored.length, pageStart + REVIEW_PAGE_SIZE);
+
   if (!open) return null;
   const cols = columnOptions();
   const useDebitPair = (mapping?.debit ?? -1) >= 0;
@@ -267,22 +287,22 @@ export function ImportDialog({
   return (
     <div className="dialog-backdrop" onClick={onClose}>
       <div
-        className="dialog"
+        className="dialog import-dialog"
         role="dialog"
         aria-modal="true"
         aria-label="Import expenses"
         onClick={(event) => event.stopPropagation()}
-        style={{ maxWidth: 640 }}
       >
-        <p className="dialog-title">Import expenses</p>
 
         {step === "upload" && (
-          <div className="stack" style={{ margin: "12px 0", gap: 12 }}>
+          <div className="import-dialog__pad">
+            <p className="dialog-title">Import expenses</p>
+            <div className="stack" style={{ margin: "12px 0", gap: 12 }}>
             <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
               Download a CSV or Excel export from your bank or expense app (YNAB, Mint,
               Monarch, Copilot, 钱迹, 随手记, Wealthsimple, RBC, TD, Scotia, BMO, CIBC),
-              then pick the file here. Amounts are imported as expenses; income rows
-              are skipped.
+              then pick the file here. Expenses and income are both imported —
+              income rows are marked as money in. Review every row before importing.
             </p>
             <input
               ref={fileRef}
@@ -295,203 +315,265 @@ export function ImportDialog({
               Choose CSV or Excel file
             </Button>
             {error && <p style={{ fontSize: 13, color: "var(--danger, #c0392b)" }}>{error}</p>}
+            </div>
           </div>
         )}
 
         {step === "review" && (
-          <div className="stack" style={{ margin: "12px 0", gap: 12 }}>
-            <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              {fileName}
-              {sourceLabel ? ` — detected ${sourceLabel} format` : ""} — {selectable.length} new
-              {incomeCount > 0 ? ` (${incomeCount} income)` : ""}, {dupCount} duplicate{dupCount === 1 ? "" : "s"} skipped.
-              {mapping ? " Check the column mapping below." : " Columns were mapped automatically."}
-            </p>
+          <>
+            <div className="import-dialog__header">
+              <p className="dialog-title">Import expenses</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 8 }}>
+                {fileName}
+                {sourceLabel ? ` — detected ${sourceLabel} format` : ""} — {selectable.length} new
+                {incomeCount > 0 ? ` (${incomeCount} income)` : ""}, {dupCount} duplicate{dupCount === 1 ? "" : "s"} skipped.
+                {mapping ? " Check the column mapping below." : " Columns were mapped automatically."}
+              </p>
 
-            {mapping && (
-            <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-              <label style={{ fontSize: 12, fontWeight: 600 }}>
-                Date
-                <select
-                  className="input"
-                  value={mapping.date}
-                  onChange={(e) => setMappingCol("date", Number(e.target.value))}
-                  style={{ display: "block", marginTop: 4, minWidth: 120 }}
-                >
-                  {cols.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ fontSize: 12, fontWeight: 600 }}>
-                Description
-                <select
-                  className="input"
-                  value={mapping.description}
-                  onChange={(e) => setMappingCol("description", Number(e.target.value))}
-                  style={{ display: "block", marginTop: 4, minWidth: 120 }}
-                >
-                  {cols.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-              </label>
-              {usePair ? (
-                <>
-                  <label style={{ fontSize: 12, fontWeight: 600 }}>
-                    Debit (out)
+              {mapping && (
+                <div className="import-mapping" style={{ marginTop: 12 }}>
+                  <label>
+                    Date
                     <select
                       className="input"
-                      value={useDebitPair ? mapping.debit : mapping.outflow}
-                      onChange={(e) =>
-                        setMappingCol(useDebitPair ? "debit" : "outflow", Number(e.target.value))
-                      }
-                      style={{ display: "block", marginTop: 4, minWidth: 110 }}
+                      value={mapping.date}
+                      onChange={(e) => setMappingCol("date", Number(e.target.value))}
                     >
                       {cols.map((c) => (
                         <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
                     </select>
                   </label>
-                  <label style={{ fontSize: 12, fontWeight: 600 }}>
-                    Credit (in)
+                  <label>
+                    Description
                     <select
                       className="input"
-                      value={useDebitPair ? mapping.credit : mapping.inflow}
-                      onChange={(e) =>
-                        setMappingCol(useDebitPair ? "credit" : "inflow", Number(e.target.value))
-                      }
-                      style={{ display: "block", marginTop: 4, minWidth: 110 }}
+                      value={mapping.description}
+                      onChange={(e) => setMappingCol("description", Number(e.target.value))}
                     >
                       {cols.map((c) => (
                         <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
                     </select>
                   </label>
-                </>
-              ) : (
-                <>
-                  <label style={{ fontSize: 12, fontWeight: 600 }}>
-                    Amount
-                    <select
-                      className="input"
-                      value={mapping.amount}
-                      onChange={(e) => setMappingCol("amount", Number(e.target.value))}
-                      style={{ display: "block", marginTop: 4, minWidth: 120 }}
-                    >
-                      {cols.map((c) => (
-                        <option key={c.value} value={c.value}>{c.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  {showSign && (
-                  <label style={{ fontSize: 12, fontWeight: 600 }}>
-                    Sign
-                    <select
-                      className="input"
-                      value={flipSign ? "pos" : "neg"}
-                      onChange={(e) => setFlipSign(e.target.value === "pos")}
-                      style={{ display: "block", marginTop: 4, minWidth: 130 }}
-                    >
-                      <option value="neg">Negative = expense</option>
-                      <option value="pos">Positive = expense</option>
-                    </select>
-                  </label>
+                  {usePair ? (
+                    <>
+                      <label>
+                        Debit (out)
+                        <select
+                          className="input"
+                          value={useDebitPair ? mapping.debit : mapping.outflow}
+                          onChange={(e) =>
+                            setMappingCol(useDebitPair ? "debit" : "outflow", Number(e.target.value))
+                          }
+                        >
+                          {cols.map((c) => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Credit (in)
+                        <select
+                          className="input"
+                          value={useDebitPair ? mapping.credit : mapping.inflow}
+                          onChange={(e) =>
+                            setMappingCol(useDebitPair ? "credit" : "inflow", Number(e.target.value))
+                          }
+                        >
+                          {cols.map((c) => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </>
+                  ) : (
+                    <>
+                      <label>
+                        Amount
+                        <select
+                          className="input"
+                          value={mapping.amount}
+                          onChange={(e) => setMappingCol("amount", Number(e.target.value))}
+                        >
+                          {cols.map((c) => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      {showSign && (
+                        <label>
+                          Sign
+                          <select
+                            className="input"
+                            value={flipSign ? "pos" : "neg"}
+                            onChange={(e) => setFlipSign(e.target.value === "pos")}
+                          >
+                            <option value="neg">Negative = expense</option>
+                            <option value="pos">Positive = expense</option>
+                          </select>
+                        </label>
+                      )}
+                    </>
                   )}
-                </>
+                  <label>
+                    Currency
+                    <select
+                      className="input"
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                    >
+                      {CURRENCIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               )}
             </div>
-            )}
 
-            <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-              <label style={{ fontSize: 12, fontWeight: 600 }}>
-                Currency
-                <select
-                  className="input"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  style={{ display: "block", marginTop: 4, minWidth: 90 }}
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </label>
+            <div className="import-dialog__body">
+              <div className="import-table-scroll">
+                <table className="import-table">
+                  <colgroup>
+                    <col className="col-check" />
+                    <col className="col-date" />
+                    <col />
+                    <col className="col-amount" />
+                    <col className="col-category" />
+                    <col className="col-status" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th style={{ textAlign: "right" }}>Amount</th>
+                      <th>Category</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageRows.map((s) => {
+                      const disabled = s.status === "duplicate";
+                      const included = !disabled && isIncluded(s);
+                      const rowKind = s.row.isCredit ? "income" : "expense";
+                      return (
+                        <tr key={s.key} className={disabled || !included ? "is-dim" : undefined}>
+                          <td>
+                            <input
+                              type="checkbox"
+                              checked={included}
+                              disabled={disabled}
+                              onChange={() =>
+                                setOverrides((o) => ({ ...o, [s.key]: o[s.key] === "skip" ? "" : "skip" }))
+                              }
+                              aria-label={`Include ${s.row.description}`}
+                            />
+                          </td>
+                          <td style={{ whiteSpace: "nowrap" }}>{s.row.date}</td>
+                          <td className="desc">{s.row.description}</td>
+                          <td className="amount">{formatMoney(s.row.amount, currency)}</td>
+                          <td>
+                            {disabled ? (
+                              <span style={{ color: "var(--text-muted)" }}>{categoryLabel(categoryOf(s))}</span>
+                            ) : (
+                              <select
+                                className="input"
+                                value={categoryOf(s)}
+                                onChange={(e) => setOverrides((o) => ({ ...o, [s.key]: e.target.value }))}
+                                aria-label={`Category for ${s.row.description}`}
+                              >
+                                <option value="">{UNCATEGORIZED_LABEL}</option>
+                                {categoriesForKind(rowKind).map((c) => (
+                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                              </select>
+                            )}
+                          </td>
+                          <td style={{ whiteSpace: "nowrap" }}>
+                            <span className={statusClassName(s)}>{statusLabel(s)}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="import-cards">
+                {pageRows.map((s) => {
+                  const disabled = s.status === "duplicate";
+                  const included = !disabled && isIncluded(s);
+                  const rowKind = s.row.isCredit ? "income" : "expense";
+                  return (
+                    <div key={s.key} className={`import-card${disabled || !included ? " is-dim" : ""}`}>
+                      <div className="import-card__top">
+                        <span className="import-card__desc">{s.row.description}</span>
+                        <span className="import-card__amount">{formatMoney(s.row.amount, currency)}</span>
+                      </div>
+                      <div className="import-card__meta">
+                        <span>{s.row.date}</span>
+                        <span className={statusClassName(s)}>{statusLabel(s)}</span>
+                      </div>
+                      {disabled ? (
+                        <p className="import-card__category-text">{categoryLabel(categoryOf(s))}</p>
+                      ) : (
+                        <select
+                          className="input"
+                          value={categoryOf(s)}
+                          onChange={(e) => setOverrides((o) => ({ ...o, [s.key]: e.target.value }))}
+                          aria-label={`Category for ${s.row.description}`}
+                        >
+                          <option value="">{UNCATEGORIZED_LABEL}</option>
+                          {categoriesForKind(rowKind).map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      )}
+                      <label className="import-card__include">
+                        <input
+                          type="checkbox"
+                          checked={included}
+                          disabled={disabled}
+                          onChange={() =>
+                            setOverrides((o) => ({ ...o, [s.key]: o[s.key] === "skip" ? "" : "skip" }))
+                          }
+                        />
+                        Include in import
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {pageCount > 1 && (
+                <div className="import-pager">
+                  <span>
+                    Showing {pageStart + 1}–{pageEnd} of {scored.length}
+                  </span>
+                  <span>
+                    Page {safePage + 1} of {pageCount}
+                  </span>
+                  <div className="import-pager__buttons">
+                    <Button variant="ghost" onClick={() => setPage(safePage - 1)} disabled={safePage === 0}>
+                      Previous
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setPage(safePage + 1)}
+                      disabled={safePage >= pageCount - 1}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {error && <p style={{ fontSize: 13, color: "var(--danger, #c0392b)" }}>{error}</p>}
             </div>
 
-            <div style={{ maxHeight: 280, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 8 }}>
-              <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ textAlign: "left", borderBottom: "1px solid var(--border)" }}>
-                    <th style={{ padding: "6px 8px" }}></th>
-                    <th style={{ padding: "6px 8px" }}>Date</th>
-                    <th style={{ padding: "6px 8px" }}>Description</th>
-                    <th style={{ padding: "6px 8px", textAlign: "right" }}>Amount</th>
-                    <th style={{ padding: "6px 8px" }}>Category</th>
-                    <th style={{ padding: "6px 8px" }}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scored.map((s) => {
-                    const disabled = s.status === "duplicate";
-                    const included = !disabled && isIncluded(s);
-                    const rowKind = s.row.isCredit ? "income" : "expense";
-                    return (
-                      <tr key={s.key} style={{ borderBottom: "1px solid var(--border)", opacity: disabled || !included ? 0.55 : 1 }}>
-                        <td style={{ padding: "6px 8px" }}>
-                          <input
-                            type="checkbox"
-                            checked={included}
-                            disabled={disabled}
-                            onChange={() =>
-                              setOverrides((o) => ({ ...o, [s.key]: o[s.key] === "skip" ? "" : "skip" }))
-                            }
-                            aria-label={`Include ${s.row.description}`}
-                          />
-                        </td>
-                        <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>{s.row.date}</td>
-                        <td style={{ padding: "6px 8px", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {s.row.description}
-                        </td>
-                        <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap" }}>
-                          {formatMoney(s.row.amount, currency)}
-                        </td>
-                        <td style={{ padding: "6px 8px" }}>
-                          {disabled ? (
-                            <span style={{ color: "var(--text-muted)" }}>{categoryLabel(categoryOf(s))}</span>
-                          ) : (
-                            <select
-                              className="input"
-                              value={categoryOf(s)}
-                              onChange={(e) => setOverrides((o) => ({ ...o, [s.key]: e.target.value }))}
-                              style={{ fontSize: 12, padding: "2px 4px" }}
-                              aria-label={`Category for ${s.row.description}`}
-                            >
-                              <option value="">{UNCATEGORIZED_LABEL}</option>
-                              {categoriesForKind(rowKind).map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                              ))}
-                            </select>
-                          )}
-                        </td>
-                        <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
-                          {s.status === "duplicate" ? (
-                            <span style={{ color: "var(--warning, #b7791f)" }}>duplicate</span>
-                          ) : s.row.isCredit ? (
-                            <span style={{ color: "var(--success, #2e7d32)" }}>income</span>
-                          ) : (
-                            <span style={{ color: "var(--success, #2e7d32)" }}>new</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {error && <p style={{ fontSize: 13, color: "var(--danger, #c0392b)" }}>{error}</p>}
-
-            <div className="row" style={{ gap: 8, justifyContent: "flex-end" }}>
+            <div className="import-dialog__footer">
               <Button variant="ghost" onClick={() => setStep("upload")} disabled={importing}>
                 Back
               </Button>
@@ -499,7 +581,7 @@ export function ImportDialog({
                 {importing ? `Importing ${progress.done}/${progress.total}…` : `Import ${includedCount} expense${includedCount === 1 ? "" : "s"}`}
               </Button>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
