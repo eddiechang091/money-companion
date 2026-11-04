@@ -1,6 +1,7 @@
 import type { MonthlyBudget } from "@/lib/types";
 import type { KvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS, STORAGE_VERSION } from "@/lib/constants";
+import { normalizeCategoryId } from "@/lib/categories";
 
 export type BudgetStoreErrorCode = "not-found" | "storage" | "too-large";
 
@@ -67,7 +68,9 @@ export function wrapBudgetDoc(budget: MonthlyBudget): { version: number; budget:
 export function unwrapBudgetDoc(doc: unknown): MonthlyBudget | null {
   if (!doc || typeof doc !== "object") return null;
   const budget = (doc as { budget: unknown }).budget;
-  return isBudgetRecord(budget) ? budget : null;
+  if (!isBudgetRecord(budget)) return null;
+  // Migrate retired category ids on read, same map as expenses.
+  return { ...budget, categoryId: normalizeCategoryId(budget.categoryId) };
 }
 
 let budgetMutationChain: Promise<void> = Promise.resolve();

@@ -38,7 +38,7 @@ describe("budget repository", () => {
 
     const created = await repo.upsert({ categoryId: "food", amount: 200, currency: "CAD" });
     expect(created.id).toBeTruthy();
-    expect(created.categoryId).toBe("food-dining"); // legacy id migrates on write
+    expect(created.categoryId).toBe("dining-out"); // legacy id migrates on write
     expect(created.amount).toBe(200);
     expect(created.period).toBe("monthly");
 
@@ -52,6 +52,42 @@ describe("budget repository", () => {
 
     await repo.remove(created.id);
     expect(await repo.list()).toHaveLength(0);
+  });
+
+  it("migrates retired category ids on read", async () => {
+    const store = memoryStore({
+      "expense-tracker:budgets:index": { version: 1, ids: ["b1", "b2"] },
+      "expense-tracker:budgets:item:b1": {
+        version: 1,
+        budget: {
+          id: "b1",
+          categoryId: "food-dining",
+          amount: 400,
+          currency: "CAD",
+          period: "monthly",
+          createdAt: "2026-10-01T00:00:00.000Z",
+          updatedAt: "2026-10-01T00:00:00.000Z",
+        },
+      },
+      "expense-tracker:budgets:item:b2": {
+        version: 1,
+        budget: {
+          id: "b2",
+          categoryId: "cushion-taxes",
+          amount: 300,
+          currency: "CAD",
+          period: "monthly",
+          createdAt: "2026-10-01T00:00:00.000Z",
+          updatedAt: "2026-10-01T00:00:00.000Z",
+        },
+      },
+    });
+    const repo = createBudgetRepository(store);
+    const listed = await repo.list();
+    expect(listed).toHaveLength(2);
+    expect(listed.find((b) => b.id === "b1")?.categoryId).toBe("dining-out");
+    // No equivalent in the new taxonomy → uncategorized, like expenses.
+    expect(listed.find((b) => b.id === "b2")?.categoryId).toBeNull();
   });
 
   it("stores an overall budget with null categoryId", async () => {

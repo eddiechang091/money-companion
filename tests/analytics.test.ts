@@ -18,7 +18,7 @@ function makeExpense(partial: Partial<Expense> & { id: string; date: string; amo
   return {
     kind: "expense",
     currency: "CAD",
-    categoryId: "food-dining",
+    categoryId: "dining-out",
     description: "Test",
     createdAt: `${partial.date}T00:00:00.000Z`,
     updatedAt: `${partial.date}T00:00:00.000Z`,

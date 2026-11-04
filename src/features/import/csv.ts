@@ -691,8 +691,8 @@ const WS_SKIP_SUBTYPES = new Set(["TRANSFER"]);
 
 /** Sub-type -> category hint for expense rows. */
 const WS_CATEGORY_HINTS: Record<string, string> = {
-  OBP_OUT: "nest-utilities", // Online bill payment
-  AFT_OUT: "nest-utilities", // Pre-authorized debit (recurring bills)
+  OBP_OUT: "utilities-bills", // Online bill payment
+  AFT_OUT: "utilities-bills", // Pre-authorized debit (recurring bills)
 };
 
 /** True when the parsed rows look like a Wealthsimple *activities* export (effective_date). The official export (transaction_date) is handled by the generic path with currency/activity-type detection. */

@@ -1350,3 +1350,39 @@ select option {
   color: var(--text);
   font-weight: 700;
 }
+
+/* ─── Kind toggle (Add transaction form) ─────────────────────────────────── */
+/* Two large option cards instead of a pill segmented control: the direction
+   of money must read at a glance, in every theme. Theme tokens only. */
+/* ─── Kind toggle (Add transaction form) ─────────────────────────────────── */
+/* Apple-style segmented control: one quiet track, two generous segments,
+   text only. The selected segment is a raised white card, in the same
+   language as the iOS-style selectors on the login wall. Theme tokens only. */
+.kind-toggle {
+  display: flex;
+  gap: 0;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.kind-option {
+  flex: 1;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.kind-option:hover { color: var(--text); }
+.kind-option:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--primary-soft); }
+.kind-option.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}

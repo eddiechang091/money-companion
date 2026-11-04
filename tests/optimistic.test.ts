@@ -12,7 +12,7 @@ function makeExpense(id: string, overrides: Partial<Expense> = {}): Expense {
     amount: 10,
     kind: "expense",
     currency: "CAD",
-    categoryId: "food-dining",
+    categoryId: "dining-out",
     description: `Expense ${id}`,
     date: "2026-09-15",
     createdAt: "2026-09-15T00:00:00.000Z",
