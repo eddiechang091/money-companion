@@ -111,30 +111,18 @@ export function ExpenseForm({
           <button
             type="button"
             aria-pressed={kind === "expense"}
-            className={`kind-option kind-option--expense${kind === "expense" ? " is-active" : ""}`}
+            className={`kind-option${kind === "expense" ? " is-active" : ""}`}
             onClick={() => handleKindChange("expense")}
           >
-            <span className="kind-option-icon" aria-hidden="true">
-              −
-            </span>
-            <span className="kind-option-text">
-              <span className="kind-option-title">Money out</span>
-              <span className="kind-option-caption">Spending</span>
-            </span>
+            Money out
           </button>
           <button
             type="button"
             aria-pressed={kind === "income"}
-            className={`kind-option kind-option--income${kind === "income" ? " is-active" : ""}`}
+            className={`kind-option${kind === "income" ? " is-active" : ""}`}
             onClick={() => handleKindChange("income")}
           >
-            <span className="kind-option-icon" aria-hidden="true">
-              +
-            </span>
-            <span className="kind-option-text">
-              <span className="kind-option-title">Money in</span>
-              <span className="kind-option-caption">Income</span>
-            </span>
+            Money in
           </button>
         </div>
       </div>

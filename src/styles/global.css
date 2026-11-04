@@ -1354,43 +1354,35 @@ select option {
 /* ─── Kind toggle (Add transaction form) ─────────────────────────────────── */
 /* Two large option cards instead of a pill segmented control: the direction
    of money must read at a glance, in every theme. Theme tokens only. */
-.kind-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.kind-option {
+/* ─── Kind toggle (Add transaction form) ─────────────────────────────────── */
+/* Apple-style segmented control: one quiet track, two generous segments,
+   text only. The selected segment is a raised white card, in the same
+   language as the iOS-style selectors on the login wall. Theme tokens only. */
+.kind-toggle {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 64px;
-  padding: 12px 14px;
-  border: 1.5px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text-muted);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
-}
-.kind-option:hover { border-color: var(--primary); }
-.kind-option:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
-.kind-option:active { transform: translateY(1px) scale(0.99); }
-.kind-option-icon {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  gap: 0;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
   background: var(--surface-2);
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
 }
-.kind-option-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.kind-option-title { font-size: 15px; font-weight: 650; color: var(--text); }
-.kind-option-caption { font-size: 12px; color: var(--text-muted); }
-.kind-option--expense .kind-option-icon { color: var(--expense); }
-.kind-option--income .kind-option-icon { color: var(--success); }
-.kind-option--expense.is-active { border-color: var(--expense); background: var(--expense-soft); box-shadow: var(--shadow-sm); }
-.kind-option--expense.is-active .kind-option-icon { background: var(--expense); color: #fff; }
-.kind-option--income.is-active { border-color: var(--success); background: var(--success-soft); box-shadow: var(--shadow-sm); }
-.kind-option--income.is-active .kind-option-icon { background: var(--success); color: #fff; }
+.kind-option {
+  flex: 1;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.kind-option:hover { color: var(--text); }
+.kind-option:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--primary-soft); }
+.kind-option.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
