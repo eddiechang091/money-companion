@@ -4,6 +4,8 @@
  * both csv.ts (low-level parsing) and presets.ts can use it.
  */
 
+import type { RecordKind } from "@/lib/types";
+
 /* ─── Direction / type values ──────────────────────────────────────────── */
 
 /** Normalize a direction/type cell to expense / income / transfer. */
@@ -32,9 +34,60 @@ export function directionOf(
 
 /* ─── Category name mapping ───────────────────────────────────────────── */
 
-const CATEGORY_ALIASES: Array<{ id: string; names: string[] }> = [
+
+/**
+ * Foreign category names → this app's subcategory ids, split by kind.
+ * Expense aliases and income aliases are disjoint: an income row consults
+ * only income aliases, so "gift" on an expense row and "gift" on an income
+ * row land in different places. `mapCategoryName` defaults to expense for
+ * callers that don't know the row's direction (e.g. Wealthsimple hints).
+ */
+const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }> = [
+  // ── Income ──────────────────────────────────────────────────────────
   {
-    id: "insurance",
+    id: "inc-paycheck",
+    kind: "income",
+    names: [
+      "salary", "paycheck", "payroll", "wages", "wage", "pay", "income",
+      "工资", "薪水", "薪资", "收入",
+    ],
+  },
+  {
+    id: "inc-side",
+    kind: "income",
+    names: [
+      "freelance", "side hustle", "consulting", "gig", "contract payment",
+      "兼职", "副业", "自由职业",
+    ],
+  },
+  {
+    id: "inc-bonus",
+    kind: "income",
+    names: ["bonus", "commission", "tips", "奖金", "提成", "绩效"],
+  },
+  {
+    id: "inc-invest",
+    kind: "income",
+    names: [
+      "dividend", "dividends", "interest", "capital gains", "股息", "分红", "利息", "收益",
+    ],
+  },
+  {
+    id: "inc-gifts",
+    kind: "income",
+    names: ["cash gift", "gift money", "red packet", "hongbao", "红包", "压岁钱"],
+  },
+  {
+    id: "inc-refunds",
+    kind: "income",
+    names: [
+      "refund", "reimbursement", "cashback", "rebate", "退款", "报销", "返现", "退税",
+    ],
+  },
+  // ── Expense ─────────────────────────────────────────────────────────
+  {
+    id: "cushion-insurance",
+    kind: "expense",
     names: [
       "insurance", "health insurance", "life insurance", "car insurance",
       "auto insurance", "home insurance", "renters insurance", "dental insurance",
@@ -42,39 +95,114 @@ const CATEGORY_ALIASES: Array<{ id: string; names: string[] }> = [
     ],
   },
   {
-    id: "health",
+    id: "well-health",
+    kind: "expense",
     names: [
       "health", "healthcare", "medical", "doctor", "dentist", "dental",
-      "pharmacy", "drugstore", "fitness", "gym", "health care",
-      "医疗", "健康", "药品", "看病", "牙科", "医院", "健身房", "运动健身", "药店",
+      "pharmacy", "drugstore", "health care",
+      "医疗", "健康", "药品", "看病", "牙科", "医院", "药店",
     ],
   },
   {
-    id: "housing",
+    id: "well-fitness",
+    kind: "expense",
+    names: ["fitness", "gym", "健身房", "运动健身"],
+  },
+  {
+    id: "well-selfcare",
+    kind: "expense",
+    names: ["beauty", "salon", "spa", "美容", "美发", "护肤"],
+  },
+  {
+    id: "well-mental",
+    kind: "expense",
+    names: ["therapy", "counseling", "meditation", "心理", "咨询"],
+  },
+  {
+    id: "nest-home",
+    kind: "expense",
     names: [
       "housing", "rent", "mortgage", "property tax", "home", "house",
       "apartment", "condo", "hoa", "property management",
-      "住房", "房租", "房贷", "物业", "物业费", "房租水电",
+      "住房", "房租", "房贷", "物业", "物业费",
     ],
   },
   {
-    id: "utilities",
+    id: "nest-utilities",
+    kind: "expense",
     names: [
       "utilities", "utility", "electric", "electricity", "water",
       "natural gas", "gas bill", "heating", "sewer", "trash",
-      "水电", "水费", "电费", "燃气费", "燃气", "暖气", "水电燃气", "水电费",
-    ],
-  },
-  {
-    id: "internet",
-    names: [
       "internet", "wifi", "cable", "tv", "phone", "mobile", "cell phone",
-      "telephone", "broadband",
-      "话费", "手机费", "宽带", "网费", "电话费", "通讯",
+      "telephone", "broadband", "bills", "bill", "bill payment",
+      "水电", "水费", "电费", "燃气费", "燃气", "暖气", "水电燃气", "水电费", "房租水电",
+      "话费", "手机费", "宽带", "网费", "电话费", "通讯", "账单", "缴费",
     ],
   },
   {
-    id: "kids",
+    id: "nest-groceries",
+    kind: "expense",
+    names: [
+      "groceries", "grocery", "supermarket", "食品", "水果", "买菜", "超市",
+    ],
+  },
+  {
+    id: "nest-sanctuary",
+    kind: "expense",
+    names: ["household", "general merchandise", "furniture", "日用品", "家具"],
+  },
+  {
+    id: "food-dining",
+    kind: "expense",
+    names: [
+      "food", "dining", "restaurants", "restaurant",
+      "fast food", "breakfast", "lunch", "dinner",
+      "snacks", "bakery",
+      "餐饮", "饮食", "午餐", "晚餐", "早餐", "零食",
+      "小吃", "早点", "餐饮美食",
+    ],
+  },
+  {
+    id: "food-coffee",
+    kind: "expense",
+    names: ["coffee", "cafe", "咖啡"],
+  },
+  {
+    id: "food-drinks",
+    kind: "expense",
+    names: ["alcohol", "bars", "饮料", "酒"],
+  },
+  {
+    id: "food-delivery",
+    kind: "expense",
+    names: ["food delivery", "外卖"],
+  },
+  {
+    id: "around-commute",
+    kind: "expense",
+    names: [
+      "transport", "transportation", "transit", "public transportation",
+      "uber", "lyft", "taxi", "rideshare",
+      "交通", "出行", "打车", "公交", "地铁", "滴滴", "出租车",
+    ],
+  },
+  {
+    id: "around-car",
+    kind: "expense",
+    names: [
+      "gas", "fuel", "gas & fuel", "auto", "car", "parking", "vehicle",
+      "gasoline",
+      "加油", "停车", "汽车", "油费", "高速", "过路费",
+    ],
+  },
+  {
+    id: "around-getaways",
+    kind: "expense",
+    names: ["road trip", "getaway", "rental car", "自驾游", "租车"],
+  },
+  {
+    id: "loved-family",
+    kind: "expense",
     names: [
       "kids", "children", "childcare", "child care", "daycare",
       "education", "school", "tuition", "toys", "baby",
@@ -82,58 +210,93 @@ const CATEGORY_ALIASES: Array<{ id: string; names: string[] }> = [
     ],
   },
   {
-    id: "travel",
+    id: "growth-learning",
+    kind: "expense",
+    names: ["books", "book", "learning", "course", "书籍", "课程", "学习"],
+  },
+  {
+    id: "growth-savings",
+    kind: "expense",
+    names: ["savings", "储蓄", "存款"],
+  },
+  {
+    id: "growth-invest",
+    kind: "expense",
+    names: ["stocks", "shares", "investment", "投资", "股票", "基金"],
+  },
+  {
+    id: "joy-vacation",
+    kind: "expense",
     names: [
       "travel", "hotel", "lodging", "flight", "flights", "airline",
-      "vacation", "rental car", "airbnb",
+      "vacation", "airbnb",
       "旅行", "旅游", "酒店", "机票", "度假", "出差", "住宿",
     ],
   },
   {
-    id: "food",
+    id: "life-apparel",
+    kind: "expense",
     names: [
-      "food", "dining", "restaurants", "restaurant", "groceries", "grocery",
-      "coffee", "cafe", "fast food", "breakfast", "lunch", "dinner",
-      "snacks", "alcohol", "bars", "bakery", "supermarket",
-      "餐饮", "食品", "饮食", "午餐", "晚餐", "早餐", "零食", "饮料",
-      "水果", "买菜", "餐饮美食", "外卖", "小吃", "早点",
+      "shopping", "clothing", "clothes", "apparel", "shoes",
+      "购物", "衣服", "服装", "商场", "淘宝", "京东", "拼多多",
     ],
   },
   {
-    id: "transport",
+    id: "life-tech",
+    kind: "expense",
+    names: ["electronics", "electronic", "gadget", "电子产品", "数码"],
+  },
+  {
+    id: "life-splurges",
+    kind: "expense",
+    names: ["blind box", "盲盒"],
+  },
+  {
+    id: "loved-gifts",
+    kind: "expense",
+    names: ["gifts", "gift", "礼物"],
+  },
+  {
+    id: "loved-pets",
+    kind: "expense",
+    names: ["pet", "pets", "veterinary", "vet", "宠物"],
+  },
+  {
+    id: "joy-subs",
+    kind: "expense",
     names: [
-      "transport", "transportation", "gas", "fuel", "gas & fuel", "auto",
-      "car", "parking", "uber", "lyft", "taxi", "transit",
-      "public transportation", "vehicle", "gasoline", "rideshare",
-      "交通", "出行", "打车", "公交", "地铁", "加油", "停车", "汽车",
-      "油费", "滴滴", "出租车", "高速", "过路费",
+      "subscriptions", "subscription", "streaming", "netflix", "spotify",
+      "订阅", "会员", "月费", "视频会员",
     ],
   },
   {
-    id: "shopping",
-    names: [
-      "shopping", "clothing", "clothes", "electronics", "household",
-      "general merchandise", "gifts", "books", "apparel", "shoes",
-      "购物", "衣服", "服装", "日用品", "电子产品", "淘宝", "京东",
-      "拼多多", "商场", "超市",
-    ],
-  },
-  {
-    id: "bills",
-    names: [
-      "bills", "bill", "bill payment", "subscriptions", "subscription",
-      "fees", "taxes", "service fee",
-      "账单", "缴费", "税费", "手续费", "订阅", "会员", "月费",
-    ],
-  },
-  {
-    id: "fun",
+    id: "joy-hobbies",
+    kind: "expense",
     names: [
       "fun", "entertainment", "movies", "movie", "games", "game", "sports",
-      "hobbies", "hobby", "music", "concert", "streaming", "netflix",
-      "spotify", "leisure",
-      "娱乐", "电影", "游戏", "运动", "休闲", "演出", "视频会员",
+      "hobbies", "hobby", "music", "concert", "leisure",
+      "娱乐", "电影", "游戏", "运动", "休闲", "演出",
     ],
+  },
+  {
+    id: "joy-events",
+    kind: "expense",
+    names: ["events", "outings", "tickets", "活动", "门票"],
+  },
+  {
+    id: "cushion-taxes",
+    kind: "expense",
+    names: ["taxes", "tax", "fees", "service fee", "税费", "税", "手续费"],
+  },
+  {
+    id: "cushion-debt",
+    kind: "expense",
+    names: ["loan", "debt", "贷款"],
+  },
+  {
+    id: "cushion-rainy",
+    kind: "expense",
+    names: ["unexpected", "emergency", "意外", "应急"],
   },
 ];
 
@@ -150,7 +313,10 @@ function matchAlias(normalized: string, alias: string): boolean {
  * child part first, then the parent, then the whole string.
  * Returns null when nothing matches (caller falls back to guessing).
  */
-export function mapCategoryName(raw: string | null | undefined): string | null {
+export function mapCategoryName(
+  raw: string | null | undefined,
+  kind: RecordKind = "expense"
+): string | null {
   if (!raw) return null;
   const norm = raw.trim().toLowerCase().replace(/\s+/g, " ");
   if (!norm) return null;
@@ -158,7 +324,8 @@ export function mapCategoryName(raw: string | null | undefined): string | null {
   // Child first, then parent, then the whole string.
   const candidates = [...parts.slice().reverse(), norm];
   for (const cand of candidates) {
-    for (const { id, names } of CATEGORY_ALIASES) {
+    for (const { id, kind: entryKind, names } of CATEGORY_ALIASES) {
+      if (entryKind !== kind) continue;
       for (const alias of names) {
         if (matchAlias(cand, alias)) return id;
       }

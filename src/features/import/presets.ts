@@ -58,7 +58,8 @@ function pushRow(
   description: string,
   amount: number,
   categoryHint: string | null,
-  raw: CsvRow
+  raw: CsvRow,
+  isCredit = false
 ): void {
   const date = parseDateLoose(dateRaw);
   if (!date || !(amount > 0)) return;
@@ -66,7 +67,7 @@ function pushRow(
     date,
     description: description || "(no description)",
     amount,
-    isCredit: false,
+    isCredit,
     categoryHint,
     raw,
   });
@@ -87,6 +88,7 @@ const ynab: Preset = {
     const category = colIndex(header, "category");
     const memo = colIndex(header, "memo");
     const outflow = colIndex(header, "outflow");
+    const inflow = colIndex(header, "inflow");
     const out: NormalizedRow[] = [];
     for (const r of rows.slice(1)) {
       const outAmt = parseAmountLoose(r[outflow] ?? "");
@@ -100,7 +102,19 @@ const ynab: Preset = {
           r
         );
       }
-      // Inflow rows are income — skipped (not expenses).
+      // Inflow rows are income.
+      const inAmt = inflow >= 0 ? parseAmountLoose(r[inflow] ?? "") : null;
+      if (inAmt && inAmt !== 0) {
+        pushRow(
+          out,
+          r[date] ?? "",
+          firstNonEmpty(r, [payee, memo]),
+          Math.abs(inAmt),
+          mapCategoryName(r[category] ?? "", "income"),
+          r,
+          true
+        );
+      }
     }
     return out;
   },
@@ -123,7 +137,8 @@ const mint: Preset = {
     const category = colIndex(header, "category");
     const out: NormalizedRow[] = [];
     for (const r of rows.slice(1)) {
-      if (directionOf(r[type] ?? "") !== "expense") continue;
+      const dir = directionOf(r[type] ?? "");
+      if (dir !== "expense" && dir !== "income") continue;
       const amt = parseAmountLoose(r[amount] ?? "");
       if (amt === null || amt === 0) continue;
       pushRow(
@@ -131,8 +146,9 @@ const mint: Preset = {
         r[date] ?? "",
         firstNonEmpty(r, [desc]),
         Math.abs(amt),
-        mapCategoryName(r[category] ?? ""),
-        r
+        mapCategoryName(r[category] ?? "", dir),
+        r,
+        dir === "income"
       );
     }
     return out;
@@ -162,14 +178,17 @@ const monarch: Preset = {
         continue;
       }
       const amt = parseAmountLoose(r[amount] ?? "");
-      if (amt === null || amt >= 0) continue; // negative = spending
+      if (amt === null || amt === 0) continue;
+      // Signed: negative = spending, positive = income.
+      const isCredit = amt > 0;
       pushRow(
         out,
         r[date] ?? "",
         firstNonEmpty(r, [merchant, notes]),
         Math.abs(amt),
-        mapCategoryName(r[category] ?? ""),
-        r
+        mapCategoryName(r[category] ?? "", isCredit ? "income" : "expense"),
+        r,
+        isCredit
       );
     }
     return out;
@@ -196,18 +215,20 @@ const copilot: Preset = {
     const note = colIndex(header, "note");
     const out: NormalizedRow[] = [];
     for (const r of rows.slice(1)) {
-      if (directionOf(r[type] ?? "") !== "expense") continue;
+      const dir = directionOf(r[type] ?? "");
+      if (dir !== "expense" && dir !== "income") continue;
       const amt = parseAmountLoose(r[amount] ?? "");
       if (amt === null || amt === 0) continue;
       const hint =
-        mapCategoryName(r[category] ?? "") ?? mapCategoryName(r[parent] ?? "");
+        mapCategoryName(r[category] ?? "", dir) ?? mapCategoryName(r[parent] ?? "", dir);
       pushRow(
         out,
         r[date] ?? "",
         firstNonEmpty(r, [name, note]),
         Math.abs(amt),
         hint,
-        r
+        r,
+        dir === "income"
       );
     }
     return out;
@@ -216,7 +237,7 @@ const copilot: Preset = {
 
 /* ─── 钱迹 (Qianji) ────────────────────────────────────────────────────
  * Template: 时间, 分类, 二级分类, 类型, 金额 (+ 账户/备注/标签/币种).
- * 类型: 收入/支出/报销/转账/还款 — only 支出 imports.
+ * 类型: 收入/支出/报销/转账/还款 — 支出 and 收入 import; 报销/转账/还款 stay out.
  * Category: 二级分类 wins over 分类. 时间 accepts datetimes ("2018/4/8 22:15").
  */
 const qianji: Preset = {
@@ -233,17 +254,19 @@ const qianji: Preset = {
     const remark = colIndex(header, "备注", "说明");
     const out: NormalizedRow[] = [];
     for (const r of rows.slice(1)) {
-      if (directionOf(r[type] ?? "") !== "expense") continue;
+      const dir = directionOf(r[type] ?? "");
+      if (dir !== "expense" && dir !== "income") continue;
       const amt = parseAmountLoose(r[amount] ?? "");
       if (amt === null || amt === 0) continue;
       const catRaw = firstNonEmpty(r, [cat2, cat1]);
       pushRow(
         out,
         r[date] ?? "",
-        firstNonEmpty(r, [remark]) || catRaw || "支出",
+        firstNonEmpty(r, [remark]) || catRaw || (dir === "income" ? "收入" : "支出"),
         Math.abs(amt),
-        mapCategoryName(catRaw),
-        r
+        mapCategoryName(catRaw, dir),
+        r,
+        dir === "income"
       );
     }
     return out;
@@ -254,7 +277,7 @@ const qianji: Preset = {
  * App CSV: 类型, 分类, 二级分类, 金额, 币种, 账户, 转出账户, 转入账户,
  *   备注, 时间, 标签, 附件 (may have preamble rows — stripped upstream).
  * Web .xls: 交易类型, 日期, 分类, 子分类, 账户1, 账户2, 金额, 商家, 项目, 备注.
- * Only 支出 imports. Category: 二级分类/子分类 wins. Description: 商家, else 备注.
+ * 支出 and 收入 import; transfers stay out. Category: 二级分类/子分类 wins. Description: 商家, else 备注.
  */
 const suishouji: Preset = {
   id: "suishouji",
@@ -275,17 +298,19 @@ const suishouji: Preset = {
     const project = colIndex(header, "项目");
     const out: NormalizedRow[] = [];
     for (const r of rows.slice(1)) {
-      if (directionOf(r[type] ?? "") !== "expense") continue;
+      const dir = directionOf(r[type] ?? "");
+      if (dir !== "expense" && dir !== "income") continue;
       const amt = parseAmountLoose(r[amount] ?? "");
       if (amt === null || amt === 0) continue;
       const catRaw = firstNonEmpty(r, [cat2, cat1]);
       pushRow(
         out,
         r[date] ?? "",
-        firstNonEmpty(r, [merchant, remark, project]) || catRaw || "支出",
+        firstNonEmpty(r, [merchant, remark, project]) || catRaw || (dir === "income" ? "收入" : "支出"),
         Math.abs(amt),
-        mapCategoryName(catRaw),
-        r
+        mapCategoryName(catRaw, dir),
+        r,
+        dir === "income"
       );
     }
     return out;

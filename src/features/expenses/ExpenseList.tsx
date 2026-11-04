@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
-import type { Expense } from "@/lib/types";
+import type { Expense, RecordKind } from "@/lib/types";
 import { useExpenses } from "@/services/expenses/useExpenses";
 import { ExpenseRow } from "./ExpenseRow";
 
@@ -42,6 +42,10 @@ export function ExpenseList({
   deletingId,
   isPending,
   onAddFirst,
+  /** Active period/kind filter (period|kind). Pagination restarts when it changes. */
+  resetKey,
+  /** Kind filter the (already filtered) list reflects, for the empty-state copy. */
+  kindFilter = "all",
 }: {
   status: "loading" | "ready" | "error";
   expenses: Expense[];
@@ -54,10 +58,18 @@ export function ExpenseList({
   deletingId: string | null;
   isPending: (id: string) => boolean;
   onAddFirst: () => void;
+  resetKey?: string;
+  kindFilter?: RecordKind | "all";
 }) {
   const { updateExpense } = useExpenses();
   const { notify } = useToast();
   const [visibleCount, setVisibleCount] = useState(EXPENSE_PAGE_SIZE);
+
+  // A new period/kind filter starts a fresh page; "Load more" progress from
+  // the previous filter must not carry over.
+  useEffect(() => {
+    setVisibleCount(EXPENSE_PAGE_SIZE);
+  }, [resetKey]);
   const narrow = useNarrowLayout();
   const infiniteScroll =
     narrow && typeof window !== "undefined" && "IntersectionObserver" in window;
@@ -100,14 +112,32 @@ export function ExpenseList({
   }
 
   if (expenses.length === 0) {
+    const emptyCopy =
+      kindFilter === "income"
+        ? {
+            title: "No income yet",
+            action: "Add transaction",
+            body: "Add your first transaction and your money story will start taking shape.",
+          }
+        : kindFilter === "expense"
+          ? {
+              title: "No expenses yet",
+              action: "Add transaction",
+              body: "Add your first transaction and your money story will start taking shape.",
+            }
+          : {
+              title: "Nothing here yet",
+              action: "Add transaction",
+              body: "Add your first transaction and your money story will start taking shape.",
+            };
     return (
       <Card>
         <EmptyState
           emoji={"\uD83E\uDDFE"}
-          title="No expenses yet"
-          action={<Button onClick={onAddFirst}>Add your first expense</Button>}
+          title={emptyCopy.title}
+          action={<Button onClick={onAddFirst}>{emptyCopy.action}</Button>}
         >
-          Add your first expense and your money story will start taking shape.
+          {emptyCopy.body}
         </EmptyState>
       </Card>
     );
@@ -127,6 +157,7 @@ export function ExpenseList({
               onCancelEdit={onCancelEdit}
               onSaveEdit={async (values) => {
                 await updateExpense(expense.id, {
+                  kind: values.kind,
                   amount: values.amount,
                   currency: values.currency,
                   categoryId: values.categoryId,

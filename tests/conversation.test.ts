@@ -14,8 +14,9 @@ import type { InsightResult } from "@/lib/aiSchema";
 
 function makeExpense(partial: Partial<Expense> & { id: string; date: string; amount: number }): Expense {
   return {
+    kind: "expense",
     currency: "CAD",
-    categoryId: "food",
+    categoryId: "food-dining",
     description: "Test expense",
     createdAt: `${partial.date}T00:00:00.000Z`,
     updatedAt: `${partial.date}T00:00:00.000Z`,
@@ -42,18 +43,18 @@ const MOCK_RESULT: InsightResult = {
 // buildConversationContext
 // ---------------------------------------------------------------------------
 describe("buildConversationContext", () => {
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 128.40, categoryId: "food", description: "Sushi" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 128.40, categoryId: "food-dining", description: "Sushi" });
   const expenses = [
     expense,
-    makeExpense({ id: "e2", date: "2026-09-10", amount: 45, categoryId: "food" }),
-    makeExpense({ id: "e3", date: "2026-08-20", amount: 200, categoryId: "food" }),
+    makeExpense({ id: "e2", date: "2026-09-10", amount: 45, categoryId: "food-dining" }),
+    makeExpense({ id: "e3", date: "2026-08-20", amount: 200, categoryId: "food-dining" }),
   ];
 
   it("builds context with a specific active expense", () => {
     const ctx = buildConversationContext(expenses, [], "CAD", expense, MONTH);
     expect(ctx.currentExpense).not.toBeNull();
     expect(ctx.currentExpense!.amount).toBe(128.40);
-    expect(ctx.currentExpense!.category).toBe("Food & Dining");
+    expect(ctx.currentExpense!.category).toBe("Dining Out & Treats");
   });
 
   it("allows null activeExpense for general conversation", () => {
@@ -87,7 +88,7 @@ describe("buildConversationContext", () => {
 // buildSuggestedQuestions
 // ---------------------------------------------------------------------------
 describe("buildSuggestedQuestions", () => {
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food-dining" });
   const ctx = buildConversationContext([expense], [], "CAD", expense, MONTH);
   const ctxNoExpense = buildConversationContext([expense], [], "CAD", null, MONTH);
 
@@ -132,7 +133,7 @@ describe("buildSuggestedQuestions", () => {
 // buildConversationMessages
 // ---------------------------------------------------------------------------
 describe("buildConversationMessages", () => {
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food-dining" });
   const ctx = buildConversationContext([expense], [], "CAD", expense, MONTH);
 
   it("returns system + user for a fresh conversation", () => {
@@ -198,7 +199,7 @@ describe("buildConversationMessages", () => {
 // buildConversationRepairMessages
 // ---------------------------------------------------------------------------
 describe("buildConversationRepairMessages", () => {
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food-dining" });
   const ctx = buildConversationContext([expense], [], "CAD", expense, MONTH);
   const original = buildConversationMessages("test", ctx, []);
 
@@ -279,7 +280,7 @@ describe("conversation history bounds", () => {
 // ---------------------------------------------------------------------------
 
 describe("isUsableFollowUp / follow-up guard", () => {
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food-dining" });
   const ctx = buildConversationContext([expense], [], "CAD", expense, MONTH);
 
   it("drops follow-ups longer than 10 words", () => {

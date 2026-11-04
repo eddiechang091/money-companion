@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Expense } from "@/lib/types";
+import { recordKind } from "@/lib/types";
 import { getCategoryById } from "@/lib/categories";
 import { money } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -40,13 +41,15 @@ export function ExpenseRow({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const category = getCategoryById(expense.categoryId);
-  const title = expense.description || category?.name || "Expense";
+  const isIncome = recordKind(expense) === "income";
+  const title = expense.description || category?.name || (isIncome ? "Income" : "Expense");
 
   if (editing) {
     return (
       <Card className="expense-wrap">
         <ExpenseForm
           initial={{
+            kind: recordKind(expense),
             amount: expense.amount,
             currency: expense.currency,
             categoryId: expense.categoryId ?? "",
@@ -87,7 +90,9 @@ export function ExpenseRow({
           </div>
         </div>
         <div className="expense-side">
-          <span className="expense-amount">{money(expense.amount, expense.currency)}</span>
+          <span className={`expense-amount${isIncome ? " is-income" : ""}`}>
+            {isIncome ? `+${money(expense.amount, expense.currency)}` : money(expense.amount, expense.currency)}
+          </span>
           {expense.originalAmount != null && expense.originalCurrency ? (
             <span className="muted" style={{ fontSize: 11 }}>
               {money(expense.originalAmount, expense.originalCurrency)}
@@ -111,7 +116,7 @@ export function ExpenseRow({
         </div>
         <ConfirmDialog
           open={confirmOpen}
-          title="Delete this expense?"
+          title={isIncome ? "Delete this income?" : "Delete this expense?"}
           body={`${title} · ${money(expense.amount, expense.currency)}. This cannot be undone.`}
           confirmLabel={deleting ? "Deleting…" : "Delete"}
           onCancel={() => setConfirmOpen(false)}

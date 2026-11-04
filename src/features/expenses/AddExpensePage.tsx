@@ -8,19 +8,26 @@ import { getRate, fxNote } from "@/services/fx/rates";
 import { money } from "@/lib/utils";
 import { ExpenseForm } from "./ExpenseForm";
 
-export function AddExpensePage({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function AddExpensePage({
+  onNavigate,
+  initialKind = "expense",
+}: {
+  onNavigate: (path: string) => void;
+  /** Preselects the form's Money out / Money in toggle ("/add-income" uses "income"). */
+  initialKind?: "expense" | "income";
+}) {
   const { notify } = useToast();
   const { createExpense } = useExpenses();
   const { profile } = useProfile();
   const defaultCurrency = profile.currency || "USD";
   const [saving, setSaving] = useState(false);
-
   return (
     <>
-      <PageHeader title="Add expense" lede="Quick capture." />
+      <PageHeader title="Add transaction" lede="Quick capture." />
       <Card>
         <ExpenseForm
-          submitLabel="Save expense"
+          initial={{ kind: initialKind }}
+          submitLabel="Save transaction"
           saving={saving}
           defaultCurrency={defaultCurrency}
           onCancel={() => onNavigate("/expenses")}
@@ -51,6 +58,7 @@ export function AddExpensePage({ onNavigate }: { onNavigate: (path: string) => v
               }
 
               await createExpense({
+                kind: values.kind,
                 amount,
                 currency,
                 categoryId: values.categoryId,

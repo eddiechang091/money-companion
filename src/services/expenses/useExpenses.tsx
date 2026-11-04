@@ -149,6 +149,7 @@ export function ExpensesProvider({ children }: { children: ReactNode }) {
       const now = new Date().toISOString();
       const optimistic: Expense = {
         id: `temp-${newId()}`,
+        kind: input.kind ?? "expense",
         amount: input.amount,
         currency: input.currency || DEFAULT_CURRENCY,
         categoryId: input.categoryId,

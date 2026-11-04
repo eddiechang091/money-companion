@@ -1,8 +1,11 @@
 import { isValidIsoDate, parseAmountInput } from "./utils";
-import { normalizeCategoryId } from "./categories";
+import { getCategoryById, normalizeCategoryId } from "./categories";
 import { DEFAULT_CURRENCY } from "./constants";
+import type { RecordKind } from "./types";
 
 export interface ExpenseDraft {
+  /** Money direction; defaults to "expense" when omitted. */
+  kind?: RecordKind;
   amountText: string;
   categoryId: string;
   description: string;
@@ -13,6 +16,7 @@ export interface ExpenseDraft {
 }
 
 export interface ValidExpenseInput {
+  kind: RecordKind;
   amount: number;
   currency: string;
   categoryId: string | null;
@@ -50,8 +54,13 @@ export function validateExpenseDraft(draft: ExpenseDraft): {
   }
 
   const categoryId = draft.categoryId ? draft.categoryId.trim() : "";
-  if (categoryId !== "" && normalizeCategoryId(categoryId) === null) {
-    errors.category = "Pick a category from the list.";
+  const kind: RecordKind = draft.kind === "income" ? "income" : "expense";
+  if (categoryId !== "") {
+    const normalized = normalizeCategoryId(categoryId);
+    const category = getCategoryById(normalized);
+    if (!category || category.kind !== kind) {
+      errors.category = "Pick a category from the list.";
+    }
   }
 
   const description = draft.description.trim();
@@ -79,6 +88,7 @@ export function validateExpenseDraft(draft: ExpenseDraft): {
 
   return {
     value: {
+      kind,
       amount: amount as number,
       currency,
       categoryId: categoryId === "" ? null : categoryId,

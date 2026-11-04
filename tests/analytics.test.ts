@@ -16,8 +16,9 @@ import type { Expense } from "@/lib/types";
 
 function makeExpense(partial: Partial<Expense> & { id: string; date: string; amount: number }): Expense {
   return {
+    kind: "expense",
     currency: "CAD",
-    categoryId: "food",
+    categoryId: "food-dining",
     description: "Test",
     createdAt: `${partial.date}T00:00:00.000Z`,
     updatedAt: `${partial.date}T00:00:00.000Z`,

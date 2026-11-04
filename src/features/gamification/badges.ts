@@ -13,6 +13,7 @@ export interface BadgeDef {
 
 export const BADGE_DEFS: BadgeDef[] = [
   { id: "first-expense", emoji: "🌱", name: "First Steps", hint: "Log your first expense" },
+  { id: "first-income", emoji: "💰", name: "First Income", hint: "Log your first income" },
   { id: "streak-3", emoji: "🔥", name: "Warming Up", hint: "Log 3 days in a row" },
   { id: "streak-7", emoji: "⚡", name: "On Fire", hint: "Log 7 days in a row" },
   { id: "streak-30", emoji: "🏆", name: "Unstoppable", hint: "Log 30 days in a row" },
@@ -35,7 +36,10 @@ export const BADGE_DEFS: BadgeDef[] = [
 
 export interface BadgeContext {
   streak: StreakInfo;
+  /** Number of expense records (money out). */
   expenseCount: number;
+  /** Number of income records (money in). */
+  incomeCount: number;
   budgetCount: number;
   hasChatted: boolean;
   /** Number of user-sent chat messages. */
@@ -82,6 +86,8 @@ function unlocked(ctx: BadgeContext, id: string): boolean {
   switch (id) {
     case "first-expense":
       return ctx.expenseCount >= 1;
+    case "first-income":
+      return ctx.incomeCount >= 1;
     case "streak-3":
       return ctx.streak.current >= 3 || ctx.streak.longest >= 3;
     case "streak-7":

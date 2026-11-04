@@ -4,13 +4,17 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { LoadingState } from "@/components/ui/States";
 import {
   currentMonthKey,
-  dailyTotals,
+  dailyFlow,
+  filterByKind,
   filterByMonth,
+  filterByYear,
   availableMonths,
   availableYears,
-  monthlyTotals,
+  monthlyFlow,
+  sumByKind,
 } from "@/lib/analytics";
-import { formatMonthLabel } from "@/lib/utils";
+import { formatMonthLabel, money } from "@/lib/utils";
+import type { RecordKind } from "@/lib/types";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { useExpenses } from "@/services/expenses/useExpenses";
@@ -22,6 +26,8 @@ import { ExportDialog } from "./ExportDialog";
 
 const SpendingChart = lazy(() => import("@/components/ui/SpendingChart"));
 
+type KindFilter = RecordKind | "all";
+
 export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { status, expenses, error, refresh, deleteExpense, isPending } = useExpenses();
   const { budgets } = useBudgets();
@@ -32,22 +38,26 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
   const [importOpen, setImportOpen] = useState(false);
   const currency = expenses[0]?.currency ?? profile.currency ?? "USD";
 
-  // Chart controls: month/year view + period picker.
+  // Period + kind controls. Everything on this page — chart, summary, list —
+  // follows the selected period and kind. Default period is the current month.
   const [chartMode, setChartMode] = useState<"month" | "year">("month");
   const [monthKey, setMonthKey] = useState<string | null>(null);
   const [yearKey, setYearKey] = useState<string | null>(null);
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const months = useMemo(() => availableMonths(expenses), [expenses]);
   const years = useMemo(() => availableYears(expenses), [expenses]);
-  // Default to the most recent month/year that actually has expenses,
-  // so the chart shows whenever any records exist — not only when the
-  // current month has data. An explicit picker selection still wins.
-  const activeMonth = monthKey ?? months[0] ?? currentMonthKey();
-  const activeYear = yearKey ?? years[0] ?? String(new Date().getFullYear());
+  const activeMonth = monthKey ?? currentMonthKey();
+  const activeYear = yearKey ?? String(new Date().getFullYear());
+  const periodRecords =
+    chartMode === "month" ? filterByMonth(expenses, activeMonth) : filterByYear(expenses, activeYear);
   const chartData =
-    chartMode === "month"
-      ? dailyTotals(filterByMonth(expenses, activeMonth), activeMonth)
-      : monthlyTotals(expenses, activeYear);
-  const hasChartData = chartData.some((d) => d.total > 0);
+    chartMode === "month" ? dailyFlow(periodRecords, activeMonth) : monthlyFlow(periodRecords, activeYear);
+  const hasChartData = chartData.some((d) => d.expense > 0 || d.income > 0);
+  const visibleRecords =
+    kindFilter === "all" ? periodRecords : filterByKind(periodRecords, kindFilter);
+  const totalIn = sumByKind(periodRecords, "income");
+  const totalOut = sumByKind(periodRecords, "expense");
+  const net = Math.round((totalIn - totalOut) * 100) / 100;
 
   const chartControls = (
     <div className="chart-controls">
@@ -88,6 +98,20 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
           ]}
         />
       )}
+      <div className="segmented" role="tablist" aria-label="Show">
+        {(["all", "expense", "income"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            aria-selected={kindFilter === k}
+            className={`segmented-btn${kindFilter === k ? " is-active" : ""}`}
+            onClick={() => setKindFilter(k)}
+          >
+            {k === "all" ? "All" : k === "expense" ? "Expenses" : "Income"}
+          </button>
+        ))}
+      </div>
     </div>
   );
 
@@ -99,7 +123,7 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
         actions={
           <div className="row" style={{ gap: 8 }}>
             <Button variant="secondary" size="sm" onClick={() => onNavigate("/add-expense")}>
-              Add expense
+              Add transaction
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setExportOpen(true)}>
               Export
@@ -113,12 +137,37 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
       {hasChartData ? (
         <Card
           className="expenses-chart-card"
-          title={chartMode === "month" ? "Daily spending" : "Monthly spending"}
+          title={chartMode === "month" ? "Daily money flow" : "Monthly money flow"}
           action={chartControls}
         >
+          <div className="chart-legend" aria-hidden="true">
+            {kindFilter !== "income" ? (
+              <span>
+                <span className="lg-dot" style={{ background: "var(--primary)" }} />
+                Expenses
+              </span>
+            ) : null}
+            {kindFilter !== "expense" ? (
+              <span>
+                <span className="lg-dot" style={{ background: "var(--success)" }} />
+                Income
+              </span>
+            ) : null}
+          </div>
           <Suspense fallback={<LoadingState label="Loading chart…" />}>
-            <SpendingChart data={chartData} currency={currency} />
+            <SpendingChart
+              data={chartData}
+              currency={currency}
+              visible={kindFilter === "all" ? "all" : kindFilter === "expense" ? "expenses" : "income"}
+            />
           </Suspense>
+          <p className="flow-summary">
+            In <b>{money(totalIn, currency)}</b> · Out <b>{money(totalOut, currency)}</b> · Net{" "}
+            <b>
+              {net >= 0 ? "+" : "−"}
+              {money(Math.abs(net), currency)}
+            </b>
+          </p>
         </Card>
       ) : null}
       <ExportDialog
@@ -135,7 +184,7 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
       />
       <ExpenseList
         status={status}
-        expenses={expenses}
+        expenses={visibleRecords}
         error={error}
         onRetry={() => void refresh()}
         editingId={editingId}
@@ -151,7 +200,9 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
         }}
         deletingId={deletingId}
         isPending={isPending}
-        onAddFirst={() => onNavigate("/add-expense")}
+        onAddFirst={() => onNavigate(kindFilter === "income" ? "/add-income" : "/add-expense")}
+        resetKey={`${chartMode}|${activeMonth}|${activeYear}|${kindFilter}`}
+        kindFilter={kindFilter}
       />
     </>
   );

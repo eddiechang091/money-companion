@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import type { Expense } from "@/lib/types";
-import { DEFAULT_CATEGORIES } from "@/lib/constants";
-import { categoryLabel } from "@/lib/categories";
+import { UNCATEGORIZED_LABEL } from "@/lib/constants";
+import { categoriesForKind, categoryLabel } from "@/lib/categories";
 import { useProfile } from "@/services/profile/useProfile";
 import { getExpenseRepository } from "@/services/expenses/repository";
 import { awardBadge } from "@/features/gamification/awardBadges";
@@ -102,17 +102,22 @@ export function ImportDialog({
   const scored: ScoredRow[] = useMemo(() => scoreRows(normalized, expenses), [normalized, expenses]);
 
   const selectable = useMemo(
-    () => scored.filter((s) => !s.row.isCredit && s.status === "new"),
+    () => scored.filter((s) => s.status === "new"),
     [scored]
   );
-  const skippedIncome = scored.filter((s) => s.row.isCredit).length;
+  const incomeCount = scored.filter((s) => s.row.isCredit && s.status === "new").length;
   const dupCount = scored.filter((s) => s.status === "duplicate").length;
 
   const isIncluded = (s: ScoredRow) => overrides[s.key] !== "skip";
-  const categoryOf = (s: ScoredRow) =>
-    overrides[s.key] && overrides[s.key] !== "skip"
-      ? overrides[s.key]
-      : (s.row.categoryHint ?? guessCategoryId(s.row.description) ?? "other");
+  const categoryOf = (s: ScoredRow): string => {
+    const override = overrides[s.key];
+    if (override !== undefined && override !== "skip") return override;
+    return (
+      s.row.categoryHint ??
+      guessCategoryId(s.row.description, s.row.isCredit ? "income" : "expense") ??
+      ""
+    );
+  };
 
   const includedCount = selectable.filter(isIncluded).length;
 
@@ -218,9 +223,10 @@ export function ImportDialog({
       let done = 0;
       for (const s of toImport) {
         await repo.create({
+          kind: s.row.isCredit ? "income" : "expense",
           amount: Math.round(s.row.amount * 100) / 100,
           currency,
-          categoryId: categoryOf(s),
+          categoryId: categoryOf(s) || null,
           description: s.row.description,
           date: s.row.date,
           paymentMethod: "Bank import",
@@ -231,7 +237,12 @@ export function ImportDialog({
         done++;
         setProgress({ done, total: toImport.length });
       }
-      notify(`Imported ${done} expense${done === 1 ? "" : "s"}.`);
+      const importedIncome = toImport.slice(0, done).filter((s) => s.row.isCredit).length;
+      notify(
+        importedIncome > 0
+          ? `Imported ${done} entries (${importedIncome} income).`
+          : `Imported ${done} expense${done === 1 ? "" : "s"}.`
+      );
       // Celebrate the first import immediately.
       if (done > 0) void awardBadge("first-import");
       onImported();
@@ -291,8 +302,8 @@ export function ImportDialog({
           <div className="stack" style={{ margin: "12px 0", gap: 12 }}>
             <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
               {fileName}
-              {sourceLabel ? ` — detected ${sourceLabel} format` : ""} — {selectable.length} new, {dupCount} duplicate{dupCount === 1 ? "" : "s"} skipped
-              {skippedIncome > 0 ? `, ${skippedIncome} income row${skippedIncome === 1 ? "" : "s"} skipped` : ""}.
+              {sourceLabel ? ` — detected ${sourceLabel} format` : ""} — {selectable.length} new
+              {incomeCount > 0 ? ` (${incomeCount} income)` : ""}, {dupCount} duplicate{dupCount === 1 ? "" : "s"} skipped.
               {mapping ? " Check the column mapping below." : " Columns were mapped automatically."}
             </p>
 
@@ -421,8 +432,9 @@ export function ImportDialog({
                 </thead>
                 <tbody>
                   {scored.map((s) => {
-                    const disabled = s.row.isCredit || s.status === "duplicate";
+                    const disabled = s.status === "duplicate";
                     const included = !disabled && isIncluded(s);
+                    const rowKind = s.row.isCredit ? "income" : "expense";
                     return (
                       <tr key={s.key} style={{ borderBottom: "1px solid var(--border)", opacity: disabled || !included ? 0.55 : 1 }}>
                         <td style={{ padding: "6px 8px" }}>
@@ -454,17 +466,18 @@ export function ImportDialog({
                               style={{ fontSize: 12, padding: "2px 4px" }}
                               aria-label={`Category for ${s.row.description}`}
                             >
-                              {DEFAULT_CATEGORIES.map((c) => (
+                              <option value="">{UNCATEGORIZED_LABEL}</option>
+                              {categoriesForKind(rowKind).map((c) => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
                               ))}
                             </select>
                           )}
                         </td>
                         <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
-                          {s.row.isCredit ? (
-                            <span style={{ color: "var(--text-muted)" }}>income</span>
-                          ) : s.status === "duplicate" ? (
+                          {s.status === "duplicate" ? (
                             <span style={{ color: "var(--warning, #b7791f)" }}>duplicate</span>
+                          ) : s.row.isCredit ? (
+                            <span style={{ color: "var(--success, #2e7d32)" }}>income</span>
                           ) : (
                             <span style={{ color: "var(--success, #2e7d32)" }}>new</span>
                           )}

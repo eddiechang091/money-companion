@@ -30,6 +30,8 @@ export function BudgetForm({
     availableOptions.push({ value: "", label: "Overall monthly total" });
   }
   for (const cat of DEFAULT_CATEGORIES) {
+    // Budgets cap spending — income categories are not budgetable.
+    if (cat.kind !== "expense") continue;
     if (!takenCategories.has(cat.id)) {
       availableOptions.push({ value: cat.id, label: `${cat.icon} ${cat.name}` });
     }

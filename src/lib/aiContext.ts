@@ -1,16 +1,21 @@
-import type { Expense, MonthlyBudget } from "./types";
+import type { Expense, MonthlyBudget, RecordKind } from "./types";
+import { recordKind } from "./types";
 import { getCategoryById } from "./categories";
+import { UNCATEGORIZED_LABEL } from "./constants";
 import {
   calculateBudgetProgress,
   comparePeriods,
   currentMonthKey,
   detectMeaningfulChanges,
+  filterByKind,
   filterByMonth,
+  sumByKind,
   sumExpenses,
   totalsByCategory,
 } from "./analytics";
 
 export interface ExpenseContext {
+  kind: RecordKind;
   amount: number;
   currency: string;
   category: string;
@@ -22,12 +27,15 @@ export interface ExpenseContext {
 export interface FinancialSummaryContext {
   month: string;
   totalSpent: number;
-  topCategories: Array<{ category: string; total: number; count: number }>;
+  totalIncome: number;
+  /** Money in minus money out for the month. */
+  balance: number;
+  topCategories: Array<{ categoryId: string | null; category: string; total: number; count: number }>;
   previousMonth: {
     totalSpent: number;
     delta: number;
     deltaPct: number | null;
-    topCategories: Array<{ category: string; total: number; count: number }>;
+    topCategories: Array<{ categoryId: string | null; category: string; total: number; count: number }>;
   } | null;
   budget: { limit: number; remaining: number; pct: number; status: string } | null;
   changes: Array<{ kind: string; category: string; delta: number }>;
@@ -51,8 +59,10 @@ export function buildInsightContext(
 ): InsightContext {
   const currency = expense.currency;
   const month = monthKey ?? currentMonthKey();
-  const monthExpenses = filterByMonth(allExpenses, month);
+  const monthRecords = filterByMonth(allExpenses, month);
+  const monthExpenses = filterByKind(monthRecords, "expense");
   const monthTotal = sumExpenses(monthExpenses);
+  const monthIncome = sumByKind(monthRecords, "income");
   const catTotals = totalsByCategory(monthExpenses).slice(0, MAX_CATEGORIES);
   const comparison = comparePeriods(allExpenses, month);
   const previousMonthExpenses = comparison ? filterByMonth(allExpenses, comparison.previousKey) : [];
@@ -64,9 +74,10 @@ export function buildInsightContext(
   return {
     user: { currency },
     currentExpense: {
+      kind: recordKind(expense),
       amount: expense.amount,
       currency: expense.currency,
-      category: cat?.name ?? "Uncategorized",
+      category: cat?.name ?? UNCATEGORIZED_LABEL,
       categoryId: expense.categoryId,
       description: expense.description,
       date: expense.date,
@@ -74,8 +85,11 @@ export function buildInsightContext(
     financialSummary: {
       month,
       totalSpent: monthTotal,
+      totalIncome: monthIncome,
+      balance: Math.round((monthIncome - monthTotal) * 100) / 100,
       topCategories: catTotals.map((t) => ({
-        category: getCategoryById(t.categoryId)?.name ?? "Uncategorized",
+        categoryId: t.categoryId,
+        category: getCategoryById(t.categoryId)?.name ?? UNCATEGORIZED_LABEL,
         total: t.total,
         count: t.count,
       })),
@@ -88,7 +102,8 @@ export function buildInsightContext(
               topCategories: totalsByCategory(previousMonthExpenses)
                 .slice(0, MAX_CATEGORIES)
                 .map((t) => ({
-                  category: getCategoryById(t.categoryId)?.name ?? "Uncategorized",
+                  categoryId: t.categoryId,
+                  category: getCategoryById(t.categoryId)?.name ?? UNCATEGORIZED_LABEL,
                   total: t.total,
                   count: t.count,
                 })),
@@ -108,7 +123,7 @@ export function buildInsightContext(
           : null,
       changes: changes.map((c) => ({
         kind: c.kind,
-        category: getCategoryById(c.categoryId)?.name ?? "Uncategorized",
+        category: getCategoryById(c.categoryId)?.name ?? UNCATEGORIZED_LABEL,
         delta: c.delta,
       })),
     },

@@ -4,6 +4,7 @@
  * (date ±1 day + same amount + similar description).
  */
 import type { Expense } from "@/lib/types";
+import { recordKind } from "@/lib/types";
 import { importKeyOf, type NormalizedRow } from "./csv";
 
 export type RowStatus = "new" | "duplicate";
@@ -54,11 +55,15 @@ export function scoreRows(rows: NormalizedRow[], existing: Expense[]): ScoredRow
   }
 
   return rows.map((row) => {
-    const key = importKeyOf(row.date, row.amount, row.description);
-    const exact = byKey.get(key);
+    // Kind-qualified key first; fall back to the legacy kind-less format so
+    // rows imported before income support still dedupe.
+    const kind = row.isCredit ? "income" : "expense";
+    const key = importKeyOf(row.date, row.amount, row.description, kind);
+    const exact = byKey.get(key) ?? byKey.get(importKeyOf(row.date, row.amount, row.description));
     if (exact) return { row, key, status: "duplicate" as const, matchedId: exact };
 
     for (const e of existing) {
+      if (recordKind(e) !== kind) continue;
       if (Math.abs(e.amount - row.amount) > 0.005) continue;
       if (dayDiff(e.date, row.date) > 1) continue;
       if (similar(e.description, row.description)) {

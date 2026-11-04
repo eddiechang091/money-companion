@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { AmountInput, Field, Select } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getCategoryById } from "@/lib/categories";
+import { UNCATEGORIZED_LABEL } from "@/lib/constants";
 import { calculateBudgetProgress } from "@/lib/analytics";
 import { money, parseAmountInput } from "@/lib/utils";
 import { CURRENCIES, currencyLabel } from "@/lib/currencies";
@@ -39,7 +40,7 @@ export function BudgetRow({
 
   const cat = getCategoryById(budget.categoryId);
   const isOverall = budget.categoryId === null;
-  const label = isOverall ? "Monthly total" : cat?.name ?? "Uncategorized";
+  const label = isOverall ? "Monthly total" : cat?.name ?? UNCATEGORIZED_LABEL;
   const icon = isOverall ? "🐷" : cat?.icon ?? "📦";
   const statusLabel = budgetStatusLabel(spent, budget.amount, budget.currency);
   const info = calculateBudgetProgress(spent, budget.amount);

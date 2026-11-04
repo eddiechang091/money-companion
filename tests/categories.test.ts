@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { categoryLabel, getCategoryById, normalizeCategoryId, sortExpensesByRecency } from "@/lib/categories";
+import {
+  categoriesForKind,
+  categoryLabel,
+  getCategoryById,
+  normalizeCategoryId,
+  sortExpensesByRecency,
+} from "@/lib/categories";
+import { CATEGORY_GROUPS, DEFAULT_CATEGORIES } from "@/lib/constants";
 import type { Expense } from "@/lib/types";
 
 function makeExpense(partial: Partial<Expense> & { id: string }): Expense {
   return {
     amount: 10,
+    kind: "expense",
     currency: "CAD",
-    categoryId: "food",
+    categoryId: "food-dining",
     description: "Test",
     date: "2026-09-15",
     createdAt: "2026-09-15T00:00:00.000Z",
@@ -16,10 +24,33 @@ function makeExpense(partial: Partial<Expense> & { id: string }): Expense {
 }
 
 describe("categories", () => {
-  it("resolves the seven predefined categories", () => {
-    for (const id of ["food", "transport", "shopping", "bills", "fun", "health", "other"]) {
-      expect(getCategoryById(id)?.id).toBe(id);
+  it("resolves the two-level taxonomy: 32 expense subcategories + 6 income categories", () => {
+    expect(DEFAULT_CATEGORIES).toHaveLength(38);
+    expect(categoriesForKind("expense")).toHaveLength(32);
+    expect(categoriesForKind("income")).toHaveLength(6);
+    expect(CATEGORY_GROUPS).toHaveLength(10);
+    for (const cat of DEFAULT_CATEGORIES) {
+      expect(getCategoryById(cat.id)?.id).toBe(cat.id);
+      expect(CATEGORY_GROUPS.some((g) => g.id === cat.groupId && g.kind === cat.kind)).toBe(true);
     }
+    expect(getCategoryById("food-dining")?.name).toBe("Dining Out & Treats");
+    expect(getCategoryById("inc-paycheck")?.name).toBe("Main Paycheck");
+  });
+
+  it("migrates pre-taxonomy ids on read", () => {
+    expect(normalizeCategoryId("food")).toBe("food-dining");
+    expect(normalizeCategoryId("transport")).toBe("around-commute");
+    expect(normalizeCategoryId("shopping")).toBe("life-apparel");
+    expect(normalizeCategoryId("housing")).toBe("nest-home");
+    expect(normalizeCategoryId("utilities")).toBe("nest-utilities");
+    expect(normalizeCategoryId("internet")).toBe("nest-utilities");
+    expect(normalizeCategoryId("insurance")).toBe("cushion-insurance");
+    expect(normalizeCategoryId("bills")).toBe("nest-utilities");
+    expect(normalizeCategoryId("fun")).toBe("joy-hobbies");
+    expect(normalizeCategoryId("health")).toBe("well-health");
+    expect(normalizeCategoryId("kids")).toBe("loved-family");
+    expect(normalizeCategoryId("travel")).toBe("joy-vacation");
+    expect(normalizeCategoryId("other")).toBeNull();
   });
 
   it("normalizes unknown ids to null", () => {
@@ -28,9 +59,9 @@ describe("categories", () => {
     expect(normalizeCategoryId(undefined)).toBeNull();
   });
 
-  it("labels unknown categories as uncategorized", () => {
-    expect(categoryLabel("yacht")).toBe("Uncategorized");
-    expect(categoryLabel(null)).toBe("Uncategorized");
+  it("labels unknown categories as Others", () => {
+    expect(categoryLabel("yacht")).toBe("Others");
+    expect(categoryLabel(null)).toBe("Others");
   });
 });
 

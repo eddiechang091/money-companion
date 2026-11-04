@@ -66,6 +66,8 @@ function renderRoute(route: string, navigate: (path: string) => void) {
       return <ExpensesPage onNavigate={navigate} />;
     case "/add-expense":
       return <AddExpensePage onNavigate={navigate} />;
+    case "/add-income":
+      return <AddExpensePage onNavigate={navigate} initialKind="income" />;
     case "/budgets":
       return <BudgetsPage />;
     case "/profile":

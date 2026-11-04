@@ -1,11 +1,13 @@
 import type { Expense } from "@/lib/types";
+import { recordKind } from "@/lib/types";
 import type { InsightContext } from "@/lib/aiContext";
 import type { InsightResult } from "@/lib/aiSchema";
 import { getCategoryById } from "@/lib/categories";
+import { UNCATEGORIZED_LABEL } from "@/lib/constants";
 import { money } from "@/lib/utils";
 
-function categoryEmoji(categoryId: string | null): string {
-  return getCategoryById(categoryId)?.icon ?? "💸";
+function categoryEmoji(categoryId: string | null, isIncome: boolean): string {
+  return getCategoryById(categoryId)?.icon ?? (isIncome ? "💰" : "💸");
 }
 
 export function buildFallbackResponse(
@@ -13,13 +15,16 @@ export function buildFallbackResponse(
   context: InsightContext
 ): InsightResult {
   const cat = getCategoryById(expense.categoryId);
-  const catName = cat?.name ?? "expense";
-  const emoji = categoryEmoji(expense.categoryId);
+  const isIncome = recordKind(expense) === "income";
+  const catName = cat?.name ?? (isIncome ? "income" : UNCATEGORIZED_LABEL);
+  const emoji = categoryEmoji(expense.categoryId, isIncome);
   const amount = money(expense.amount, expense.currency);
   const budget = context.financialSummary.budget;
 
   let headline: string;
-  if (expense.amount < 10) {
+  if (isIncome) {
+    headline = `${amount} ${catName} income — logged! ${emoji}`;
+  } else if (expense.amount < 10) {
     headline = `${amount} in ${catName} ${emoji}`;
   } else if (expense.amount < 50) {
     headline = `${amount} in ${catName} — logged! ${emoji}`;

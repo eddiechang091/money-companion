@@ -1,13 +1,29 @@
+/** Money direction of a record: money out ("expense") or money in ("income"). */
+export type RecordKind = "expense" | "income";
+
+export interface CategoryGroup {
+  id: string;
+  name: string;
+  icon: string;
+  kind: RecordKind;
+}
+
 export interface Category {
   id: string;
   name: string;
   icon: string;
   color: string;
   isDefault: boolean;
+  /** Group this subcategory belongs to (see CATEGORY_GROUPS). */
+  groupId: string;
+  /** Which kind of record this category applies to. */
+  kind: RecordKind;
 }
 
 export interface Expense {
   id: string;
+  /** Money direction. Records written before income support lack this field and read as "expense". */
+  kind: RecordKind;
   amount: number;
   currency: string;
   categoryId: string | null;
@@ -23,8 +39,13 @@ export interface Expense {
   fxRate?: number;
   /** "import" for bank-CSV imports, undefined/"manual" otherwise. */
   source?: "manual" | "import";
-  /** Stable dedupe key for imports: date|amount_cents|normalized description. */
+  /** Stable dedupe key for imports: kind|date|amount_cents|normalized description. */
   importKey?: string;
+}
+
+/** Money direction of a record, defaulting unknown/missing values to "expense". */
+export function recordKind(expense: Expense): RecordKind {
+  return expense.kind === "income" ? "income" : "expense";
 }
 
 export interface MonthlyBudget {

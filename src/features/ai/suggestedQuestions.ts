@@ -1,4 +1,5 @@
 import type { ConversationContext } from "./conversationContext";
+import { getCategoryById, getGroupOfCategory } from "@/lib/categories";
 
 type SuggestionSet = readonly string[];
 
@@ -8,41 +9,42 @@ const WELCOME_SUGGESTIONS: SuggestionSet = [
   "Am I on track with my budget?",
 ];
 
+/** Keyed by subcategory id. Income categories get their own questions. */
 const CATEGORY_SUGGESTIONS: Record<string, SuggestionSet> = {
-  food: [
+  "food-dining": [
     "Was it worth it?",
     "How much have I spent eating out?",
     "Am I eating out more than usual?",
   ],
-  transport: [
-    "How much am I spending on transport?",
+  "around-commute": [
+    "How much am I spending on getting around?",
     "Is this my usual amount?",
     "Am I spending more on transport than last month?",
   ],
-  shopping: [
+  "life-apparel": [
     "Was this planned?",
     "How much have I spent shopping this month?",
     "Can I keep spending this month?",
   ],
-  bills: [
+  "nest-utilities": [
     "Am I on track with bills this month?",
     "Are my bills going up?",
     "What fixed costs do I have?",
   ],
-  fun: [
+  "joy-hobbies": [
     "How much fun spending am I doing?",
     "Is this my usual amount?",
     "How does this compare to last month?",
   ],
-  health: [
+  "well-health": [
     "What's my health spending like?",
     "Is this a regular expense?",
     "How much have I spent on health?",
   ],
-  other: [
-    "What's this expense about?",
-    "How much have I spent in this category?",
-    "Is this a one-time expense?",
+  "inc-paycheck": [
+    "How does this compare to last month?",
+    "Is this my usual pay?",
+    "Anything else coming in this month?",
   ],
 };
 
@@ -146,16 +148,22 @@ export function buildSuggestedQuestions(
     for (const q of PATTERN_QUESTIONS) pushIfNew(q);
   }
 
-  // Unexplored topics: suggest categories with spending that haven't been discussed
+  // Unexplored topics: suggest categories with spending that haven't been discussed.
+  // A category counts as discussed when the user named it or its group.
   const discussedCats = new Set<string>();
   for (const m of asked) {
-    for (const cat of Object.keys(CATEGORY_SUGGESTIONS)) {
-      if (m.includes(cat)) discussedCats.add(cat);
+    for (const key of Object.keys(CATEGORY_SUGGESTIONS)) {
+      const cat = getCategoryById(key);
+      const names = [cat?.name, cat ? getGroupOfCategory(cat)?.name : undefined]
+        .filter((n): n is string => !!n)
+        .map((n) => n.toLowerCase());
+      if (names.some((n) => m.includes(n))) discussedCats.add(key);
     }
   }
   for (const top of ctx.financialSummary.topCategories.slice(0, 3)) {
-    const catId = top.category.toLowerCase();
-    if (!discussedCats.has(catId) && CATEGORY_SUGGESTIONS[catId]) {
+    const catId = top.categoryId;
+    if (!catId || discussedCats.has(catId)) continue;
+    if (CATEGORY_SUGGESTIONS[catId]) {
       for (const q of CATEGORY_SUGGESTIONS[catId].slice(0, 1)) pushIfNew(q);
       if (suggestions.length >= 3) break;
     }
