@@ -34,7 +34,7 @@ describe("record kind", () => {
   it("migrates legacy category ids, uncategorized for other", () => {
     expect(normalizeCategoryId("food")).toBe("food-dining");
     expect(normalizeCategoryId("other")).toBeNull();
-    expect(categoryLabel(null)).toBe("Just Life Stuff");
+    expect(categoryLabel(null)).toBe("Others");
   });
 });
 

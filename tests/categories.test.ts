@@ -59,9 +59,9 @@ describe("categories", () => {
     expect(normalizeCategoryId(undefined)).toBeNull();
   });
 
-  it("labels unknown categories as Just Life Stuff", () => {
-    expect(categoryLabel("yacht")).toBe("Just Life Stuff");
-    expect(categoryLabel(null)).toBe("Just Life Stuff");
+  it("labels unknown categories as Others", () => {
+    expect(categoryLabel("yacht")).toBe("Others");
+    expect(categoryLabel(null)).toBe("Others");
   });
 });
 

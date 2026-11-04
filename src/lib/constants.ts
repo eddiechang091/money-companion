@@ -112,5 +112,8 @@ export const LEGACY_CATEGORY_MIGRATION: Record<string, string | null> = {
   other: null,
 };
 
-/** Warm wording for records without a category. */
-export const UNCATEGORIZED_LABEL = "Just Life Stuff";
+/** Label for records without a category. */
+export const UNCATEGORIZED_LABEL = "Others";
+
+/** Icon shown with the uncategorized label where siblings show icons (picker, chip). */
+export const UNCATEGORIZED_ICON = "📦";
