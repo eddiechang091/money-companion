@@ -24,7 +24,9 @@ import {
 import { detectPreset, type Preset } from "./presets";
 import { looksLikeWorkbook, readWorkbookSheets } from "./workbook";
 import { scoreRows, type ScoredRow } from "./dedupe";
+import { getLlmService } from "@/services/anna/llm";
 import { guessCategoryId } from "./guess";
+import { suggestCategories, suggestionKey, type SuggestItem } from "./suggest";
 
 type Step = "upload" | "review";
 
@@ -78,6 +80,10 @@ export function ImportDialog({
   // Per-row overrides: rowKey -> categoryId | "skip"
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [page, setPage] = useState(0);
+  // AI-suggested categories, keyed by kind + description. Advisory only:
+  // a manual override always wins, and the user reviews every row.
+  const [suggestions, setSuggestions] = useState<Record<string, string>>({});
+  const [suggesting, setSuggesting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -92,6 +98,7 @@ export function ImportDialog({
       setError("");
       setImporting(false);
       setOverrides({});
+      setSuggestions({});
       setPage(0);
       const onKey = (event: KeyboardEvent) => {
         if (event.key === "Escape") onClose();
@@ -125,12 +132,58 @@ export function ImportDialog({
   const categoryOf = (s: ScoredRow): string => {
     const override = overrides[s.key];
     if (override !== undefined && override !== "skip") return override;
+    const kind = s.row.isCredit ? "income" : "expense";
     return (
+      suggestions[suggestionKey(s.row.description, kind)] ??
       s.row.categoryHint ??
-      guessCategoryId(s.row.description, s.row.isCredit ? "income" : "expense") ??
+      guessCategoryId(s.row.description, kind) ??
       ""
     );
   };
+
+  // Distinct descriptions still sitting on Others — the only ones ever
+  // sent to the AI, and only when the user taps Suggest categories.
+  const suggestTargets: SuggestItem[] = useMemo(() => {
+    const seen = new Set<string>();
+    const items: SuggestItem[] = [];
+    for (const s of selectable) {
+      const override = overrides[s.key];
+      if (override !== undefined && override !== "skip") continue;
+      const kind = s.row.isCredit ? "income" : "expense";
+      const base =
+        s.row.categoryHint ?? guessCategoryId(s.row.description, kind) ?? "";
+      if (base) continue;
+      const key = suggestionKey(s.row.description, kind);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      items.push({ description: s.row.description, kind });
+    }
+    return items;
+  }, [selectable, overrides]);
+
+  async function handleSuggest() {
+    if (suggestTargets.length === 0 || suggesting) return;
+    setSuggesting(true);
+    try {
+      const llm = await getLlmService();
+      if (!llm.available) {
+        notify("AI suggestions aren't available right now.", "error");
+        return;
+      }
+      const map = await suggestCategories(suggestTargets, (req) => llm.complete(req));
+      const count = Object.keys(map).length;
+      setSuggestions(map);
+      notify(
+        count > 0
+          ? `Suggested categories for ${count} description${count === 1 ? "" : "s"} — review before importing.`
+          : "No confident suggestions — the rest stay as Others."
+      );
+    } catch {
+      notify("Couldn't get AI suggestions. Your local guesses are unchanged.", "error");
+    } finally {
+      setSuggesting(false);
+    }
+  }
 
   const includedCount = selectable.filter(isIncluded).length;
 
@@ -194,6 +247,7 @@ export function ImportDialog({
               setPreset(analyzed.preset);
               setSourceLabel(analyzed.sourceLabel);
               setOverrides({});
+              setSuggestions({});
               setPage(0);
               setStep("review");
               return;
@@ -430,6 +484,23 @@ export function ImportDialog({
                   </label>
                 </div>
               )}
+
+              <div className="import-suggest">
+                <Button
+                  variant="secondary"
+                  onClick={handleSuggest}
+                  disabled={suggesting || suggestTargets.length === 0}
+                >
+                  {suggesting
+                    ? "Suggesting…"
+                    : `Suggest categories${suggestTargets.length > 0 ? ` (${suggestTargets.length})` : ""}`}
+                </Button>
+                <p>
+                  Optional AI help for the rows still marked Others. Sends only
+                  merchant names — no amounts, dates, or account details.
+                  Unclear ones stay as Others.
+                </p>
+              </div>
             </div>
 
             <div className="import-dialog__body">

@@ -1476,3 +1476,7 @@ select option {
   .import-card__include { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; }
   .import-card__include input { width: 20px; height: 20px; flex: none; }
 }
+
+/* AI suggestion row in the import header. */
+.import-suggest { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.import-suggest p { flex: 1 1 220px; margin: 0; font-size: 12px; color: var(--text-muted); }
