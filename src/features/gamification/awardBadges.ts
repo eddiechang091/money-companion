@@ -1,5 +1,6 @@
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { recordKind } from "@/lib/types";
 import { computeStreak } from "@/lib/streak";
 import { getExpenseRepository } from "@/services/expenses/repository";
 import { getBudgetRepository } from "@/services/budgets/repository";
@@ -147,7 +148,8 @@ export async function buildBadgeContext(): Promise<BadgeContext> {
 
   return {
     streak: { ...streak, longest },
-    expenseCount: expenses.length,
+    expenseCount: expenses.filter((e) => recordKind(e) === "expense").length,
+    incomeCount: expenses.filter((e) => recordKind(e) === "income").length,
     budgetCount: budgets.length,
     hasChatted: userMessages.length > 0,
     chatMessageCount: userMessages.length,

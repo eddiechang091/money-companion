@@ -11,6 +11,7 @@ function ctx(over: Partial<BadgeContext> = {}): BadgeContext {
   return {
     streak: { current: 0, longest: 0, totalDays: 0, lastActiveDate: null, aliveButIdleToday: false },
     expenseCount: 0,
+    incomeCount: 0,
     budgetCount: 0,
     hasChatted: false,
     chatMessageCount: 0,
@@ -24,6 +25,18 @@ function ctx(over: Partial<BadgeContext> = {}): BadgeContext {
 describe("checkBadgeUnlocks", () => {
   it("unlocks first-expense on the first log", () => {
     expect(checkBadgeUnlocks(new Set(), ctx({ expenseCount: 1 }))).toEqual(["first-expense"]);
+  });
+
+  it("unlocks first-income on the first income log", () => {
+    expect(checkBadgeUnlocks(new Set(), ctx({ incomeCount: 1 }))).toEqual(["first-income"]);
+  });
+
+  it("keeps the firsts kind-specific", () => {
+    expect(checkBadgeUnlocks(new Set(), ctx({ expenseCount: 1 }))).not.toContain("first-income");
+    expect(checkBadgeUnlocks(new Set(), ctx({ incomeCount: 1 }))).not.toContain("first-expense");
+    const both = checkBadgeUnlocks(new Set(), ctx({ expenseCount: 1, incomeCount: 1 }));
+    expect(both).toContain("first-expense");
+    expect(both).toContain("first-income");
   });
 
   it("unlocks streak badges from longest run too", () => {

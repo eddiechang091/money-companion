@@ -21,15 +21,13 @@ export function AddExpensePage({
   const { profile } = useProfile();
   const defaultCurrency = profile.currency || "USD";
   const [saving, setSaving] = useState(false);
-  const isIncome = initialKind === "income";
-
   return (
     <>
-      <PageHeader title={isIncome ? "Add income" : "Add expense"} lede={isIncome ? "Money coming in." : "Quick capture."} />
+      <PageHeader title="Add transaction" lede="Quick capture." />
       <Card>
         <ExpenseForm
           initial={{ kind: initialKind }}
-          submitLabel={isIncome ? "Save income" : "Save expense"}
+          submitLabel="Save transaction"
           saving={saving}
           defaultCurrency={defaultCurrency}
           onCancel={() => onNavigate("/expenses")}

@@ -116,19 +116,19 @@ export function ExpenseList({
       kindFilter === "income"
         ? {
             title: "No income yet",
-            action: "Add your first income",
-            body: "Add your first income and your money story will start taking shape.",
+            action: "Add transaction",
+            body: "Add your first transaction and your money story will start taking shape.",
           }
         : kindFilter === "expense"
           ? {
               title: "No expenses yet",
-              action: "Add your first expense",
-              body: "Add your first expense and your money story will start taking shape.",
+              action: "Add transaction",
+              body: "Add your first transaction and your money story will start taking shape.",
             }
           : {
               title: "Nothing here yet",
-              action: "Add your first entry",
-              body: "Add your first expense or income and your money story will start taking shape.",
+              action: "Add transaction",
+              body: "Add your first transaction and your money story will start taking shape.",
             };
     return (
       <Card>

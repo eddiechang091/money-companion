@@ -114,12 +114,7 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
             emoji="🌱"
             title="Nothing yet this month"
             action={
-              <div className="row" style={{ gap: 8 }}>
-                <Button onClick={() => onNavigate("/add-expense")}>Add your first expense</Button>
-                <Button variant="secondary" onClick={() => onNavigate("/add-income")}>
-                  Add income
-                </Button>
-              </div>
+              <Button onClick={() => onNavigate("/add-expense")}>Add your first transaction</Button>
             }
           >
             Your money story starts here.

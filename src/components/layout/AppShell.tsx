@@ -34,11 +34,11 @@ export function AppShell({
       <button
         type="button"
         className="fab"
-        aria-label="Add expense"
+        aria-label="Add transaction"
         onClick={() => onNavigate("/add-expense")}
       >
         <Plus size={18} aria-hidden="true" />
-        <span>Add expense</span>
+        <span>Add transaction</span>
       </button>
       <button
         type="button"

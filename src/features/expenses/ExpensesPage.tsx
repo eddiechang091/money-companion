@@ -123,10 +123,7 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
         actions={
           <div className="row" style={{ gap: 8 }}>
             <Button variant="secondary" size="sm" onClick={() => onNavigate("/add-expense")}>
-              Add expense
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => onNavigate("/add-income")}>
-              Add income
+              Add transaction
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setExportOpen(true)}>
               Export
