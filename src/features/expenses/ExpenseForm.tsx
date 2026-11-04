@@ -103,26 +103,41 @@ export function ExpenseForm({
 
   return (
     <form className="stack" onSubmit={handleSubmit} noValidate>
-      <Field label="Type">
-        <div className="segmented" role="group" aria-label="Record type">
+      {/* Not wrapped in Field: a <label> ancestor would pollute these
+          buttons' accessible names with the whole label text. */}
+      <div className="field">
+        <span>Type</span>
+        <div className="kind-toggle" role="group" aria-label="Record type">
           <button
             type="button"
             aria-pressed={kind === "expense"}
-            className={`segmented-btn${kind === "expense" ? " is-active" : ""}`}
+            className={`kind-option kind-option--expense${kind === "expense" ? " is-active" : ""}`}
             onClick={() => handleKindChange("expense")}
           >
-            Money out
+            <span className="kind-option-icon" aria-hidden="true">
+              −
+            </span>
+            <span className="kind-option-text">
+              <span className="kind-option-title">Money out</span>
+              <span className="kind-option-caption">Spending</span>
+            </span>
           </button>
           <button
             type="button"
             aria-pressed={kind === "income"}
-            className={`segmented-btn${kind === "income" ? " is-active" : ""}`}
+            className={`kind-option kind-option--income${kind === "income" ? " is-active" : ""}`}
             onClick={() => handleKindChange("income")}
           >
-            Money in
+            <span className="kind-option-icon" aria-hidden="true">
+              +
+            </span>
+            <span className="kind-option-text">
+              <span className="kind-option-title">Money in</span>
+              <span className="kind-option-caption">Income</span>
+            </span>
           </button>
         </div>
-      </Field>
+      </div>
       <Field label="Amount" hint={amountPreview !== null ? undefined : "Numbers only, e.g. 12.50"}>
         <AmountInput
           value={amountText}
