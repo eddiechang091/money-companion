@@ -28,7 +28,12 @@ const RULES: GuessRule[] = [
   {
     categoryId: "reimbursements-refunds",
     kind: "income",
-    keywords: ["refund", "reimbursement", "cashback", "rebate"],
+    keywords: [
+      "refund", "reimbursement", "cashback", "rebate",
+      // Government benefit / insurer claim deposits (e.g. CRA, Sun Life).
+      "sunlife", "sun life", "med ins", "insurance claim", "claim",
+      "cra", "ccb", "child benefit", "gst/hst", "benefit payment",
+    ],
   },
   {
     categoryId: "investments-dividends",
@@ -122,7 +127,7 @@ const RULES: GuessRule[] = [
     kind: "expense",
     keywords: [
       "mortgage", "rent", "property tax", "landlord", "apartment",
-      "condo fee", "strata",
+      "condo fee", "strata", "merix",
     ],
   },
   {
@@ -141,7 +146,7 @@ const RULES: GuessRule[] = [
     kind: "expense",
     keywords: [
       "insurance", "manulife", "sun life", "canada life", "desjardins",
-      "intact", "td insurance", "rbc insurance",
+      "intact", "td insurance", "rbc insurance", "mutual ins", "pei mutual",
     ],
   },
   {
@@ -193,6 +198,12 @@ export function guessCategoryId(
   description: string,
   kind: RecordKind = "expense"
 ): string | null {
+  // A bare "CANADA" payee is a federal government payment (CCB / CRA
+  // benefit). Deliberately exact: "MAXIMUS CANADA" (employer payroll) must
+  // NOT match this — it stays unguessed for the user or AI suggestions.
+  if (kind === "income" && description.trim().toLowerCase() === "canada") {
+    return "reimbursements-refunds";
+  }
   const hay = ` ${description.toLowerCase()} `;
   for (const rule of RULES) {
     if (rule.kind !== kind) continue;
