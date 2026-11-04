@@ -18,7 +18,7 @@ interface GuessRule {
 const RULES: GuessRule[] = [
   // ── Income ──────────────────────────────────────────────────────────
   {
-    categoryId: "inc-paycheck",
+    categoryId: "main-salary",
     kind: "income",
     keywords: [
       "payroll", "salary", "pay deposit", "direct dep", "direct deposit",
@@ -26,23 +26,23 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "inc-refunds",
+    categoryId: "reimbursements-refunds",
     kind: "income",
     keywords: ["refund", "reimbursement", "cashback", "rebate"],
   },
   {
-    categoryId: "inc-invest",
+    categoryId: "investments-dividends",
     kind: "income",
     keywords: ["dividend", "interest", "capital gain"],
   },
   {
-    categoryId: "inc-side",
+    categoryId: "side-hustle",
     kind: "income",
     keywords: ["freelance", "contract payment", "fiverr", "upwork"],
   },
   // ── Expense: most specific first ────────────────────────────────────
   {
-    categoryId: "food-coffee",
+    categoryId: "coffee-brew",
     kind: "expense",
     keywords: ["tim hortons", "starbucks", "cafe", "coffee"],
   },
@@ -52,7 +52,7 @@ const RULES: GuessRule[] = [
     keywords: ["uber eats", "doordash", "skip the dishes", "skipdishes"],
   },
   {
-    categoryId: "food-dining",
+    categoryId: "dining-out",
     kind: "expense",
     keywords: [
       "mcdonald", "subway", "restaurant", "pizza", "sushi", "burger", "taco",
@@ -61,7 +61,7 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "nest-groceries",
+    categoryId: "groceries-fresh",
     kind: "expense",
     keywords: [
       "grocery", "sobeys", "loblaws", "superstore", "walmart", "costco",
@@ -69,7 +69,7 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "around-car",
+    categoryId: "car-fuel",
     kind: "expense",
     keywords: [
       "shell", "esso", "petro", "ultramar", "irving", "circle k", "couche-tard",
@@ -77,14 +77,14 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "around-commute",
+    categoryId: "daily-commute",
     kind: "expense",
     keywords: [
       "parking", "uber", "lyft", "taxi", "transit", "maritime bus", "via rail",
     ],
   },
   {
-    categoryId: "joy-vacation",
+    categoryId: "travel-getaways",
     kind: "expense",
     keywords: [
       "hotel", "airbnb", "booking.com", "expedia", "airline", "flight",
@@ -92,7 +92,7 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "life-apparel",
+    categoryId: "apparel-style",
     kind: "expense",
     keywords: [
       "amazon", "dollarama", "giant tiger", "marshalls", "winners",
@@ -101,29 +101,24 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "nest-sanctuary",
+    categoryId: "home-sanctuary",
     kind: "expense",
     keywords: [
       "canadian tire", "home depot", "rona", "kent ", "ikea", "bed bath",
     ],
   },
   {
-    categoryId: "life-tech",
-    kind: "expense",
-    keywords: ["best buy", "staples"],
-  },
-  {
-    categoryId: "joy-hobbies",
+    categoryId: "hobbies-passions",
     kind: "expense",
     keywords: ["michaels"],
   },
   {
-    categoryId: "growth-learning",
+    categoryId: "growth-courses",
     kind: "expense",
     keywords: ["indigo", "chapters"],
   },
   {
-    categoryId: "nest-home",
+    categoryId: "housing-rent",
     kind: "expense",
     keywords: [
       "mortgage", "rent", "property tax", "landlord", "apartment",
@@ -131,7 +126,7 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "nest-utilities",
+    categoryId: "utilities-bills",
     kind: "expense",
     keywords: [
       "maritime electric", "pei energy", "hydro", "electric bill", "power bill",
@@ -142,7 +137,7 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "cushion-insurance",
+    categoryId: "insurance-safety",
     kind: "expense",
     keywords: [
       "insurance", "manulife", "sun life", "canada life", "desjardins",
@@ -150,16 +145,20 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "joy-hobbies",
+    categoryId: "events-fun",
     kind: "expense",
     keywords: [
-      "cineplex", "theatre", "cinema", "golf", "bowling", "arcade", "steam",
-      "playstation", "xbox", "nintendo", "roblox", "concert", "ticketmaster",
-      "museum", "zoo", "park",
+      "cineplex", "theatre", "cinema", "golf", "bowling", "arcade",
+      "concert", "ticketmaster", "museum", "zoo", "park",
     ],
   },
   {
-    categoryId: "joy-subs",
+    categoryId: "hobbies-passions",
+    kind: "expense",
+    keywords: ["steam", "playstation", "xbox", "nintendo", "roblox"],
+  },
+  {
+    categoryId: "subscriptions-digital",
     kind: "expense",
     keywords: [
       "netflix", "spotify", "disney", "prime video",
@@ -167,7 +166,7 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "well-health",
+    categoryId: "health-pharmacy",
     kind: "expense",
     keywords: [
       "shoppers drug", "pharmasave", "pharmacy", "dental", "dentist",
@@ -175,12 +174,12 @@ const RULES: GuessRule[] = [
     ],
   },
   {
-    categoryId: "well-fitness",
+    categoryId: "fitness-sports",
     kind: "expense",
     keywords: ["gym", "goodlife", "planet fitness"],
   },
   {
-    categoryId: "loved-family",
+    categoryId: "kids-family",
     kind: "expense",
     keywords: [
       "toys r us", "carters", "oshkosh", "daycare", "childcare", "babysitter",

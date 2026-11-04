@@ -21,7 +21,7 @@ function expense(partial: Partial<Expense>): Expense {
     kind: "expense",
     amount: 5.67,
     currency: "CAD",
-    categoryId: "food-dining",
+    categoryId: "dining-out",
     description: "TIM HORTONS #1234",
     date: "2026-10-01",
     createdAt: "2026-10-01T00:00:00Z",
@@ -66,12 +66,12 @@ describe("scoreRows", () => {
 
 describe("guessCategoryId", () => {
   it("guesses common merchants", () => {
-    expect(guessCategoryId("TIM HORTONS #1234")).toBe("food-coffee");
-    expect(guessCategoryId("SHELL CANADA")).toBe("around-car");
-    expect(guessCategoryId("AMAZON.CA")).toBe("life-apparel");
-    expect(guessCategoryId("BELL MOBILITY")).toBe("nest-utilities");
-    expect(guessCategoryId("CINEPLEX ODEON")).toBe("joy-hobbies");
-    expect(guessCategoryId("SHOPPERS DRUG MART")).toBe("well-health");
+    expect(guessCategoryId("TIM HORTONS #1234")).toBe("coffee-brew");
+    expect(guessCategoryId("SHELL CANADA")).toBe("car-fuel");
+    expect(guessCategoryId("AMAZON.CA")).toBe("apparel-style");
+    expect(guessCategoryId("BELL MOBILITY")).toBe("utilities-bills");
+    expect(guessCategoryId("CINEPLEX ODEON")).toBe("events-fun");
+    expect(guessCategoryId("SHOPPERS DRUG MART")).toBe("health-pharmacy");
   });
 
   it("returns null for unknown merchants", () => {

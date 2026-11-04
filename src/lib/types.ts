@@ -1,21 +1,12 @@
 /** Money direction of a record: money out ("expense") or money in ("income"). */
 export type RecordKind = "expense" | "income";
 
-export interface CategoryGroup {
-  id: string;
-  name: string;
-  icon: string;
-  kind: RecordKind;
-}
-
 export interface Category {
   id: string;
   name: string;
   icon: string;
   color: string;
   isDefault: boolean;
-  /** Group this subcategory belongs to (see CATEGORY_GROUPS). */
-  groupId: string;
   /** Which kind of record this category applies to. */
   kind: RecordKind;
 }

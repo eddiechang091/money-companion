@@ -1,5 +1,5 @@
 import type { ConversationContext } from "./conversationContext";
-import { getCategoryById, getGroupOfCategory } from "@/lib/categories";
+import { getCategoryById } from "@/lib/categories";
 
 type SuggestionSet = readonly string[];
 
@@ -9,39 +9,39 @@ const WELCOME_SUGGESTIONS: SuggestionSet = [
   "Am I on track with my budget?",
 ];
 
-/** Keyed by subcategory id. Income categories get their own questions. */
+/** Keyed by category id. Income categories get their own questions. */
 const CATEGORY_SUGGESTIONS: Record<string, SuggestionSet> = {
-  "food-dining": [
+  "dining-out": [
     "Was it worth it?",
     "How much have I spent eating out?",
     "Am I eating out more than usual?",
   ],
-  "around-commute": [
+  "daily-commute": [
     "How much am I spending on getting around?",
     "Is this my usual amount?",
     "Am I spending more on transport than last month?",
   ],
-  "life-apparel": [
+  "apparel-style": [
     "Was this planned?",
     "How much have I spent shopping this month?",
     "Can I keep spending this month?",
   ],
-  "nest-utilities": [
+  "utilities-bills": [
     "Am I on track with bills this month?",
     "Are my bills going up?",
     "What fixed costs do I have?",
   ],
-  "joy-hobbies": [
+  "hobbies-passions": [
     "How much fun spending am I doing?",
     "Is this my usual amount?",
     "How does this compare to last month?",
   ],
-  "well-health": [
+  "health-pharmacy": [
     "What's my health spending like?",
     "Is this a regular expense?",
     "How much have I spent on health?",
   ],
-  "inc-paycheck": [
+  "main-salary": [
     "How does this compare to last month?",
     "Is this my usual pay?",
     "Anything else coming in this month?",
@@ -149,12 +149,12 @@ export function buildSuggestedQuestions(
   }
 
   // Unexplored topics: suggest categories with spending that haven't been discussed.
-  // A category counts as discussed when the user named it or its group.
+  // A category counts as discussed when the user named it.
   const discussedCats = new Set<string>();
   for (const m of asked) {
     for (const key of Object.keys(CATEGORY_SUGGESTIONS)) {
       const cat = getCategoryById(key);
-      const names = [cat?.name, cat ? getGroupOfCategory(cat)?.name : undefined]
+      const names = [cat?.name]
         .filter((n): n is string => !!n)
         .map((n) => n.toLowerCase());
       if (names.some((n) => m.includes(n))) discussedCats.add(key);

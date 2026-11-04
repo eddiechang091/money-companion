@@ -19,7 +19,7 @@ function makeExpense(partial: Partial<Expense> & { id: string; date: string; amo
   return {
     kind: "expense",
     currency: "CAD",
-    categoryId: "food-dining",
+    categoryId: "dining-out",
     description: "Test expense",
     createdAt: `${partial.date}T00:00:00.000Z`,
     updatedAt: `${partial.date}T00:00:00.000Z`,
@@ -176,11 +176,11 @@ describe("normalizeInsightResponse", () => {
 describe("buildInsightContext", () => {
   // Pin to a fixed month so tests are time-independent
   const MONTH = "2026-09";
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 128.40, categoryId: "food-dining", description: "Sushi restaurant" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 128.40, categoryId: "dining-out", description: "Sushi restaurant" });
   const expenses = [
     expense,
-    makeExpense({ id: "e2", date: "2026-09-10", amount: 45, categoryId: "food-dining" }),
-    makeExpense({ id: "e3", date: "2026-08-20", amount: 200, categoryId: "food-dining" }),
+    makeExpense({ id: "e2", date: "2026-09-10", amount: 45, categoryId: "dining-out" }),
+    makeExpense({ id: "e3", date: "2026-08-20", amount: 200, categoryId: "dining-out" }),
   ];
   const budgets: MonthlyBudget[] = [];
 
@@ -193,14 +193,14 @@ describe("buildInsightContext", () => {
   it("includes the current expense details", () => {
     const ctx = buildInsightContext(expense, expenses, budgets, MONTH);
     expect(ctx.currentExpense.amount).toBe(128.40);
-    expect(ctx.currentExpense.category).toBe("Dining Out & Treats");
+    expect(ctx.currentExpense.category).toBe("Dining Out");
     expect(ctx.currentExpense.description).toBe("Sushi restaurant");
   });
 
   it("includes top category totals for the current month", () => {
     const ctx = buildInsightContext(expense, expenses, budgets, MONTH);
     expect(ctx.financialSummary.topCategories.length).toBeGreaterThan(0);
-    const food = ctx.financialSummary.topCategories.find((c) => c.category === "Dining Out & Treats");
+    const food = ctx.financialSummary.topCategories.find((c) => c.category === "Dining Out");
     expect(food).toBeDefined();
     expect(food!.total).toBeGreaterThan(0);
   });
@@ -237,7 +237,7 @@ describe("buildInsightContext", () => {
 // ---------------------------------------------------------------------------
 describe("buildFallbackResponse", () => {
   const MONTH = "2026-09";
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 128.40, categoryId: "food-dining" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 128.40, categoryId: "dining-out" });
   const ctx = buildInsightContext(expense, [expense], [], MONTH);
 
   it("returns a result with isFallback: true", () => {
@@ -252,7 +252,7 @@ describe("buildFallbackResponse", () => {
 
   it("includes the category name", () => {
     const result = buildFallbackResponse(expense, ctx);
-    expect(result.headline).toContain("Dining Out & Treats");
+    expect(result.headline).toContain("Dining Out");
   });
 
   it("returns mode 'casual'", () => {
@@ -283,7 +283,7 @@ describe("buildFallbackResponse", () => {
 // ---------------------------------------------------------------------------
 describe("buildInsightMessages", () => {
   const MONTH = "2026-09";
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food-dining" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "dining-out" });
   const ctx = buildInsightContext(expense, [expense], [], MONTH);
 
   it("returns two messages: system + user", () => {
@@ -300,7 +300,7 @@ describe("buildInsightMessages", () => {
 
   it("includes category in the user message", () => {
     const messages = buildInsightMessages(ctx);
-    expect(messages[1].content).toContain("Dining Out & Treats");
+    expect(messages[1].content).toContain("Dining Out");
   });
 
   it("system prompt contains the JSON schema instruction", () => {
@@ -312,7 +312,7 @@ describe("buildInsightMessages", () => {
 
 describe("buildRepairMessages", () => {
   const MONTH = "2026-09";
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "food-dining" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "dining-out" });
   const ctx = buildInsightContext(expense, [expense], [], MONTH);
   const originalMessages = buildInsightMessages(ctx);
 
@@ -333,7 +333,7 @@ describe("buildRepairMessages", () => {
 // InsightService (createInsightService)
 // ---------------------------------------------------------------------------
 describe("createInsightService", () => {
-  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 128.40, categoryId: "food-dining", description: "Sushi" });
+  const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 128.40, categoryId: "dining-out", description: "Sushi" });
   const expenses = [expense];
   const budgets: MonthlyBudget[] = [];
 

@@ -1,4 +1,4 @@
-import type { Category, CategoryGroup, RecordKind } from "./types";
+import type { Category, RecordKind } from "./types";
 
 export const APP_NAMESPACE = "expense-tracker";
 export const STORAGE_VERSION = 1;
@@ -19,97 +19,115 @@ export const STORAGE_KEYS = {
   dailyDelight: (dateKey: string) => `daily:delight:${dateKey}`,
 } as const;
 
-/** Two-level taxonomy: 9 expense groups + 1 income group. Subcategories share their group's color. */
-export const CATEGORY_GROUPS: CategoryGroup[] = [
-  { id: "nest-living", name: "Nest & Living", icon: "🏡", kind: "expense" },
-  { id: "food-social", name: "Food & Social", icon: "🍲", kind: "expense" },
-  { id: "getting-around", name: "Getting Around", icon: "🚗", kind: "expense" },
-  { id: "wellness", name: "Wellness & Self-Care", icon: "💖", kind: "expense" },
-  { id: "joy-chill", name: "Joy & Chill", icon: "🎈", kind: "expense" },
-  { id: "lifestyle", name: "Lifestyle & Shopping", icon: "🛍️", kind: "expense" },
-  { id: "loved-ones", name: "Loved Ones & Pets", icon: "🐾", kind: "expense" },
-  { id: "growth-future", name: "Growth & Future", icon: "📚", kind: "expense" },
-  { id: "cushion-duty", name: "Life Cushion & Duty", icon: "🛡️", kind: "expense" },
-  { id: "income", name: "Income", icon: "💰", kind: "income" },
-];
-
+/** Flat taxonomy: 24 expense categories + 7 income categories, each with its
+ * own color. No groups — the picker, the breakdown and the change messages
+ * all use the category itself. */
 function cat(
   id: string,
   name: string,
   icon: string,
-  groupId: string,
   kind: RecordKind,
   color: string
 ): Category {
-  return { id, name, icon, color, isDefault: true, groupId, kind };
+  return { id, name, icon, color, isDefault: true, kind };
 }
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  // 🏡 Nest & Living
-  cat("nest-home", "Home & Shelter", "🏠", "nest-living", "expense", "#5b9bff"),
-  cat("nest-utilities", "Utilities & Bills", "💡", "nest-living", "expense", "#5b9bff"),
-  cat("nest-groceries", "Groceries & Nourishment", "🥬", "nest-living", "expense", "#5b9bff"),
-  cat("nest-sanctuary", "Home Sanctuary", "🕯️", "nest-living", "expense", "#5b9bff"),
-  // 🍲 Food & Social
-  cat("food-dining", "Dining Out & Treats", "🍽️", "food-social", "expense", "#ff8a5b"),
-  cat("food-coffee", "Coffee & Daily Brew", "☕", "food-social", "expense", "#ff8a5b"),
-  cat("food-drinks", "Drinks & Night Out", "🍸", "food-social", "expense", "#ff8a5b"),
-  cat("food-delivery", "Food Delivery", "🛵", "food-social", "expense", "#ff8a5b"),
-  // 🚗 Getting Around
-  cat("around-commute", "Daily Commute", "🚌", "getting-around", "expense", "#f6c453"),
-  cat("around-car", "Car & Upkeep", "🚗", "getting-around", "expense", "#f6c453"),
-  cat("around-getaways", "Getaways & Rides", "🛣️", "getting-around", "expense", "#f6c453"),
-  // 💖 Wellness & Self-Care
-  cat("well-selfcare", "Self-Care & Beauty", "💅", "wellness", "expense", "#7bc96f"),
-  cat("well-health", "Health & Pharmacy", "💊", "wellness", "expense", "#7bc96f"),
-  cat("well-fitness", "Fitness & Movement", "🏋️", "wellness", "expense", "#7bc96f"),
-  cat("well-mental", "Mental Wellness", "🧘", "wellness", "expense", "#7bc96f"),
-  // 🎈 Joy & Chill
-  cat("joy-hobbies", "Hobbies & Passions", "🎨", "joy-chill", "expense", "#ff7b9c"),
-  cat("joy-subs", "Subscriptions & Digital", "📺", "joy-chill", "expense", "#ff7b9c"),
-  cat("joy-events", "Events & Outings", "🎟️", "joy-chill", "expense", "#ff7b9c"),
-  cat("joy-vacation", "Vacation & Trips", "🏖️", "joy-chill", "expense", "#ff7b9c"),
-  // 🛍️ Lifestyle & Shopping
-  cat("life-apparel", "Apparel & Style", "👗", "lifestyle", "expense", "#c792ea"),
-  cat("life-tech", "Tech & Gadgets", "📱", "lifestyle", "expense", "#c792ea"),
-  cat("life-splurges", "Little Splurges", "✨", "lifestyle", "expense", "#c792ea"),
-  // 🐾 Loved Ones & Pets
-  cat("loved-pets", "Pet Care & Treats", "🐾", "loved-ones", "expense", "#ff9f68"),
-  cat("loved-family", "Family & Kids", "👨‍👩‍👧", "loved-ones", "expense", "#ff9f68"),
-  cat("loved-gifts", "Gifts & Celebrations", "🎁", "loved-ones", "expense", "#ff9f68"),
-  // 📚 Growth & Future
-  cat("growth-learning", "Learning & Books", "📚", "growth-future", "expense", "#35c286"),
-  cat("growth-savings", "Future Savings", "🌱", "growth-future", "expense", "#35c286"),
-  cat("growth-invest", "Investments & Wealth", "📈", "growth-future", "expense", "#35c286"),
-  // 🛡️ Life Cushion & Duty
-  cat("cushion-insurance", "Insurance Protection", "🛡️", "cushion-duty", "expense", "#9aa3b2"),
-  cat("cushion-taxes", "Taxes & Official", "🧾", "cushion-duty", "expense", "#9aa3b2"),
-  cat("cushion-debt", "Debt & Loans", "💳", "cushion-duty", "expense", "#9aa3b2"),
-  cat("cushion-rainy", "Rainy Day / Unexpected", "🌧️", "cushion-duty", "expense", "#9aa3b2"),
-  // 💰 Income
-  cat("inc-paycheck", "Main Paycheck", "💼", "income", "income", "#0e9f8a"),
-  cat("inc-side", "Side Hustle", "🤝", "income", "income", "#0e9f8a"),
-  cat("inc-bonus", "Bonuses & Perks", "🎉", "income", "income", "#0e9f8a"),
-  cat("inc-invest", "Investments & Dividends", "💹", "income", "income", "#0e9f8a"),
-  cat("inc-gifts", "Gifts & Unexpected Cash", "💌", "income", "income", "#0e9f8a"),
-  cat("inc-refunds", "Reimbursements & Refunds", "↩️", "income", "income", "#0e9f8a"),
+  // Expense
+  cat("housing-rent", "Housing & Rent", "🏠", "expense", "#5b9bff"),
+  cat("utilities-bills", "Utilities & Bills", "💡", "expense", "#ff8a5b"),
+  cat("home-sanctuary", "Home Sanctuary", "🕯️", "expense", "#35c286"),
+  cat("groceries-fresh", "Groceries & Fresh", "🥬", "expense", "#f6c453"),
+  cat("dining-out", "Dining Out", "🍽️", "expense", "#c792ea"),
+  cat("coffee-brew", "Coffee & Brew", "☕", "expense", "#ff7b9c"),
+  cat("food-delivery", "Food Delivery", "🛵", "expense", "#2fbfa8"),
+  cat("daily-commute", "Daily Commute", "🚌", "expense", "#4fc3ff"),
+  cat("car-fuel", "Car & Fuel", "🚗", "expense", "#ef6d6d"),
+  cat("travel-getaways", "Travel & Getaways", "✈️", "expense", "#7bc96f"),
+  cat("health-pharmacy", "Health & Pharmacy", "💊", "expense", "#ffb347"),
+  cat("selfcare-beauty", "Self-Care & Beauty", "💅", "expense", "#9aa3b2"),
+  cat("fitness-sports", "Fitness & Sports", "🏋️", "expense", "#5b9bff"),
+  cat("subscriptions-digital", "Subscriptions & Digital", "📺", "expense", "#ff8a5b"),
+  cat("hobbies-passions", "Hobbies & Passions", "🎨", "expense", "#35c286"),
+  cat("events-fun", "Events & Fun", "🎟️", "expense", "#f6c453"),
+  cat("apparel-style", "Apparel & Style", "👗", "expense", "#c792ea"),
+  cat("pet-care", "Pet Care & Treats", "🐾", "expense", "#ff7b9c"),
+  cat("kids-family", "Kids & Family", "👨‍👩‍👧", "expense", "#2fbfa8"),
+  cat("gifts-celebrations", "Gifts & Celebrations", "🎁", "expense", "#4fc3ff"),
+  cat("growth-courses", "Growth & Courses", "📚", "expense", "#ef6d6d"),
+  cat("insurance-safety", "Insurance & Safety", "🛡️", "expense", "#7bc96f"),
+  cat("rainy-day", "Rainy Day / Unexpected", "🌧️", "expense", "#ffb347"),
+  // Income — one shared green, so money in reads as green everywhere.
+  cat("main-salary", "Main Salary", "💼", "income", "#0e9f8a"),
+  cat("side-hustle", "Side Hustle", "🤝", "income", "#0e9f8a"),
+  cat("bonuses-perks", "Bonuses & Perks", "🎉", "income", "#0e9f8a"),
+  cat("investments-dividends", "Investments & Dividends", "💹", "income", "#0e9f8a"),
+  cat("gifts-cash", "Gifts & Cash", "💌", "income", "#0e9f8a"),
+  cat("reimbursements-refunds", "Reimbursements & Refunds", "↩️", "income", "#0e9f8a"),
 ];
 
-/** Pre-taxonomy category ids → new subcategory id (null = uncategorized). Applied on every read, so old records migrate in place without a rewrite. */
+/** Category preselected for a fresh record of each kind. */
+export const DEFAULT_CATEGORY_ID: Record<RecordKind, string> = {
+  expense: "groceries-fresh",
+  income: "main-salary",
+};
+
+/** Retired category ids → current id (null = uncategorized). Applied on every
+ * read, so old records and budgets migrate in place without a rewrite. Covers
+ * the pre-taxonomy flat ids (e.g. "food") and the retired 2026-11-03 two-level
+ * subcategory ids (e.g. "food-dining"). Retired ids with no equivalent in the
+ * new taxonomy map to null. */
 export const LEGACY_CATEGORY_MIGRATION: Record<string, string | null> = {
-  food: "food-dining",
-  transport: "around-commute",
-  shopping: "life-apparel",
-  housing: "nest-home",
-  utilities: "nest-utilities",
-  internet: "nest-utilities",
-  insurance: "cushion-insurance",
-  bills: "nest-utilities",
-  fun: "joy-hobbies",
-  health: "well-health",
-  kids: "loved-family",
-  travel: "joy-vacation",
+  food: "dining-out",
+  transport: "daily-commute",
+  shopping: "apparel-style",
+  housing: "housing-rent",
+  utilities: "utilities-bills",
+  internet: "utilities-bills",
+  insurance: "insurance-safety",
+  bills: "utilities-bills",
+  fun: "hobbies-passions",
+  health: "health-pharmacy",
+  kids: "kids-family",
+  travel: "travel-getaways",
   other: null,
+  "nest-home": "housing-rent",
+  "nest-utilities": "utilities-bills",
+  "nest-groceries": "groceries-fresh",
+  "nest-sanctuary": "home-sanctuary",
+  "food-dining": "dining-out",
+  "food-coffee": "coffee-brew",
+  "food-drinks": "dining-out",
+  "around-commute": "daily-commute",
+  "around-car": "car-fuel",
+  "around-getaways": "travel-getaways",
+  "well-selfcare": "selfcare-beauty",
+  "well-health": "health-pharmacy",
+  "well-fitness": "fitness-sports",
+  "well-mental": "selfcare-beauty",
+  "joy-hobbies": "hobbies-passions",
+  "joy-subs": "subscriptions-digital",
+  "joy-events": "events-fun",
+  "joy-vacation": "travel-getaways",
+  "life-apparel": "apparel-style",
+  "loved-pets": "pet-care",
+  "loved-family": "kids-family",
+  "loved-gifts": "gifts-celebrations",
+  "growth-learning": "growth-courses",
+  "cushion-insurance": "insurance-safety",
+  "cushion-rainy": "rainy-day",
+  "inc-paycheck": "main-salary",
+  "inc-side": "side-hustle",
+  "inc-bonus": "bonuses-perks",
+  "inc-invest": "investments-dividends",
+  "inc-gifts": "gifts-cash",
+  "inc-refunds": "reimbursements-refunds",
+  "life-tech": null,
+  "life-splurges": null,
+  "growth-savings": null,
+  "growth-invest": null,
+  "cushion-taxes": null,
+  "cushion-debt": null,
 };
 
 /** Label for records without a category. */

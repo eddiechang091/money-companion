@@ -32,7 +32,7 @@ describe("wealthsimple import", () => {
 
   it("maps bill sub-types to the bills category", () => {
     const normalized = normalizeWealthsimpleRows(rows);
-    const billRows = normalized.filter((r) => r.categoryHint === "nest-utilities");
+    const billRows = normalized.filter((r) => r.categoryHint === "utilities-bills");
     // 7 OBP_OUT + 8 AFT_OUT = 15 bill rows
     expect(billRows).toHaveLength(15);
   });
@@ -49,27 +49,27 @@ describe("wealthsimple import", () => {
 
 describe("category guessing with new categories", () => {
   it("guesses housing", () => {
-    expect(guessCategoryId("RBC MORTGAGE PAYMENT")).toBe("nest-home");
-    expect(guessCategoryId("RENT - LANDLORD")).toBe("nest-home");
+    expect(guessCategoryId("RBC MORTGAGE PAYMENT")).toBe("housing-rent");
+    expect(guessCategoryId("RENT - LANDLORD")).toBe("housing-rent");
   });
   it("guesses utilities", () => {
-    expect(guessCategoryId("MARITIME ELECTRIC")).toBe("nest-utilities");
-    expect(guessCategoryId("CITY WATER BILL")).toBe("nest-utilities");
+    expect(guessCategoryId("MARITIME ELECTRIC")).toBe("utilities-bills");
+    expect(guessCategoryId("CITY WATER BILL")).toBe("utilities-bills");
   });
   it("guesses internet", () => {
-    expect(guessCategoryId("BELL MOBILITY")).toBe("nest-utilities");
-    expect(guessCategoryId("EASTLINK INTERNET")).toBe("nest-utilities");
+    expect(guessCategoryId("BELL MOBILITY")).toBe("utilities-bills");
+    expect(guessCategoryId("EASTLINK INTERNET")).toBe("utilities-bills");
   });
   it("guesses insurance", () => {
-    expect(guessCategoryId("MANULIFE INSURANCE")).toBe("cushion-insurance");
+    expect(guessCategoryId("MANULIFE INSURANCE")).toBe("insurance-safety");
   });
   it("guesses kids and travel", () => {
-    expect(guessCategoryId("CARTERS OSHKOSH")).toBe("loved-family");
-    expect(guessCategoryId("AIRBNB * HM123")).toBe("joy-vacation");
+    expect(guessCategoryId("CARTERS OSHKOSH")).toBe("kids-family");
+    expect(guessCategoryId("AIRBNB * HM123")).toBe("travel-getaways");
   });
   it("keeps streaming under fun", () => {
-    expect(guessCategoryId("NETFLIX.COM")).toBe("joy-subs");
+    expect(guessCategoryId("NETFLIX.COM")).toBe("subscriptions-digital");
     expect(guessCategoryId("EMPLOYER PAYROLL")).toBeNull();
-    expect(guessCategoryId("EMPLOYER PAYROLL", "income")).toBe("inc-paycheck");
+    expect(guessCategoryId("EMPLOYER PAYROLL", "income")).toBe("main-salary");
   });
 });

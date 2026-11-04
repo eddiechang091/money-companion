@@ -36,7 +36,7 @@ export function directionOf(
 
 
 /**
- * Foreign category names → this app's subcategory ids, split by kind.
+ * Foreign category names → this app's category ids, split by kind.
  * Expense aliases and income aliases are disjoint: an income row consults
  * only income aliases, so "gift" on an expense row and "gift" on an income
  * row land in different places. `mapCategoryName` defaults to expense for
@@ -45,15 +45,15 @@ export function directionOf(
 const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }> = [
   // ── Income ──────────────────────────────────────────────────────────
   {
-    id: "inc-paycheck",
+    id: "main-salary",
     kind: "income",
     names: [
-      "salary", "paycheck", "payroll", "wages", "wage", "pay", "income",
+      "salary", "paycheck", "payroll", "wages", "wage", "pay", "income", "main salary",
       "工资", "薪水", "薪资", "收入",
     ],
   },
   {
-    id: "inc-side",
+    id: "side-hustle",
     kind: "income",
     names: [
       "freelance", "side hustle", "consulting", "gig", "contract payment",
@@ -61,24 +61,24 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "inc-bonus",
+    id: "bonuses-perks",
     kind: "income",
-    names: ["bonus", "commission", "tips", "奖金", "提成", "绩效"],
+    names: ["bonus", "commission", "tips", "allowance", "subsidy", "奖金", "提成", "绩效", "补贴", "津贴"],
   },
   {
-    id: "inc-invest",
+    id: "investments-dividends",
     kind: "income",
     names: [
       "dividend", "dividends", "interest", "capital gains", "股息", "分红", "利息", "收益",
     ],
   },
   {
-    id: "inc-gifts",
+    id: "gifts-cash",
     kind: "income",
     names: ["cash gift", "gift money", "red packet", "hongbao", "红包", "压岁钱"],
   },
   {
-    id: "inc-refunds",
+    id: "reimbursements-refunds",
     kind: "income",
     names: [
       "refund", "reimbursement", "cashback", "rebate", "退款", "报销", "返现", "退税",
@@ -86,7 +86,7 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
   },
   // ── Expense ─────────────────────────────────────────────────────────
   {
-    id: "cushion-insurance",
+    id: "insurance-safety",
     kind: "expense",
     names: [
       "insurance", "health insurance", "life insurance", "car insurance",
@@ -95,31 +95,31 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "well-health",
+    id: "health-pharmacy",
     kind: "expense",
     names: [
       "health", "healthcare", "medical", "doctor", "dentist", "dental",
       "pharmacy", "drugstore", "health care",
-      "医疗", "健康", "药品", "看病", "牙科", "医院", "药店",
+      "医疗", "健康", "药品", "看病", "牙科", "医院", "药店", "体检", "保健品",
     ],
   },
   {
-    id: "well-fitness",
+    id: "fitness-sports",
     kind: "expense",
-    names: ["fitness", "gym", "健身房", "运动健身"],
+    names: ["fitness", "gym", "yoga", "sports", "健身房", "运动健身", "瑜伽", "运动"],
   },
   {
-    id: "well-selfcare",
+    id: "selfcare-beauty",
     kind: "expense",
-    names: ["beauty", "salon", "spa", "美容", "美发", "护肤"],
+    names: ["beauty", "salon", "spa", "美容", "美发", "护肤", "理发", "美妆", "护肤品"],
   },
   {
-    id: "well-mental",
+    id: "selfcare-beauty",
     kind: "expense",
     names: ["therapy", "counseling", "meditation", "心理", "咨询"],
   },
   {
-    id: "nest-home",
+    id: "housing-rent",
     kind: "expense",
     names: [
       "housing", "rent", "mortgage", "property tax", "home", "house",
@@ -128,7 +128,7 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "nest-utilities",
+    id: "utilities-bills",
     kind: "expense",
     names: [
       "utilities", "utility", "electric", "electricity", "water",
@@ -140,19 +140,19 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "nest-groceries",
+    id: "groceries-fresh",
     kind: "expense",
     names: [
-      "groceries", "grocery", "supermarket", "食品", "水果", "买菜", "超市",
+      "groceries", "grocery", "supermarket", "食品", "水果", "买菜", "超市", "生鲜", "粮油",
     ],
   },
   {
-    id: "nest-sanctuary",
+    id: "home-sanctuary",
     kind: "expense",
-    names: ["household", "general merchandise", "furniture", "日用品", "家具"],
+    names: ["household", "general merchandise", "furniture", "日用品", "家具", "清洁", "家电"],
   },
   {
-    id: "food-dining",
+    id: "dining-out",
     kind: "expense",
     names: [
       "food", "dining", "restaurants", "restaurant",
@@ -163,12 +163,12 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "food-coffee",
+    id: "coffee-brew",
     kind: "expense",
-    names: ["coffee", "cafe", "咖啡"],
+    names: ["coffee", "cafe", "bubble tea", "咖啡", "奶茶", "下午茶"],
   },
   {
-    id: "food-drinks",
+    id: "dining-out",
     kind: "expense",
     names: ["alcohol", "bars", "饮料", "酒"],
   },
@@ -178,7 +178,7 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     names: ["food delivery", "外卖"],
   },
   {
-    id: "around-commute",
+    id: "daily-commute",
     kind: "expense",
     names: [
       "transport", "transportation", "transit", "public transportation",
@@ -187,21 +187,21 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "around-car",
+    id: "car-fuel",
     kind: "expense",
     names: [
       "gas", "fuel", "gas & fuel", "auto", "car", "parking", "vehicle",
       "gasoline",
-      "加油", "停车", "汽车", "油费", "高速", "过路费",
+      "加油", "停车", "汽车", "油费", "高速", "过路费", "洗车", "保养", "维修",
     ],
   },
   {
-    id: "around-getaways",
+    id: "travel-getaways",
     kind: "expense",
     names: ["road trip", "getaway", "rental car", "自驾游", "租车"],
   },
   {
-    id: "loved-family",
+    id: "kids-family",
     kind: "expense",
     names: [
       "kids", "children", "childcare", "child care", "daycare",
@@ -210,22 +210,12 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "growth-learning",
+    id: "growth-courses",
     kind: "expense",
-    names: ["books", "book", "learning", "course", "书籍", "课程", "学习"],
+    names: ["books", "book", "learning", "course", "书籍", "课程", "学习", "培训"],
   },
   {
-    id: "growth-savings",
-    kind: "expense",
-    names: ["savings", "储蓄", "存款"],
-  },
-  {
-    id: "growth-invest",
-    kind: "expense",
-    names: ["stocks", "shares", "investment", "投资", "股票", "基金"],
-  },
-  {
-    id: "joy-vacation",
+    id: "travel-getaways",
     kind: "expense",
     names: [
       "travel", "hotel", "lodging", "flight", "flights", "airline",
@@ -234,7 +224,7 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "life-apparel",
+    id: "apparel-style",
     kind: "expense",
     names: [
       "shopping", "clothing", "clothes", "apparel", "shoes",
@@ -242,27 +232,22 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "life-tech",
-    kind: "expense",
-    names: ["electronics", "electronic", "gadget", "电子产品", "数码"],
-  },
-  {
-    id: "life-splurges",
+    id: "hobbies-passions",
     kind: "expense",
     names: ["blind box", "盲盒"],
   },
   {
-    id: "loved-gifts",
+    id: "gifts-celebrations",
     kind: "expense",
-    names: ["gifts", "gift", "礼物"],
+    names: ["gifts", "gift", "礼物", "红包", "随礼", "生日礼物"],
   },
   {
-    id: "loved-pets",
+    id: "pet-care",
     kind: "expense",
-    names: ["pet", "pets", "veterinary", "vet", "宠物"],
+    names: ["pet", "pets", "veterinary", "vet", "宠物", "宠物粮"],
   },
   {
-    id: "joy-subs",
+    id: "subscriptions-digital",
     kind: "expense",
     names: [
       "subscriptions", "subscription", "streaming", "netflix", "spotify",
@@ -270,33 +255,23 @@ const CATEGORY_ALIASES: Array<{ id: string; kind: RecordKind; names: string[] }>
     ],
   },
   {
-    id: "joy-hobbies",
+    id: "hobbies-passions",
     kind: "expense",
     names: [
-      "fun", "entertainment", "movies", "movie", "games", "game", "sports",
-      "hobbies", "hobby", "music", "concert", "leisure",
-      "娱乐", "电影", "游戏", "运动", "休闲", "演出",
+      "fun", "entertainment", "games", "game", "sports",
+      "hobbies", "hobby", "music", "leisure",
+      "娱乐", "游戏", "运动", "休闲",
     ],
   },
   {
-    id: "joy-events",
+    id: "events-fun",
     kind: "expense",
-    names: ["events", "outings", "tickets", "活动", "门票"],
+    names: ["events", "outings", "tickets", "movies", "movie", "concert", "活动", "门票", "电影", "演唱会", "展览"],
   },
   {
-    id: "cushion-taxes",
+    id: "rainy-day",
     kind: "expense",
-    names: ["taxes", "tax", "fees", "service fee", "税费", "税", "手续费"],
-  },
-  {
-    id: "cushion-debt",
-    kind: "expense",
-    names: ["loan", "debt", "贷款"],
-  },
-  {
-    id: "cushion-rainy",
-    kind: "expense",
-    names: ["unexpected", "emergency", "意外", "应急"],
+    names: ["unexpected", "emergency", "repair", "意外", "应急", "维修", "修缮"],
   },
 ];
 

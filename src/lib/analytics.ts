@@ -1,7 +1,7 @@
 import type { Expense, RecordKind } from "./types";
 import { recordKind } from "./types";
 import { UNCATEGORIZED_LABEL } from "./constants";
-import { getCategoryById, getGroupOfCategory } from "./categories";
+import { getCategoryById } from "./categories";
 import { isValidIsoDate, monthKey } from "./utils";
 
 export interface CategoryTotal {
@@ -296,7 +296,7 @@ export interface MeaningfulChangesOptions {
 function changeCategoryLabel(categoryId: string | null): string {
   const category = getCategoryById(categoryId);
   if (!category) return UNCATEGORIZED_LABEL;
-  return getGroupOfCategory(category)?.name ?? category.name;
+  return category.name;
 }
 
 /**

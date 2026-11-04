@@ -32,7 +32,7 @@ describe("record kind", () => {
   });
 
   it("migrates legacy category ids, uncategorized for other", () => {
-    expect(normalizeCategoryId("food")).toBe("food-dining");
+    expect(normalizeCategoryId("food")).toBe("dining-out");
     expect(normalizeCategoryId("other")).toBeNull();
     expect(categoryLabel(null)).toBe("Others");
   });
@@ -40,10 +40,10 @@ describe("record kind", () => {
 
 describe("kind-aware totals", () => {
   const records = [
-    rec({ id: "e1", amount: 100, kind: "expense", categoryId: "food-dining" }),
-    rec({ id: "e2", amount: 50, kind: "expense", categoryId: "food-dining" }),
-    rec({ id: "i1", amount: 2000, kind: "income", categoryId: "inc-paycheck" }),
-    rec({ id: "i2", amount: 120, kind: "income", categoryId: "inc-refunds" }),
+    rec({ id: "e1", amount: 100, kind: "expense", categoryId: "dining-out" }),
+    rec({ id: "e2", amount: 50, kind: "expense", categoryId: "dining-out" }),
+    rec({ id: "i1", amount: 2000, kind: "income", categoryId: "main-salary" }),
+    rec({ id: "i2", amount: 120, kind: "income", categoryId: "reimbursements-refunds" }),
   ];
 
   it("sums each kind separately", () => {
@@ -55,10 +55,10 @@ describe("kind-aware totals", () => {
 
   it("totalsByCategory excludes income by default and includes it when asked", () => {
     expect(totalsByCategory(records)).toHaveLength(1);
-    expect(totalsByCategory(records)[0]).toMatchObject({ categoryId: "food-dining", total: 150, count: 2 });
+    expect(totalsByCategory(records)[0]).toMatchObject({ categoryId: "dining-out", total: 150, count: 2 });
     const income = totalsByCategory(records, "income");
     expect(income).toHaveLength(2);
-    expect(income[0]).toMatchObject({ categoryId: "inc-paycheck", total: 2000 });
+    expect(income[0]).toMatchObject({ categoryId: "main-salary", total: 2000 });
   });
 
   it("dailyFlow splits expense and income per day", () => {

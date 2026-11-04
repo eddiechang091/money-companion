@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { AmountInput, Field, Select, Textarea, TextInput } from "@/components/ui/Input";
 import { CategoryPicker } from "@/components/ui/CategoryPicker";
+import { defaultCategoryIdForKind } from "@/lib/categories";
 import { CURRENCIES, currencyLabel } from "@/lib/currencies";
 import { todayIso, parseAmountInput } from "@/lib/utils";
 import { validateExpenseDraft, type ExpenseFieldErrors } from "@/lib/validation";
@@ -41,7 +42,14 @@ export function ExpenseForm({
   const [kind, setKind] = useState<RecordKind>(initialKind);
   const [amountText, setAmountText] = useState(initial?.amount !== undefined ? String(initial.amount) : "");
   const [currency, setCurrency] = useState(initial?.currency ?? defaultCurrency);
-  const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
+  // Fresh records start on the kind's default category; edits keep the
+  // record's own category (null = Others, stored as "").
+  const initialCategoryId = initial?.categoryId;
+  const [categoryId, setCategoryId] = useState<string>(
+    initialCategoryId === undefined
+      ? defaultCategoryIdForKind(initialKind)
+      : (initialCategoryId ?? "")
+  );
   const [description, setDescription] = useState(initial?.description ?? "");
   const [date, setDate] = useState(initial?.date ?? todayIso());
   const [paymentMethod, setPaymentMethod] = useState(
@@ -54,8 +62,8 @@ export function ExpenseForm({
   function handleKindChange(next: RecordKind) {
     if (next === kind) return;
     setKind(next);
-    // Categories differ per kind; a stale selection would fail validation.
-    setCategoryId("");
+    // Categories differ per kind; restart on the new kind's default.
+    setCategoryId(defaultCategoryIdForKind(next));
   }
 
   useEffect(() => {
