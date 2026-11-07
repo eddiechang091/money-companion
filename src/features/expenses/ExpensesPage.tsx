@@ -143,13 +143,13 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
           <div className="chart-legend" aria-hidden="true">
             {kindFilter !== "income" ? (
               <span>
-                <span className="lg-dot" style={{ background: "var(--primary)" }} />
+                <span className="lg-dot" style={{ background: "var(--chart-expense, var(--primary))" }} />
                 Expenses
               </span>
             ) : null}
             {kindFilter !== "expense" ? (
               <span>
-                <span className="lg-dot" style={{ background: "var(--success)" }} />
+                <span className="lg-dot" style={{ background: "var(--chart-income, var(--success))" }} />
                 Income
               </span>
             ) : null}
