@@ -26,9 +26,6 @@ function AIContent({ result }: { result: InsightResult }) {
         <p className="bubble-text muted">{result.financialObservation}</p>
       ) : null}
       {result.suggestion ? <p className="bubble-text">{result.suggestion}</p> : null}
-      {result.followUpQuestion ? (
-        <p className="bubble-question">{result.followUpQuestion}</p>
-      ) : null}
     </div>
   );
 }

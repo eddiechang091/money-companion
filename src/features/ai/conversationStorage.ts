@@ -75,12 +75,16 @@ export function makeAssistantMessage(
   result: InsightResult,
   expenseId?: string
 ): ConversationMessage {
+  // The follow-up question is deliberately NOT part of the displayed text:
+  // it lives in the suggestion chips (see buildSuggestedQuestions, which
+  // takes it from result.followUpQuestion). Including it here rendered the
+  // same question twice — once as the closing line of the cat's reply and
+  // once as a tappable chip underneath it.
   const parts = [
     result.headline,
     result.smallTalk,
     result.financialObservation,
     result.suggestion,
-    result.followUpQuestion,
   ].filter(Boolean);
   return {
     id: newId(),
