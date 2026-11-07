@@ -572,6 +572,35 @@ function activitySkipReason(value: string): "investment" | "transfer" | undefine
   return undefined;
 }
 
+/**
+ * Header names that carry the transaction's own type label (e.g. "Interest",
+ * "Internal Transfer"). Used only when the description cell is empty, so
+ * rows without a payee still read intelligibly in review and can be
+ * guessed (an "Interest" row is dividend/interest income).
+ */
+const TYPE_HEADER_NAMES = [
+  "transaction type",
+  "transaction sub type",
+  "activity type",
+  "activity sub type",
+  "type",
+  "sub type",
+];
+
+function typeLabelOf(row: CsvRow, mapping: ColumnMapping): string {
+  if (!mapping.hasHeader) return "";
+  const norm = (h: string) => h.trim().toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ");
+  const parts: string[] = [];
+  for (const name of TYPE_HEADER_NAMES) {
+    const idx = mapping.header.findIndex((h) => norm(h) === name);
+    if (idx >= 0) {
+      const v = (row[idx] ?? "").trim();
+      if (v) parts.push(v);
+    }
+  }
+  return parts.join(" ");
+}
+
 /** Convert parsed rows into normalized expense rows using a column mapping. */
 export function normalizeRows(
   rows: CsvRow[],
@@ -650,7 +679,7 @@ export function normalizeRows(
     const currency = mapping.currencyCol >= 0 ? (r[mapping.currencyCol] ?? "").trim() || undefined : undefined;
     const skipReason =
       mapping.activityTypeCol >= 0 ? activitySkipReason(r[mapping.activityTypeCol] ?? "") : undefined;
-    out.push({ date, description: description || "(no description)", amount, isCredit, categoryHint, currency, skipReason, raw: r });
+    out.push({ date, description: description || typeLabelOf(r, mapping) || "(no description)", amount, isCredit, categoryHint, currency, skipReason, raw: r });
   }
   return out;
 }

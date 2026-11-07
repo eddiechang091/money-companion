@@ -77,4 +77,17 @@ describe("guessCategoryId", () => {
   it("returns null for unknown merchants", () => {
     expect(guessCategoryId("SOME RANDOM PLACE XYZ")).toBeNull();
   });
+
+  it("guesses bank-statement payees", () => {
+    // Federal benefit deposits and insurer claim reimbursements.
+    expect(guessCategoryId("CANADA", "income")).toBe("reimbursements-refunds");
+    expect(guessCategoryId("SUNLIFE MED INS", "income")).toBe("reimbursements-refunds");
+    // Employer payroll names stay unguessed: only generic payroll words match.
+    expect(guessCategoryId("MAXIMUS CANADA", "income")).toBeNull();
+    // Mortgage lender and mutual insurer.
+    expect(guessCategoryId("MERIX", "expense")).toBe("housing-rent");
+    expect(guessCategoryId("PEI Mutual Ins", "expense")).toBe("insurance-safety");
+    // Interest rows (via the type-label fallback) are investment income.
+    expect(guessCategoryId("Interest", "income")).toBe("investments-dividends");
+  });
 });
