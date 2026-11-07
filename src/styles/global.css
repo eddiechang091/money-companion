@@ -364,6 +364,15 @@ select option {
   display: flex;
   align-items: center;
   gap: 8px;
+  /* On narrow screens the three controls (Month/Year, month picker,
+     All/Expenses/Income) cannot fit one row. Let them wrap as whole
+     units instead of crushing the pills — a crushed pill breaks its
+     label letter-by-letter because body sets overflow-wrap: anywhere. */
+  flex-wrap: wrap;
+}
+.chart-controls > .segmented,
+.chart-controls > .dropdown {
+  flex-shrink: 0;
 }
 .segmented {
   display: inline-flex;
@@ -381,6 +390,9 @@ select option {
   padding: 4px 12px;
   border-radius: 999px;
   cursor: pointer;
+  /* Labels must never break mid-word: body sets overflow-wrap: anywhere,
+     so a squeezed pill used to stack "Month" as M-o-n-t-h on mobile. */
+  white-space: nowrap;
 }
 .segmented-btn.is-active {
   background: var(--surface-1);
