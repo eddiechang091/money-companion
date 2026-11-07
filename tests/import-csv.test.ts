@@ -4,6 +4,7 @@ import {
   parseDateLoose,
   parseAmountLoose,
   detectColumns,
+  emptyMapping,
   normalizeRows,
   importKeyOf,
 } from "@/features/import/csv";
@@ -66,6 +67,36 @@ const RBC_CSV = `"Account Type","Account Number","Transaction Date","Cheque Numb
 Chequing,12345,10/04/2026,,WALMART SUPERCENTER,, -67.89,
 Chequing,12345,10/05/2026,,INTEREST,, 0.12,
 `;
+
+describe("normalizeRows description fallback", () => {
+  it("uses the transaction type label when the payee cell is empty", () => {
+    const header = ["transaction_date", "transaction_type", "transaction_sub_type", "payee", "amount"];
+    const mapping = emptyMapping(true, header);
+    mapping.date = 0;
+    mapping.description = 3;
+    mapping.amount = 4;
+    const rows = [
+      header,
+      ["2026-05-04", "Interest", "", "", "0.12"],
+      ["2026-05-05", "Internal Transfer", "Source", "", "-500.00"],
+      ["2026-05-06", "Deposit", "Aft", "CANADA", "790.00"],
+    ];
+    const out = normalizeRows(rows, mapping);
+    expect(out.map((r) => r.description)).toEqual(["Interest", "Internal Transfer Source", "CANADA"]);
+    expect(out[0].isCredit).toBe(true);
+    expect(out[1].isCredit).toBe(false);
+  });
+
+  it("keeps the placeholder when neither payee nor type label exists", () => {
+    const header = ["transaction_date", "payee", "amount"];
+    const mapping = emptyMapping(true, header);
+    mapping.date = 0;
+    mapping.description = 1;
+    mapping.amount = 2;
+    const out = normalizeRows([header, ["2026-05-04", "", "-5.00"]], mapping);
+    expect(out[0].description).toBe("(no description)");
+  });
+});
 
 describe("detectColumns + normalizeRows", () => {
   it("handles TD debit/credit shape", () => {

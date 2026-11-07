@@ -27,7 +27,7 @@ export function AddExpensePage({
       <Card>
         <ExpenseForm
           initial={{ kind: initialKind }}
-          submitLabel="Save transaction"
+          submitLabel="Save"
           saving={saving}
           defaultCurrency={defaultCurrency}
           onCancel={() => onNavigate("/expenses")}
