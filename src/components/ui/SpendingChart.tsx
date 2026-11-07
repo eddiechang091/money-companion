@@ -69,7 +69,7 @@ export default function SpendingChart({
           {showExpense ? (
             <Bar
               dataKey="expense"
-              fill="var(--primary)"
+              fill="var(--chart-expense, var(--primary))"
               radius={[3, 3, 0, 0]}
               maxBarSize={24}
             />
@@ -77,7 +77,7 @@ export default function SpendingChart({
           {showIncome ? (
             <Bar
               dataKey="income"
-              fill="var(--success)"
+              fill="var(--chart-income, var(--success))"
               radius={[3, 3, 0, 0]}
               maxBarSize={24}
             />

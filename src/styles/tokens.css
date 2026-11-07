@@ -18,6 +18,10 @@
   --warning-soft: #fdf3df;
   --expense: #ef6d6d;
   --expense-soft: #fdeaea;
+  /* Money-flow chart bars. Default to the primary/success pair; themes
+     where those two are too close override --chart-expense below. */
+  --chart-expense: var(--primary);
+  --chart-income: var(--success);
   --border: #ece2d7;
   --border-strong: #ded1c3;
   --radius-sm: 10px;
@@ -82,6 +86,10 @@
   --primary: #2f9e5f;
   --primary-strong: #237a49;
   --primary-soft: #e0f3e8;
+  /* Chart bars: --primary and --success are both green here, so the
+     expense bars would be indistinguishable from income. Use the
+     expense red for money out instead. */
+  --chart-expense: var(--expense);
   --secondary: #7bc96f;
   --border: #d8e6cf;
   --border-strong: #bccfb2;
@@ -127,6 +135,10 @@
   --primary: #2fbfa8;
   --primary-strong: #1fa78f;
   --primary-soft: #0e3a44;
+  /* Chart bars: --primary (teal) and --success (mint) are too close,
+     so the expense bars would blend into income. Use the expense
+     pink-red for money out instead. */
+  --chart-expense: var(--expense);
   --secondary: #4fc3ff;
   --success: #3fe0b0;
   --success-soft: #0c332a;
