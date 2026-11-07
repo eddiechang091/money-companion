@@ -239,11 +239,23 @@ describe("makeUserMessage", () => {
 });
 
 describe("makeAssistantMessage", () => {
-  it("builds text from all non-null result fields", () => {
+  it("builds text from the reply fields, but not the follow-up question", () => {
     const msg = makeAssistantMessage(MOCK_RESULT);
     expect(msg.text).toContain(MOCK_RESULT.headline);
     expect(msg.text).toContain(MOCK_RESULT.smallTalk!);
-    expect(msg.text).toContain(MOCK_RESULT.followUpQuestion!);
+    // The follow-up question lives in the suggestion chips, not in the
+    // reply text — rendering it in both showed the same question twice
+    // (once as the cat's closing line, once as a tappable chip).
+    expect(msg.text).not.toContain(MOCK_RESULT.followUpQuestion!);
+  });
+
+  it("shows the follow-up in the suggestions, not in the reply text", () => {
+    const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "dining-out" });
+    const ctx = buildConversationContext([expense], [], "CAD", expense, MONTH);
+    const msg = makeAssistantMessage(MOCK_RESULT);
+    const questions = buildSuggestedQuestions(ctx, true, [], [msg]);
+    expect(questions).toContain(MOCK_RESULT.followUpQuestion!);
+    expect(msg.text).not.toContain(MOCK_RESULT.followUpQuestion!);
   });
 
   it("sets role to assistant and attaches result", () => {
