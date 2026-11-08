@@ -6,7 +6,7 @@ import { UNCATEGORIZED_LABEL } from "@/lib/constants";
 import { categoriesForKind, categoryLabel } from "@/lib/categories";
 import { useProfile } from "@/services/profile/useProfile";
 import { getExpenseRepository } from "@/services/expenses/repository";
-import { awardBadge } from "@/features/gamification/awardBadges";
+import { awardBadge, refreshBadges } from "@/features/gamification/awardBadges";
 import {
   parseCsv,
   sniffDelimiter,
@@ -311,8 +311,17 @@ export function ImportDialog({
           ? `Imported ${done} entries (${importedIncome} income).`
           : `Imported ${done} expense${done === 1 ? "" : "s"}.`
       );
-      // Celebrate the first import immediately.
-      if (done > 0) void awardBadge("first-import");
+      // Celebrate the first import immediately, then sweep state-derived
+      // badges (first expense/income, months, streaks, counts) so everything
+      // the imported data earns celebrates right after it. Without the sweep,
+      // those badges only appeared when the profile page ran its mount-time
+      // refresh. Awaited in sequence: both calls share the unlocked-badge
+      // store, so firing them concurrently could lose one side's persist —
+      // and sequencing keeps the import badge first in the celebration queue.
+      if (done > 0) {
+        await awardBadge("first-import");
+        await refreshBadges();
+      }
       onImported();
       onClose();
     } catch {

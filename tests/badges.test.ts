@@ -81,6 +81,27 @@ describe("checkBadgeUnlocks", () => {
     expect(checkBadgeUnlocks(new Set(), ctx({ consecutiveMonths: 60 }))).toContain("months-60");
   });
 
+  it("unlocks everything a 6-month import earns — except the import badge itself", () => {
+    // Regression: importing 6 months of data must celebrate the state
+    // badges it earns (firsts, counts, months, streaks) right away, not
+    // only when the profile page runs its mount-time refresh.
+    const ids = checkBadgeUnlocks(
+      new Set(),
+      ctx({
+        expenseCount: 60,
+        incomeCount: 12,
+        consecutiveMonths: 6,
+        streak: { current: 3, longest: 3, totalDays: 60, lastActiveDate: "2026-11-07", aliveButIdleToday: false },
+      })
+    );
+    for (const id of ["first-expense", "first-income", "expenses-50", "months-3", "months-6", "streak-3"]) {
+      expect(ids).toContain(id);
+    }
+    // first-import is an event badge: the import action awards it directly,
+    // never the state refresh.
+    expect(ids).not.toContain("first-import");
+  });
+
   it("never unlocks event badges via state refresh", () => {
     const ids = checkBadgeUnlocks(
       new Set(),
