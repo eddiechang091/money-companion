@@ -4,9 +4,10 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
+  YAxis,
   type TooltipProps,
 } from "recharts";
-import { money } from "@/lib/utils";
+import { compactMoney, money } from "@/lib/utils";
 import type { CategoryTrendRow } from "@/lib/analytics";
 
 export interface TrendCategory {
@@ -29,8 +30,6 @@ export default function CategoryTrendChart({
   if (!hasData) return null;
   // 12 monthly points: show every other label so they fit on mobile.
   const labelInterval = data.length > 8 ? 1 : 0;
-  // With one or two points a line has no visible curve, so show dots.
-  const showDots = data.length <= 2;
 
   function renderTooltip({ active, payload }: TooltipProps<number, string>) {
     if (!active || !payload || payload.length === 0) return null;
@@ -54,14 +53,23 @@ export default function CategoryTrendChart({
   return (
     <div className="chart-wrap chart-wrap-tall" aria-hidden="true">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 8 }}>
+        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: "var(--text-muted)" }}
             tickLine={false}
-            axisLine={false}
+            axisLine={{ stroke: "var(--border)" }}
             interval={labelInterval}
             padding={{ left: 24, right: 24 }}
+          />
+          <YAxis
+            width={44}
+            tick={{ fontSize: 11, fill: "var(--text-muted)" }}
+            tickLine={false}
+            axisLine={{ stroke: "var(--border)" }}
+            tickFormatter={(value: number) => compactMoney(value, currency)}
+            domain={[0, "auto"]}
+            allowDecimals={false}
           />
           <Tooltip content={renderTooltip} cursor={{ stroke: "var(--border)" }} />
           {categories.map((c) => (
@@ -71,8 +79,8 @@ export default function CategoryTrendChart({
               dataKey={c.id}
               stroke={c.color}
               strokeWidth={2}
-              dot={showDots ? { r: 3 } : false}
-              activeDot={{ r: 3 }}
+              dot={{ r: 3 }}
+              activeDot={{ r: 4 }}
             />
           ))}
         </LineChart>

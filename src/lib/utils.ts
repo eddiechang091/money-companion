@@ -19,6 +19,22 @@ export function money(amount: number, currency = "USD"): string {
   }
 }
 
+/** Short money for axis labels ("$1.1K", "CA$500"). */
+export function compactMoney(amount: number, currency = "USD"): string {
+  const safe = Number.isFinite(amount) ? amount : 0;
+  const locale = CURRENCY_LOCALES[currency] ?? "en-CA";
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(safe);
+  } catch {
+    return money(safe, currency);
+  }
+}
+
 export function toIsoDate(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");

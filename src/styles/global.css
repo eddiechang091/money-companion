@@ -360,7 +360,8 @@ select option {
 .trend-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
 .trend-chips .chip { cursor: pointer; }
 .trend-chips .chip[aria-pressed="false"] { opacity: 0.45; }
-.chart-legend { display: flex; gap: 14px; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.chart-legend span { white-space: nowrap; }
 .lg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
 .flow-summary { margin: 10px 0 0; font-size: 14px; color: var(--text-muted); }
 .flow-summary b { color: var(--text); }
@@ -1352,6 +1353,207 @@ select option {
   background: var(--primary-soft);
   color: var(--text);
   font-weight: 700;
+}
+
+/* ─── PWA install prompt ─────────────────────────────────────────────── */
+.install-prompt {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  animation: install-prompt-in var(--dur-normal) var(--ease);
+}
+@keyframes install-prompt-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.install-prompt-icon {
+  border-radius: 10px;
+  flex: none;
+}
+.install-prompt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.install-prompt-text strong {
+  color: var(--text);
+  font-size: 14px;
+}
+.install-prompt-cta {
+  flex: none;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 9px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-inverse);
+  background: var(--primary);
+  cursor: pointer;
+}
+.install-prompt-dismiss {
+  flex: none;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px;
+}
+
+/* Toggle switch with ON/OFF labels */
+.toggle {
+  position: relative;
+  width: 76px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: #3a3a3c;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.toggle.is-on {
+  background: var(--toggle-on, #34c759);
+}
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.toggle-track-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+.toggle-track-label-off {
+  right: 10px;
+}
+.toggle.is-on .toggle-track-label-off {
+  display: none;
+}
+.toggle-track-label-on {
+  left: 10px;
+  display: none;
+}
+.toggle.is-on .toggle-track-label-on {
+  display: block;
+}
+.toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease;
+}
+.toggle.is-on .toggle-knob {
+  transform: translateX(44px);
+}
+
+/* Settings row: icon + label on one line, control on the right */
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+.setting-row-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+.setting-row-text {
+  flex: 1;
+  min-width: 0;
+}
+.setting-row-title {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.setting-row-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Small help (?) bubble trigger + tooltip */
+.help-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--text-muted);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: transparent;
+  padding: 0;
+  line-height: 1;
+}
+.help-dot:hover {
+  border-color: var(--text);
+  color: var(--text);
+}
+.help-bubble-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.help-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+  font-weight: 400;
+}
+.help-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--border, #e5e5e5);
 }
 
 /* ─── Kind toggle (Add transaction form) ─────────────────────────────────── */
