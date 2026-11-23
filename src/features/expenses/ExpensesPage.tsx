@@ -228,6 +228,19 @@ export function ExpensesPage({
       />
       {categoryFilter ? (
         <div className="filter-banner" role="status">
+          <button
+            type="button"
+            className="filter-banner-back"
+            onClick={() =>
+              onNavigate(
+                `/trends?category=${categoryFilter}&kind=${
+                  kindFilter === "expense" || kindFilter === "income" ? kindFilter : "expense"
+                }`
+              )
+            }
+          >
+            ← {t("expenses.backToTrends")}
+          </button>
           <span>
             {t("expenses.onlyCategory", {
               category: categoryName(categoryFilter === "uncategorized" ? null : categoryFilter),

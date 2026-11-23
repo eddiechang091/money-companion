@@ -1,11 +1,13 @@
 import {
   CartesianGrid,
+  Dot,
   Line,
   LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  type DotProps,
   type TooltipProps,
 } from "recharts";
 import { compactMoney, money } from "@/lib/utils";
@@ -59,6 +61,26 @@ export default function CategoryTrendChart({
     );
   }
 
+  // Recharts drops event handlers from the Line's own props (renderDots
+  // uses filterProps(..., false)) but keeps them from the dot object
+  // (filterProps(..., true)). At runtime the dot's onClick receives the
+  // dot's props as its first argument (dataKey, value, payload) — see
+  // resolveTrendPointClick. The SAME handler must be on activeDot too:
+  // as soon as the tooltip is active, recharts renders the active dot
+  // (r=6) on top of the regular dot, and without its own onClick it
+  // swallows the tap — hovered/tapped points did nothing.
+  //
+  // Note the active dot cannot take the handler as an object prop:
+  // renderActivePoints calls adaptEventHandlers(activeDot), which invokes
+  // the handler with the activeDot OBJECT itself (no dataKey/value/
+  // payload), so resolveTrendPointClick would return null. As a render
+  // function, the active dot receives the point's real dotProps and the
+  // onClick closes over them.
+  function handleDotClick(dotProps: unknown) {
+    const point = resolveTrendPointClick(dotProps);
+    if (point) onPointClick?.(point);
+  }
+
   return (
     <div className="chart-wrap chart-wrap-tall" aria-hidden="true">
       <ResponsiveContainer width="100%" height="100%">
@@ -94,18 +116,18 @@ export default function CategoryTrendChart({
                 fill: c.color,
                 stroke: "var(--surface)",
                 strokeWidth: 1.5,
-                // Recharts drops event handlers from the Line's own props
-                // (renderDots uses filterProps(..., false)) but keeps them
-                // from the dot object (filterProps(..., true)). At runtime
-                // the dot's onClick receives the dot's props as its first
-                // argument (dataKey, value, payload) — see
-                // resolveTrendPointClick.
-                onClick: (dotProps: unknown) => {
-                  const point = resolveTrendPointClick(dotProps);
-                  if (point) onPointClick?.(point);
-                },
+                onClick: handleDotClick,
               }}
-              activeDot={{ r: 6, fill: c.color, stroke: "var(--surface)", strokeWidth: 2 }}
+              activeDot={(props: DotProps) => (
+                <Dot
+                  {...props}
+                  r={6}
+                  fill={c.color}
+                  stroke="var(--surface)"
+                  strokeWidth={2}
+                  onClick={() => handleDotClick(props)}
+                />
+              )}
             />
           ))}
         </LineChart>
