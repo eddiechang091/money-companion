@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n";
 import {
   createContext,
   useCallback,
@@ -107,7 +108,7 @@ export function expensesReducer(state: ExpensesState, action: ExpensesAction): E
 
 function friendlyErrorMessage(error: unknown): string {
   if (error instanceof ExpenseStoreError) return error.message;
-  return "Oops \u2014 something went a little sideways.";
+  return translate("store.oops");
 }
 
 interface ExpensesContextValue extends ExpensesState {
@@ -182,8 +183,8 @@ export function ExpensesProvider({ children }: { children: ReactNode }) {
       const repository = await getExpenseRepository();
       const current = await repository.get(id);
       if (!current) {
-        notify("That expense is already gone.", "error");
-        throw new ExpenseStoreError("not-found", "That expense is already gone.");
+        notify(translate("store.expenseGone"), "error");
+        throw new ExpenseStoreError("not-found", translate("store.expenseGone"));
       }
       const optimistic: Expense = { ...current, ...patch, id: current.id, updatedAt: new Date().toISOString() };
       dispatch({ type: "optimistic-update", expense: optimistic });
@@ -208,8 +209,8 @@ export function ExpensesProvider({ children }: { children: ReactNode }) {
       const repository = await getExpenseRepository();
       const current = await repository.get(id);
       if (!current) {
-        notify("That expense is already gone.", "error");
-        throw new ExpenseStoreError("not-found", "That expense is already gone.");
+        notify(translate("store.expenseGone"), "error");
+        throw new ExpenseStoreError("not-found", translate("store.expenseGone"));
       }
       dispatch({ type: "optimistic-remove", id });
       dispatch({ type: "pending-add", id });

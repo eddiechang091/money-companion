@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n";
 import type { MonthlyBudget } from "@/lib/types";
 import type { KvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS, STORAGE_VERSION } from "@/lib/constants";
@@ -16,11 +17,11 @@ export class BudgetStoreError extends Error {
 }
 
 export function budgetStorageError(): BudgetStoreError {
-  return new BudgetStoreError("storage", "Couldn't reach your budget storage. Please try again.");
+  return new BudgetStoreError("storage", translate("store.budgetStorageError"));
 }
 
 export function budgetNotFoundError(): BudgetStoreError {
-  return new BudgetStoreError("not-found", "That budget is already gone.");
+  return new BudgetStoreError("not-found", translate("store.budgetGone"));
 }
 
 export interface BudgetInput {
@@ -50,14 +51,14 @@ export function isBudgetRecord(value: unknown): value is MonthlyBudget {
 
 export function sanitizeBudgetAmount(amount: number): number {
   if (!Number.isFinite(amount) || amount <= 0) {
-    throw new BudgetStoreError("storage", "Pick an amount above zero for your budget.");
+    throw new BudgetStoreError("storage", translate("store.budgetAmountZero"));
   }
   return Math.round(amount * 100) / 100;
 }
 
 export function assertBudgetStorable(value: unknown): void {
   if (JSON.stringify(value).length > MAX_BUDGET_BYTES) {
-    throw new BudgetStoreError("too-large", "That budget couldn't be saved.");
+    throw new BudgetStoreError("too-large", translate("store.budgetSaveFailed"));
   }
 }
 

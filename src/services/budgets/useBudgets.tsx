@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n";
 import {
   createContext,
   useCallback,
@@ -54,7 +55,7 @@ export function budgetsReducer(state: BudgetsState, action: BudgetsAction): Budg
 
 function friendly(error: unknown): string {
   if (error instanceof BudgetStoreError) return error.message;
-  return "Oops — something went a little sideways.";
+  return translate("store.oops");
 }
 
 interface BudgetsContextValue extends BudgetsState {

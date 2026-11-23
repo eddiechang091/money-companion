@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n";
 import type { KvStore } from "@/services/anna/storage";
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS, STORAGE_VERSION } from "@/lib/constants";
@@ -46,7 +47,7 @@ function applyPatch(current: Expense, patch: ExpensePatch): Expense {
   if (patch.kind !== undefined) merged.kind = normalizeRecordKind(patch.kind);
   if (patch.amount !== undefined) {
     if (!Number.isFinite(patch.amount) || patch.amount <= 0) {
-      throw new ExpenseStoreError("storage", "That expense couldn't be saved. Check the amount and try again.");
+      throw new ExpenseStoreError("storage", translate("store.expenseSaveAmount"));
     }
     merged.amount = Math.round(patch.amount * 100) / 100;
   }
@@ -57,7 +58,7 @@ function applyPatch(current: Expense, patch: ExpensePatch): Expense {
   if (patch.description !== undefined) merged.description = patch.description.trim();
   if (patch.date !== undefined) {
     if (!isValidIsoDate(patch.date)) {
-      throw new ExpenseStoreError("storage", "That expense couldn't be saved. Check the date and try again.");
+      throw new ExpenseStoreError("storage", translate("store.expenseSaveDate"));
     }
     merged.date = patch.date;
   }

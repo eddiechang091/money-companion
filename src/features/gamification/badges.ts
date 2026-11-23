@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n";
 import type { StreakInfo } from "@/lib/streak";
 
 // ---------------------------------------------------------------------------
@@ -135,6 +136,20 @@ export function checkBadgeUnlocks(
   return BADGE_DEFS.filter((b) => !alreadyUnlocked.has(b.id) && unlocked(ctx, b.id)).map(
     (b) => b.id
   );
+}
+
+/** Display name of a badge in the current UI language ("badge.<id>"). */
+export function badgeName(id: string): string {
+  const key = `badge.${id}`;
+  const translated = translate(key);
+  return translated !== key ? translated : (BADGE_DEFS.find((b) => b.id === id)?.name ?? id);
+}
+
+/** Display hint of a badge in the current UI language ("badge.<id>.hint"). */
+export function badgeHint(id: string): string {
+  const key = `badge.${id}.hint`;
+  const translated = translate(key);
+  return translated !== key ? translated : (BADGE_DEFS.find((b) => b.id === id)?.hint ?? "");
 }
 
 export function badgeDefById(id: string): BadgeDef | undefined {

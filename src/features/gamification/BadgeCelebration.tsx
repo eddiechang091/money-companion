@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import type { BadgeDef } from "./badges";
+import { badgeName, badgeHint, type BadgeDef } from "./badges";
+import { useLanguage } from "@/lib/i18n";
 import { CELEBRATION_SLIDE_MS } from "./badgeEvents";
 
 export function BadgeCelebration({
@@ -10,6 +11,7 @@ export function BadgeCelebration({
   badges: BadgeDef[];
   onDone: () => void;
 }) {
+  const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const badge = badges[index];
 
@@ -40,19 +42,19 @@ export function BadgeCelebration({
       className="celebration-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label={`Badge unlocked: ${badge.name}`}
+      aria-label={t("badges.celebration", { name: badgeName(badge.id) })}
       onClick={next}
     >
       <div className="celebration-card" onClick={(e) => e.stopPropagation()}>
-        <p className="celebration-kicker">🏅 Badge unlocked!</p>
+        <p className="celebration-kicker">{t("badges.celebrationTitle")}</p>
         <div key={badge.id} className="celebration-emoji" aria-hidden="true">
           {badge.emoji}
         </div>
-        <h2 className="celebration-name">{badge.name}</h2>
-        <p className="celebration-hint muted">{badge.hint}</p>
+        <h2 className="celebration-name">{badgeName(badge.id)}</h2>
+        <p className="celebration-hint muted">{badgeHint(badge.id)}</p>
         {badges.length > 1 && (
           <p className="celebration-progress muted">
-            {index + 1} of {badges.length}
+            {t("common.of", { a: index + 1, b: badges.length })}
           </p>
         )}
       </div>

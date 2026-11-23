@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import type { Expense } from "@/lib/types";
-import { UNCATEGORIZED_LABEL } from "@/lib/constants";
-import { categoriesForKind, categoryLabel } from "@/lib/categories";
+import { categoriesForKind, categoryLabel, categoryName } from "@/lib/categories";
+import { useLanguage } from "@/lib/i18n";
+import { getIntlLocale } from "@/lib/utils";
 import { useProfile } from "@/services/profile/useProfile";
 import { getExpenseRepository } from "@/services/expenses/repository";
 import { awardBadge, refreshBadges } from "@/features/gamification/awardBadges";
@@ -32,7 +33,7 @@ type Step = "upload" | "review";
 
 function formatMoney(amount: number, currency: string): string {
   try {
-    return new Intl.NumberFormat("en", { style: "currency", currency }).format(amount);
+    return new Intl.NumberFormat(getIntlLocale(), { style: "currency", currency }).format(amount);
   } catch {
     return `${currency} ${amount.toFixed(2)}`;
   }
@@ -42,9 +43,9 @@ const CURRENCIES = ["CAD", "USD", "EUR", "GBP", "CNY", "HKD", "AUD", "JPY"];
 
 const REVIEW_PAGE_SIZE = 20;
 
-function statusLabel(s: ScoredRow): string {
-  if (s.status === "duplicate") return "duplicate";
-  return s.row.isCredit ? "income" : "new";
+function statusLabel(s: ScoredRow, t: (key: string) => string): string {
+  if (s.status === "duplicate") return t("import.statusDuplicate");
+  return s.row.isCredit ? t("import.statusIncome") : t("import.statusNew");
 }
 
 function statusClassName(s: ScoredRow): string {
@@ -62,6 +63,7 @@ export function ImportDialog({
   expenses: Expense[];
   onImported: () => void;
 }) {
+  const { t } = useLanguage();
   const { notify } = useToast();
   const { profile } = useProfile();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -167,7 +169,7 @@ export function ImportDialog({
     try {
       const llm = await getLlmService();
       if (!llm.available) {
-        notify("AI suggestions aren't available right now.", "error");
+        notify(t("import.aiUnavailable"), "error");
         return;
       }
       const map = await suggestCategories(suggestTargets, (req) => llm.complete(req));
@@ -175,11 +177,11 @@ export function ImportDialog({
       setSuggestions(map);
       notify(
         count > 0
-          ? `Suggested categories for ${count} description${count === 1 ? "" : "s"} — review before importing.`
-          : "No confident suggestions — the rest stay as Others."
+          ? t("import.suggestedFor", { count })
+          : t("import.noConfident")
       );
     } catch {
-      notify("Couldn't get AI suggestions. Your local guesses are unchanged.", "error");
+      notify(t("import.aiFailed"), "error");
     } finally {
       setSuggesting(false);
     }
@@ -230,7 +232,7 @@ export function ImportDialog({
           if (looksLikeWorkbook(file.name, buf)) {
             const sheets = readWorkbookSheets(buf);
             if (sheets.length === 0) {
-              setError("Couldn't find any data in this spreadsheet.");
+              setError(t("import.noData"));
               return;
             }
             candidates.push(...sheets);
@@ -253,14 +255,12 @@ export function ImportDialog({
               return;
             }
           }
-          setError(
-            "Couldn't recognize the columns. Make sure the file has a date, description and amount column."
-          );
+          setError(t("import.badColumns"));
         } catch {
-          setError("Couldn't read this file. Try a CSV or Excel export from your bank or expense app.");
+          setError(t("import.unreadableLong"));
         }
       })
-      .catch(() => setError("Couldn't read this file."));
+      .catch(() => setError(t("import.unreadable")));
   }
 
   function setMappingCol(
@@ -274,14 +274,14 @@ export function ImportDialog({
     const colCount = Math.max(0, ...rows.map((r) => r.length));
     return Array.from({ length: colCount }, (_, i) => ({
       value: i,
-      label: mapping?.hasHeader ? `${mapping.header[i] ?? `Column ${i + 1}`} (#${i + 1})` : `Column ${i + 1}`,
+      label: mapping?.hasHeader ? `${mapping.header[i] ?? t("import.column", { n: i + 1 })} (#${i + 1})` : t("import.column", { n: i + 1 }),
     }));
   }
 
   async function handleImport() {
     const toImport = selectable.filter(isIncluded);
     if (toImport.length === 0) {
-      notify("Nothing to import.", "error");
+      notify(t("import.nothing"), "error");
       return;
     }
     setImporting(true);
@@ -298,7 +298,7 @@ export function ImportDialog({
           description: s.row.description,
           date: s.row.date,
           paymentMethod: "Bank import",
-          notes: `Imported from ${fileName}`,
+          notes: t("import.importedFrom", { fileName }),
           source: "import",
           importKey: s.key,
         });
@@ -308,8 +308,8 @@ export function ImportDialog({
       const importedIncome = toImport.slice(0, done).filter((s) => s.row.isCredit).length;
       notify(
         importedIncome > 0
-          ? `Imported ${done} entries (${importedIncome} income).`
-          : `Imported ${done} expense${done === 1 ? "" : "s"}.`
+          ? t("import.importedEntries", { done, income: importedIncome })
+          : t("import.importedExpenses", { count: done })
       );
       // Celebrate the first import immediately, then sweep state-derived
       // badges (first expense/income, months, streaks, counts) so everything
@@ -325,7 +325,7 @@ export function ImportDialog({
       onImported();
       onClose();
     } catch {
-      notify("Import stopped early — some rows may not have been saved.", "error");
+      notify(t("import.stoppedEarly"), "error");
     } finally {
       setImporting(false);
     }
@@ -353,19 +353,16 @@ export function ImportDialog({
         className="dialog import-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="Import expenses"
+        aria-label={t("import.title")}
         onClick={(event) => event.stopPropagation()}
       >
 
         {step === "upload" && (
           <div className="import-dialog__pad">
-            <p className="dialog-title">Import expenses</p>
+            <p className="dialog-title">{t("import.title")}</p>
             <div className="stack" style={{ margin: "12px 0", gap: 12 }}>
             <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              Download a CSV or Excel export from your bank or expense app (YNAB, Mint,
-              Monarch, Copilot, 钱迹, 随手记, Wealthsimple, RBC, TD, Scotia, BMO, CIBC),
-              then pick the file here. Expenses and income are both imported —
-              income rows are marked as money in. Review every row before importing.
+              {t("import.uploadIntro")}
             </p>
             <input
               ref={fileRef}
@@ -375,7 +372,7 @@ export function ImportDialog({
               onChange={(e) => handleFile(e.target.files?.[0])}
             />
             <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-              Choose CSV or Excel file
+              {t("import.chooseFile")}
             </Button>
             {error && <p style={{ fontSize: 13, color: "var(--danger, #c0392b)" }}>{error}</p>}
             </div>
@@ -385,18 +382,18 @@ export function ImportDialog({
         {step === "review" && (
           <>
             <div className="import-dialog__header">
-              <p className="dialog-title">Import expenses</p>
+              <p className="dialog-title">{t("import.title")}</p>
               <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 8 }}>
                 {fileName}
-                {sourceLabel ? ` — detected ${sourceLabel} format` : ""} — {selectable.length} new
-                {incomeCount > 0 ? ` (${incomeCount} income)` : ""}, {dupCount} duplicate{dupCount === 1 ? "" : "s"} skipped.
-                {mapping ? " Check the column mapping below." : " Columns were mapped automatically."}
+                {sourceLabel ? t("import.detectedFormat", { source: sourceLabel }) : ""} — {t("import.newRows", { count: selectable.length })}
+                {incomeCount > 0 ? ` ${t("import.incomeCount", { count: incomeCount })}` : ""}, {t("import.duplicatesSkipped", { count: dupCount })}.
+                {mapping ? ` ${t("import.checkMapping")}` : ` ${t("import.mappedAuto")}`}
               </p>
 
               {mapping && (
                 <div className="import-mapping" style={{ marginTop: 12 }}>
                   <label>
-                    Date
+                    {t("common.date")}
                     <select
                       className="input"
                       value={mapping.date}
@@ -408,7 +405,7 @@ export function ImportDialog({
                     </select>
                   </label>
                   <label>
-                    Description
+                    {t("common.description")}
                     <select
                       className="input"
                       value={mapping.description}
@@ -422,7 +419,7 @@ export function ImportDialog({
                   {usePair ? (
                     <>
                       <label>
-                        Debit (out)
+                        {t("import.debitOut")}
                         <select
                           className="input"
                           value={useDebitPair ? mapping.debit : mapping.outflow}
@@ -436,7 +433,7 @@ export function ImportDialog({
                         </select>
                       </label>
                       <label>
-                        Credit (in)
+                        {t("import.creditIn")}
                         <select
                           className="input"
                           value={useDebitPair ? mapping.credit : mapping.inflow}
@@ -453,7 +450,7 @@ export function ImportDialog({
                   ) : (
                     <>
                       <label>
-                        Amount
+                        {t("common.amount")}
                         <select
                           className="input"
                           value={mapping.amount}
@@ -466,21 +463,21 @@ export function ImportDialog({
                       </label>
                       {showSign && (
                         <label>
-                          Sign
+                          {t("import.sign")}
                           <select
                             className="input"
                             value={flipSign ? "pos" : "neg"}
                             onChange={(e) => setFlipSign(e.target.value === "pos")}
                           >
-                            <option value="neg">Negative = expense</option>
-                            <option value="pos">Positive = expense</option>
+                            <option value="neg">{t("import.negativeExpense")}</option>
+                            <option value="pos">{t("import.positiveExpense")}</option>
                           </select>
                         </label>
                       )}
                     </>
                   )}
                   <label>
-                    Currency
+                    {t("import.currency")}
                     <select
                       className="input"
                       value={currency}
@@ -501,13 +498,11 @@ export function ImportDialog({
                   disabled={suggesting || suggestTargets.length === 0}
                 >
                   {suggesting
-                    ? "Suggesting…"
-                    : `Suggest categories${suggestTargets.length > 0 ? ` (${suggestTargets.length})` : ""}`}
+                    ? t("import.suggesting")
+                    : `${t("import.suggestCategories")}${suggestTargets.length > 0 ? ` (${suggestTargets.length})` : ""}`}
                 </Button>
                 <p>
-                  Optional AI help for the rows still marked Others. Sends only
-                  merchant names — no amounts, dates, or account details.
-                  Unclear ones stay as Others.
+                  {t("import.suggestNote")}
                 </p>
               </div>
             </div>
@@ -526,11 +521,11 @@ export function ImportDialog({
                   <thead>
                     <tr>
                       <th></th>
-                      <th>Date</th>
-                      <th>Description</th>
-                      <th style={{ textAlign: "right" }}>Amount</th>
-                      <th>Category</th>
-                      <th>Status</th>
+                      <th>{t("common.date")}</th>
+                      <th>{t("common.description")}</th>
+                      <th style={{ textAlign: "right" }}>{t("common.amount")}</th>
+                      <th>{t("common.category")}</th>
+                      <th>{t("common.status")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -548,7 +543,7 @@ export function ImportDialog({
                               onChange={() =>
                                 setOverrides((o) => ({ ...o, [s.key]: o[s.key] === "skip" ? "" : "skip" }))
                               }
-                              aria-label={`Include ${s.row.description}`}
+                              aria-label={t("import.include", { desc: s.row.description })}
                             />
                           </td>
                           <td style={{ whiteSpace: "nowrap" }}>{s.row.date}</td>
@@ -562,17 +557,17 @@ export function ImportDialog({
                                 className="input"
                                 value={categoryOf(s)}
                                 onChange={(e) => setOverrides((o) => ({ ...o, [s.key]: e.target.value }))}
-                                aria-label={`Category for ${s.row.description}`}
+                                aria-label={t("import.categoryFor", { desc: s.row.description })}
                               >
-                                <option value="">{UNCATEGORIZED_LABEL}</option>
+                                <option value="">{categoryName(null)}</option>
                                 {categoriesForKind(rowKind).map((c) => (
-                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                  <option key={c.id} value={c.id}>{categoryName(c.id)}</option>
                                 ))}
                               </select>
                             )}
                           </td>
                           <td style={{ whiteSpace: "nowrap" }}>
-                            <span className={statusClassName(s)}>{statusLabel(s)}</span>
+                            <span className={statusClassName(s)}>{statusLabel(s, t)}</span>
                           </td>
                         </tr>
                       );
@@ -594,7 +589,7 @@ export function ImportDialog({
                       </div>
                       <div className="import-card__meta">
                         <span>{s.row.date}</span>
-                        <span className={statusClassName(s)}>{statusLabel(s)}</span>
+                        <span className={statusClassName(s)}>{statusLabel(s, t)}</span>
                       </div>
                       {disabled ? (
                         <p className="import-card__category-text">{categoryLabel(categoryOf(s))}</p>
@@ -603,11 +598,11 @@ export function ImportDialog({
                           className="input"
                           value={categoryOf(s)}
                           onChange={(e) => setOverrides((o) => ({ ...o, [s.key]: e.target.value }))}
-                          aria-label={`Category for ${s.row.description}`}
+                          aria-label={t("import.categoryFor", { desc: s.row.description })}
                         >
-                          <option value="">{UNCATEGORIZED_LABEL}</option>
+                          <option value="">{categoryName(null)}</option>
                           {categoriesForKind(rowKind).map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
+                            <option key={c.id} value={c.id}>{categoryName(c.id)}</option>
                           ))}
                         </select>
                       )}
@@ -620,7 +615,7 @@ export function ImportDialog({
                             setOverrides((o) => ({ ...o, [s.key]: o[s.key] === "skip" ? "" : "skip" }))
                           }
                         />
-                        Include in import
+                        {t("import.includeInImport")}
                       </label>
                     </div>
                   );
@@ -630,21 +625,21 @@ export function ImportDialog({
               {pageCount > 1 && (
                 <div className="import-pager">
                   <span>
-                    Showing {pageStart + 1}–{pageEnd} of {scored.length}
+                    {t("import.showing", { a: pageStart + 1, b: pageEnd, total: scored.length })}
                   </span>
                   <span>
-                    Page {safePage + 1} of {pageCount}
+                    {t("import.pageOf", { a: safePage + 1, b: pageCount })}
                   </span>
                   <div className="import-pager__buttons">
                     <Button variant="ghost" onClick={() => setPage(safePage - 1)} disabled={safePage === 0}>
-                      Previous
+                      {t("common.previous")}
                     </Button>
                     <Button
                       variant="ghost"
                       onClick={() => setPage(safePage + 1)}
                       disabled={safePage >= pageCount - 1}
                     >
-                      Next
+                      {t("common.next")}
                     </Button>
                   </div>
                 </div>
@@ -655,10 +650,10 @@ export function ImportDialog({
 
             <div className="import-dialog__footer">
               <Button variant="ghost" onClick={() => setStep("upload")} disabled={importing}>
-                Back
+                {t("common.back")}
               </Button>
               <Button onClick={handleImport} disabled={importing || includedCount === 0}>
-                {importing ? `Importing ${progress.done}/${progress.total}…` : `Import ${includedCount} expense${includedCount === 1 ? "" : "s"}`}
+                {importing ? t("import.importing", { done: progress.done, total: progress.total }) : t("import.importButton", { count: includedCount })}
               </Button>
             </div>
           </>

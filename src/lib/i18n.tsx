@@ -94,6 +94,8 @@ export function paymentMethodDisplayName(method: string): string {
       return translate("form.cash");
     case "Transfer":
       return translate("form.transfer");
+    case "Bank import":
+      return translate("import.bankImport");
     default:
       return translate("form.other");
   }

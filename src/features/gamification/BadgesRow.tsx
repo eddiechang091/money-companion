@@ -1,4 +1,5 @@
-import { BADGE_DEFS, type BadgeDef } from "./badges";
+import { BADGE_DEFS, badgeName, badgeHint, type BadgeDef } from "./badges";
+import { useLanguage } from "@/lib/i18n";
 
 export function BadgesRow({
   unlockedIds,
@@ -7,15 +8,16 @@ export function BadgesRow({
   unlockedIds: ReadonlySet<string>;
   onSelect?: (badge: BadgeDef) => void;
 }) {
+  const { t } = useLanguage();
   const unlockedCount = BADGE_DEFS.filter((b) => unlockedIds.has(b.id)).length;
   const pct = Math.round((unlockedCount / BADGE_DEFS.length) * 100);
   return (
     <div className="badge-wall">
       <div className="badge-wall-head">
         <div>
-          <h3 className="badge-wall-title">Badge Wall</h3>
+          <h3 className="badge-wall-title">{t("badges.wall")}</h3>
           <p className="muted badge-wall-sub">
-            {unlockedCount} of {BADGE_DEFS.length} unlocked
+            {t("badges.countOf", { a: unlockedCount, b: BADGE_DEFS.length })}
           </p>
         </div>
         <div
@@ -24,12 +26,12 @@ export function BadgesRow({
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Badges unlocked"
+          aria-label={t("badges.unlocked")}
         >
           <div className="badge-wall-progress-fill" style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <div className="badge-wall-grid" role="list" aria-label="Achievement badges">
+      <div className="badge-wall-grid" role="list" aria-label={t("badges.achievements")}>
         {BADGE_DEFS.map((b) => {
           const unlocked = unlockedIds.has(b.id);
           const clickable = unlocked && onSelect;
@@ -37,7 +39,7 @@ export function BadgesRow({
             <div
               key={b.id}
               role={clickable ? "button" : "listitem"}
-              title={unlocked ? `${b.name} — unlocked!` : `${b.name}: ${b.hint}`}
+              title={unlocked ? t("badges.unlockedToast", { name: badgeName(b.id) }) : t("badges.nameHint", { name: badgeName(b.id), hint: badgeHint(b.id) })}
               className={`badge-card${unlocked ? " is-unlocked" : " is-locked"}${
                 clickable ? " is-clickable" : ""
               }`}
@@ -57,8 +59,8 @@ export function BadgesRow({
               <span className="badge-card-emoji" aria-hidden="true">
                 {unlocked ? b.emoji : "🔒"}
               </span>
-              <span className="badge-card-name">{b.name}</span>
-              <span className="badge-card-hint">{unlocked ? b.hint : "Locked"}</span>
+              <span className="badge-card-name">{badgeName(b.id)}</span>
+              <span className="badge-card-hint">{unlocked ? badgeHint(b.id) : t("badges.locked")}</span>
             </div>
           );
         })}

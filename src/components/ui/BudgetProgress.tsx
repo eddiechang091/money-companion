@@ -1,4 +1,5 @@
 import { money } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 export function BudgetProgress({
   spent,
@@ -9,6 +10,7 @@ export function BudgetProgress({
   limit: number;
   currency?: string;
 }) {
+  const { t } = useLanguage();
   const ratio = limit > 0 ? spent / limit : 0;
   const pct = Math.min(100, Math.max(0, Math.round(ratio * 100)));
   const over = limit > 0 && spent > limit;
@@ -24,7 +26,7 @@ export function BudgetProgress({
         <span style={{ width: pct + "%" }} />
       </div>
       <p className="muted" style={{ fontSize: 13 }}>
-        {money(spent, currency)} of {money(limit, currency)}
+        {t("budgets.spentOf", { spent: money(spent, currency), limit: money(limit, currency) })}
       </p>
     </div>
   );

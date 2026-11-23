@@ -4,6 +4,7 @@
 // Rarity gates the reward tables: longer history -> rarer drops.
 
 import type { CatItem } from "./types";
+import { translate } from "@/lib/i18n";
 
 export const CAT_ITEMS: CatItem[] = [
   // ---- Foods (7) ----
@@ -32,6 +33,20 @@ export const CAT_ITEMS: CatItem[] = [
 ];
 
 const BY_ID = new Map(CAT_ITEMS.map((i) => [i.id, i]));
+
+/** Display name of a cat item in the current UI language ("item.<id>"). */
+export function itemName(id: string): string {
+  const key = `item.${id}`;
+  const translated = translate(key);
+  return translated !== key ? translated : (BY_ID.get(id)?.name ?? id);
+}
+
+/** Display blurb of a cat item in the current UI language ("item.<id>.desc"). */
+export function itemBlurb(id: string): string {
+  const key = `item.${id}.desc`;
+  const translated = translate(key);
+  return translated !== key ? translated : (BY_ID.get(id)?.blurb ?? "");
+}
 
 export function getItem(id: string): CatItem | undefined {
   return BY_ID.get(id);

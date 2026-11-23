@@ -6,6 +6,7 @@
  *  - Single signed-amount shape: Date, Description, Amount
  */
 
+import { translate } from "@/lib/i18n";
 import { HEADER_ALIASES, directionOf, findAliasColumn, mapCategoryName, normalizeHeaderCell } from "./fields";
 import type { RecordKind } from "@/lib/types";
 
@@ -679,7 +680,7 @@ export function normalizeRows(
     const currency = mapping.currencyCol >= 0 ? (r[mapping.currencyCol] ?? "").trim() || undefined : undefined;
     const skipReason =
       mapping.activityTypeCol >= 0 ? activitySkipReason(r[mapping.activityTypeCol] ?? "") : undefined;
-    out.push({ date, description: description || typeLabelOf(r, mapping) || "(no description)", amount, isCredit, categoryHint, currency, skipReason, raw: r });
+    out.push({ date, description: description || typeLabelOf(r, mapping) || translate("import.noDescription"), amount, isCredit, categoryHint, currency, skipReason, raw: r });
   }
   return out;
 }
@@ -733,7 +734,7 @@ export function isWealthsimpleExport(rows: CsvRow[]): boolean {
 
 function cleanWsDescription(raw: string): string {
   // "Online bill payment (executed at 2026-07-23)" -> "Online bill payment"
-  return raw.replace(/\s*\(executed at [^)]*\)\s*/i, "").trim() || "(no description)";
+  return raw.replace(/\s*\(executed at [^)]*\)\s*/i, "").trim() || translate("import.noDescription");
 }
 
 /** Normalize Wealthsimple activity rows into money rows (expenses + income). */
