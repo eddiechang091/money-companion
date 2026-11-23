@@ -235,7 +235,9 @@ export function resolveTrendPointClick(data: unknown): TrendPointClick | null {
   const periodKey =
     payload && typeof payload.date === "string" && payload.date.length > 0 ? payload.date : null;
   const value = typeof d.value === "number" ? d.value : null;
-  if (!categoryId || !periodKey || value === null) return null;
+  // A $0 point has no transactions to show, so it does not navigate.
+  // (The tooltip still shows its $0 row.)
+  if (!categoryId || !periodKey || value === null || value === 0) return null;
   return { periodKey, categoryId, value };
 }
 

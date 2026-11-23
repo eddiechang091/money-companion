@@ -196,10 +196,10 @@ describe("resolveTrendPointClick", () => {
     expect(resolveTrendPointClick("nope")).toBeNull();
   });
 
-  it("still resolves a $0 point — its destination shows the empty state", () => {
+  it("returns null for a $0 point — nothing to drill into", () => {
     expect(
       resolveTrendPointClick({ dataKey: "dining-out", value: 0, payload: { date: "2026-11" } })
-    ).toEqual({ periodKey: "2026-11", categoryId: "dining-out", value: 0 });
+    ).toBeNull();
   });
 });
 
