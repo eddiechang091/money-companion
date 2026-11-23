@@ -678,5 +678,6 @@ export const zhCN: Dict = {
   "delight.fallback14": "完成一件小事也值得肯定。为小小的胜利庆祝吧。",
   "expenses.onlyCategory": "仅显示：{category}",
   "expenses.clearCategoryFilter": "清除分类筛选",
+  "expenses.backToTrends": "返回趋势",
   "trends.tapHint": "点一下图表上的点，查看对应的交易。",
 };

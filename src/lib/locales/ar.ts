@@ -678,5 +678,6 @@ export const ar: Dict = {
   "delight.fallback14": "إنهاء شيء صغير ما زال يُحسب. احتفل بالانتصارات الصغيرة.",
   "expenses.onlyCategory": "عرض {category} فقط",
   "expenses.clearCategoryFilter": "مسح عامل تصفية الفئة",
+  "expenses.backToTrends": "العودة إلى الاتجاهات",
   "trends.tapHint": "انقر على نقطة لعرض معاملاتها.",
 };
