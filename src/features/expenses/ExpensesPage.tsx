@@ -15,7 +15,7 @@ import {
   monthlyFlow,
   sumByKind,
 } from "@/lib/analytics";
-import { formatMonthLabel, money } from "@/lib/utils";
+import { currencySymbol, formatMonthLabel, plainMoney } from "@/lib/utils";
 import type { RecordKind } from "@/lib/types";
 import { categoryName, getCategoryById } from "@/lib/categories";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -206,11 +206,12 @@ export function ExpensesPage({
             />
           </Suspense>
           <p className="flow-summary">
-            {t("expenses.in")} <b>{money(totalIn, currency)}</b> · {t("expenses.out")} <b>{money(totalOut, currency)}</b> · {t("expenses.net")}{" "}
+            {t("expenses.in")} <b>{plainMoney(totalIn)}</b> · {t("expenses.out")} <b>{plainMoney(totalOut)}</b> · {t("expenses.net")}{" "}
             <b>
               {net >= 0 ? "+" : "−"}
-              {money(Math.abs(net), currency)}
-            </b>
+              {plainMoney(Math.abs(net))}
+            </b>{" "}
+            ({currencySymbol(currency)})
           </p>
         </Card>
       ) : null}

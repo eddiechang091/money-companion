@@ -23,7 +23,7 @@ import {
 } from "@/lib/analytics";
 import { getCategoryById } from "@/lib/categories";
 import { UNCATEGORIZED_LABEL } from "@/lib/constants";
-import { money } from "@/lib/utils";
+import { currencySymbol, money, plainMoney } from "@/lib/utils";
 import type { RecordKind } from "@/lib/types";
 
 const CategoryTrendChart = lazy(() => import("@/components/ui/CategoryTrendChart"));
@@ -295,11 +295,12 @@ export function TrendsPage({
                 </p>
               )}
               <p className="flow-summary">
-                {t("expenses.in")} <b>{money(totalIn, currency)}</b> · {t("expenses.out")} <b>{money(totalOut, currency)}</b> · {t("expenses.net")}{" "}
+                {t("expenses.in")} <b>{plainMoney(totalIn)}</b> · {t("expenses.out")} <b>{plainMoney(totalOut)}</b> · {t("expenses.net")}{" "}
                 <b>
                   {net >= 0 ? "+" : "−"}
-                  {money(Math.abs(net), currency)}
-                </b>
+                  {plainMoney(Math.abs(net))}
+                </b>{" "}
+                ({currencySymbol(currency)})
               </p>
               {hasSeriesData && changes.length > 0 && prevLabel ? (
                 <div className="trend-changes">

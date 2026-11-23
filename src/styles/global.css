@@ -408,7 +408,14 @@ button.cat-row:focus-visible .cat-name { text-decoration: underline; }
 .chart-controls {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+}
+/* Control groups wrap as whole units on narrow screens — they must never
+   be squeezed below their content width, or the buttons inside wrap their
+   labels letter by letter (seen at 390px: "M o n t h"). */
+.chart-controls > * {
+  flex-shrink: 0;
 }
 .segmented {
   display: inline-flex;
@@ -426,6 +433,8 @@ button.cat-row:focus-visible .cat-name { text-decoration: underline; }
   padding: 4px 12px;
   border-radius: 999px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .segmented-btn.is-active {
   background: var(--surface-1);

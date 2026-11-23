@@ -10,7 +10,7 @@ import {
   type DotProps,
   type TooltipProps,
 } from "recharts";
-import { compactMoney, money } from "@/lib/utils";
+import { compactNumber, currencySymbol, money } from "@/lib/utils";
 import { resolveTrendPointClick, type TrendPointClick } from "@/lib/analytics";
 import type { CategoryTrendRow } from "@/lib/analytics";
 
@@ -84,7 +84,7 @@ export default function CategoryTrendChart({
   return (
     <div className="chart-wrap chart-wrap-tall" aria-hidden="true">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+        <LineChart data={data} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey="label"
@@ -99,7 +99,14 @@ export default function CategoryTrendChart({
             tick={{ fontSize: 11, fill: "var(--text-muted)" }}
             tickLine={false}
             axisLine={{ stroke: "var(--text-muted)" }}
-            tickFormatter={(value: number) => compactMoney(value, currency)}
+            tickFormatter={(value: number) => compactNumber(value)}
+            label={{
+              value: currencySymbol(currency),
+              position: "top",
+              offset: 13,
+              fill: "var(--text-muted)",
+              fontSize: 11,
+            }}
             domain={[0, "auto"]}
             allowDecimals={false}
           />
