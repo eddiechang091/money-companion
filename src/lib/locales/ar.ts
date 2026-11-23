@@ -676,4 +676,7 @@ export const ar: Dict = {
   "delight.fallback12": "ابتسامة صادقة من غريب يمكنها أن تغير مسار يومك بهدوء.",
   "delight.fallback13": "لرائحة المطر على الرصيف الجاف اسم: بتريكور. الآن تعرف.",
   "delight.fallback14": "إنهاء شيء صغير ما زال يُحسب. احتفل بالانتصارات الصغيرة.",
+  "expenses.onlyCategory": "عرض {category} فقط",
+  "expenses.clearCategoryFilter": "مسح عامل تصفية الفئة",
+  "trends.tapHint": "انقر على نقطة لعرض معاملاتها.",
 };

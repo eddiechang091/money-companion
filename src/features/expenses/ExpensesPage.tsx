@@ -6,6 +6,7 @@ import {
   dailyFlow,
   defaultMonthKey,
   defaultYearKey,
+  filterByCategory,
   filterByKind,
   filterByMonth,
   filterByYear,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/analytics";
 import { formatMonthLabel, money } from "@/lib/utils";
 import type { RecordKind } from "@/lib/types";
+import { categoryName, getCategoryById } from "@/lib/categories";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { useExpenses } from "@/services/expenses/useExpenses";
@@ -33,10 +35,19 @@ type KindFilter = RecordKind | "all";
 export function ExpensesPage({
   onNavigate,
   initialMonthKey,
+  initialYearKey,
+  initialCategoryId,
+  initialKind,
 }: {
   onNavigate: (path: string) => void;
   /** Month from the route (?month=YYYY-MM), e.g. Dashboard "View all". */
   initialMonthKey?: string | null;
+  /** Year from the route (?year=YYYY), e.g. a Trends year point. */
+  initialYearKey?: string | null;
+  /** Category from the route (?category=<trend key>), e.g. a Trends point. */
+  initialCategoryId?: string | null;
+  /** Kind from the route (?kind=expense|income), e.g. a Trends point. */
+  initialKind?: RecordKind;
 }) {
   const { t } = useLanguage();
   const { status, expenses, error, refresh, deleteExpense, isPending } = useExpenses();
@@ -53,25 +64,41 @@ export function ExpensesPage({
   // ?month=… when given (Dashboard "View all"), otherwise the current month
   // when it has data, otherwise the latest month with data — an empty
   // current month must not hide older transactions.
-  const [chartMode, setChartMode] = useState<"month" | "year">("month");
-  const [monthKey, setMonthKey] = useState<string | null>(null);
-  const [yearKey, setYearKey] = useState<string | null>(null);
-  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
-  const months = useMemo(() => availableMonths(expenses), [expenses]);
-  const years = useMemo(() => availableYears(expenses), [expenses]);
+  // Route entry (Trends point drill-down): ?month=… / ?year=… / ?category=…
+  // (trend key, "uncategorized" for Others) / ?kind=…. The chart and the
+  // summary stay period-scoped, like the kind switch; the category filter
+  // narrows the list only, and can be cleared from the banner.
   const initialMonth =
     initialMonthKey && /^\d{4}-(0[1-9]|1[0-2])$/.test(initialMonthKey)
       ? initialMonthKey
       : undefined;
+  const initialYear =
+    initialYearKey && /^\d{4}$/.test(initialYearKey) ? initialYearKey : undefined;
+  const validInitialCategory =
+    initialCategoryId &&
+    (initialCategoryId === "uncategorized" || getCategoryById(initialCategoryId))
+      ? initialCategoryId
+      : null;
+  const initialKindFilter: KindFilter =
+    initialKind === "expense" || initialKind === "income" ? initialKind : "all";
+  const [chartMode, setChartMode] = useState<"month" | "year">(initialYear ? "year" : "month");
+  const [monthKey, setMonthKey] = useState<string | null>(null);
+  const [yearKey, setYearKey] = useState<string | null>(null);
+  const [kindFilter, setKindFilter] = useState<KindFilter>(initialKindFilter);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(validInitialCategory);
+  const months = useMemo(() => availableMonths(expenses), [expenses]);
+  const years = useMemo(() => availableYears(expenses), [expenses]);
   const activeMonth = monthKey ?? initialMonth ?? defaultMonthKey(expenses);
-  const activeYear = yearKey ?? defaultYearKey(expenses);
+  const activeYear = yearKey ?? initialYear ?? defaultYearKey(expenses);
   const periodRecords =
     chartMode === "month" ? filterByMonth(expenses, activeMonth) : filterByYear(expenses, activeYear);
   const chartData =
     chartMode === "month" ? dailyFlow(periodRecords, activeMonth) : monthlyFlow(periodRecords, activeYear);
   const hasChartData = chartData.some((d) => d.expense > 0 || d.income > 0);
-  const visibleRecords =
-    kindFilter === "all" ? periodRecords : filterByKind(periodRecords, kindFilter);
+  const visibleRecords = filterByCategory(
+    kindFilter === "all" ? periodRecords : filterByKind(periodRecords, kindFilter),
+    categoryFilter
+  );
   const totalIn = sumByKind(periodRecords, "income");
   const totalOut = sumByKind(periodRecords, "expense");
   const net = Math.round((totalIn - totalOut) * 100) / 100;
@@ -199,6 +226,23 @@ export function ExpensesPage({
         expenses={expenses}
         onImported={() => void refresh()}
       />
+      {categoryFilter ? (
+        <div className="filter-banner" role="status">
+          <span>
+            {t("expenses.onlyCategory", {
+              category: categoryName(categoryFilter === "uncategorized" ? null : categoryFilter),
+            })}
+          </span>
+          <button
+            type="button"
+            className="filter-banner-clear"
+            onClick={() => setCategoryFilter(null)}
+            aria-label={t("expenses.clearCategoryFilter")}
+          >
+            ✕
+          </button>
+        </div>
+      ) : null}
       <ExpenseList
         status={status}
         expenses={visibleRecords}
@@ -218,7 +262,7 @@ export function ExpensesPage({
         deletingId={deletingId}
         isPending={isPending}
         onAddFirst={() => onNavigate(kindFilter === "income" ? "/add-income" : "/add-expense")}
-        resetKey={`${chartMode}|${activeMonth}|${activeYear}|${kindFilter}`}
+        resetKey={`${chartMode}|${activeMonth}|${activeYear}|${kindFilter}|${categoryFilter ?? ""}`}
         kindFilter={kindFilter}
       />
     </>

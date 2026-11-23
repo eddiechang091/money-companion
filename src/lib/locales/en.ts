@@ -689,4 +689,7 @@ export const en: Dict = {
   "delight.fallback12": "A genuine smile from a stranger can quietly reroute your whole day.",
   "delight.fallback13": "The smell of rain on dry pavement has a name: petrichor. Now you know.",
   "delight.fallback14": "Finishing something small still counts. Celebrate the tiny wins.",
+  "expenses.onlyCategory": "Showing only: {category}",
+  "expenses.clearCategoryFilter": "Clear category filter",
+  "trends.tapHint": "Tap a point to see its transactions.",
 };

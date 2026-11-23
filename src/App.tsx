@@ -70,11 +70,24 @@ function renderRoute(route: string, navigate: (path: string) => void) {
   switch (path) {
     case "/dashboard":
       return <DashboardPage onNavigate={navigate} />;
-    case "/expenses":
+    case "/expenses": {
+      const kindParam = params.get("kind");
+      const initialKind =
+        kindParam === "income" || kindParam === "expense" ? kindParam : undefined;
       // Key by the full route (including query) so "View all" from a
       // different dashboard month remounts with the new month — useState
       // initializers only run on mount.
-      return <ExpensesPage key={route} onNavigate={navigate} initialMonthKey={params.get("month")} />;
+      return (
+        <ExpensesPage
+          key={route}
+          onNavigate={navigate}
+          initialMonthKey={params.get("month")}
+          initialYearKey={params.get("year")}
+          initialCategoryId={params.get("category")}
+          initialKind={initialKind}
+        />
+      );
+    }
     case "/trends": {
       const kindParam = params.get("kind");
       const initialKind =
