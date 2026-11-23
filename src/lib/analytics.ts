@@ -220,10 +220,12 @@ export interface TrendPointClick {
 }
 
 /**
- * Resolve a recharts Line-dot click into a trend point. Recharts calls a
- * Line's onClick with the dot's props: dataKey (the series = trend key),
- * value, and payload (the row datum). A $0 point has no transactions to
- * show, so it resolves to null.
+ * Resolve a recharts trend-line dot click into a trend point. The handler
+ * lives on the dot object prop (the Line's own onClick is dropped by
+ * recharts' filterProps in renderDots); at runtime it is called with the
+ * dot's props: dataKey (the series = trend key), value, and payload (the
+ * row datum). Every dot navigates — even a $0 point, whose destination
+ * list simply shows the empty state.
  */
 export function resolveTrendPointClick(data: unknown): TrendPointClick | null {
   if (!data || typeof data !== "object") return null;
@@ -233,7 +235,7 @@ export function resolveTrendPointClick(data: unknown): TrendPointClick | null {
   const periodKey =
     payload && typeof payload.date === "string" && payload.date.length > 0 ? payload.date : null;
   const value = typeof d.value === "number" ? d.value : null;
-  if (!categoryId || !periodKey || value === null || value <= 0) return null;
+  if (!categoryId || !periodKey || value === null) return null;
   return { periodKey, categoryId, value };
 }
 

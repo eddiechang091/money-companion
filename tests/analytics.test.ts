@@ -189,14 +189,17 @@ describe("resolveTrendPointClick", () => {
     ).toEqual({ periodKey: "2026", categoryId: "uncategorized", value: 45 });
   });
 
-  it("returns null for a $0 point, a missing dataKey, or garbage", () => {
-    expect(
-      resolveTrendPointClick({ dataKey: "dining-out", value: 0, payload: { date: "2026-11" } })
-    ).toBeNull();
+  it("returns null for a missing dataKey or garbage", () => {
     expect(resolveTrendPointClick({ value: 10, payload: { date: "2026-11" } })).toBeNull();
     expect(resolveTrendPointClick({ dataKey: "dining-out", value: 10, payload: {} })).toBeNull();
     expect(resolveTrendPointClick(null)).toBeNull();
     expect(resolveTrendPointClick("nope")).toBeNull();
+  });
+
+  it("still resolves a $0 point — its destination shows the empty state", () => {
+    expect(
+      resolveTrendPointClick({ dataKey: "dining-out", value: 0, payload: { date: "2026-11" } })
+    ).toEqual({ periodKey: "2026-11", categoryId: "dining-out", value: 0 });
   });
 });
 

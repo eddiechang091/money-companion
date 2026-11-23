@@ -385,6 +385,8 @@ button.cat-row:focus-visible .cat-name { text-decoration: underline; }
 
 .chart-wrap { width: 100%; height: 130px; }
 .chart-wrap-tall { height: 220px; }
+/* Trend-line dots are tappable (drill down to the point's transactions). */
+.chart-wrap .recharts-line-dot { cursor: pointer; }
 .trend-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
 .trend-chips .chip { cursor: pointer; }
 .trend-chips .chip[aria-pressed="false"] { opacity: 0.45; }

@@ -678,4 +678,5 @@ export const es: Dict = {
   "delight.fallback14": "Terminar algo pequeño también cuenta. Celebra las pequeñas victorias.",
   "expenses.onlyCategory": "Mostrando solo: {category}",
   "expenses.clearCategoryFilter": "Quitar el filtro de categoría",
+  "trends.tapHint": "Toca un punto para ver sus transacciones.",
 };

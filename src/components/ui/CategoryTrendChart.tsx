@@ -9,6 +9,7 @@ import {
   type TooltipProps,
 } from "recharts";
 import { compactMoney, money } from "@/lib/utils";
+import { resolveTrendPointClick, type TrendPointClick } from "@/lib/analytics";
 import type { CategoryTrendRow } from "@/lib/analytics";
 
 export interface TrendCategory {
@@ -22,10 +23,13 @@ export default function CategoryTrendChart({
   data,
   categories,
   currency = "USD",
+  onPointClick,
 }: {
   data: CategoryTrendRow[];
   categories: TrendCategory[];
   currency?: string;
+  /** Fired when a dot is tapped — the caller navigates to its transactions. */
+  onPointClick?: (point: TrendPointClick) => void;
 }) {
   const hasData = data.some((d) => categories.some((c) => (d[c.id] as number) > 0));
   if (!hasData) return null;
@@ -81,7 +85,19 @@ export default function CategoryTrendChart({
               dataKey={c.id}
               stroke={c.color}
               strokeWidth={2}
-              dot={{ r: 3 }}
+              dot={{
+                r: 3,
+                // Recharts drops event handlers from the Line's own props
+                // (renderDots uses filterProps(..., false)) but keeps them
+                // from the dot object (filterProps(..., true)). At runtime
+                // the dot's onClick receives the dot's props as its first
+                // argument (dataKey, value, payload) — see
+                // resolveTrendPointClick.
+                onClick: (dotProps: unknown) => {
+                  const point = resolveTrendPointClick(dotProps);
+                  if (point) onPointClick?.(point);
+                },
+              }}
               activeDot={{ r: 4 }}
             />
           ))}
