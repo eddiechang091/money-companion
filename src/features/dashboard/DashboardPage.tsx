@@ -15,6 +15,7 @@ import {
   filterByMonth,
   sumByKind,
   totalsByCategory,
+  trendKey,
 } from "@/lib/analytics";
 import { money, formatMonthLabel } from "@/lib/utils";
 import { DEFAULT_CURRENCY } from "@/lib/constants";
@@ -189,7 +190,14 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
           }
         >
           {breakdownTotals.length > 0 ? (
-            <CategoryBreakdown totals={breakdownTotals} monthTotal={breakdownTotal} currency={currency} />
+            <CategoryBreakdown
+              totals={breakdownTotals}
+              monthTotal={breakdownTotal}
+              currency={currency}
+              onSelect={(categoryId) =>
+                onNavigate(`/trends?category=${trendKey(categoryId)}&kind=${breakdownKind}`)
+              }
+            />
           ) : (
             <p className="muted" style={{ fontSize: 14 }}>
               {breakdownKind === "income" ? "No income this month." : "No spending this month."}
