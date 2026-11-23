@@ -11,6 +11,7 @@ import {
   categoryMonthlySeries,
   categoryYearlySeries,
   filterByKind,
+  latestPointChanges,
   sumByKind,
   totalsByCategory,
   trendKey,
@@ -23,8 +24,8 @@ import type { RecordKind } from "@/lib/types";
 const CategoryTrendChart = lazy(() => import("@/components/ui/CategoryTrendChart"));
 
 const TOP_DEFAULT = 5;
-const MONTH_WINDOW = 12;
 const YEAR_WINDOW = 6;
+const MONTH_RANGES = [3, 6, 12] as const;
 
 export function TrendsPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { status, expenses, error, refresh } = useExpenses();
@@ -33,12 +34,13 @@ export function TrendsPage({ onNavigate }: { onNavigate: (path: string) => void 
 
   const [granularity, setGranularity] = useState<"month" | "year">("month");
   const [kind, setKind] = useState<RecordKind>("expense");
+  const [monthRange, setMonthRange] = useState<(typeof MONTH_RANGES)[number]>(12);
   // null = auto: top 5 categories by total in the visible range.
   const [selected, setSelected] = useState<string[] | null>(null);
 
   const months = useMemo(
-    () => availableMonths(expenses).slice(0, MONTH_WINDOW).reverse(),
-    [expenses]
+    () => availableMonths(expenses).slice(0, monthRange).reverse(),
+    [expenses, monthRange]
   );
   const years = useMemo(
     () => availableYears(expenses).slice(0, YEAR_WINDOW).reverse(),
@@ -88,6 +90,12 @@ export function TrendsPage({ onNavigate }: { onNavigate: (path: string) => void 
   const totalIn = sumByKind(rangeRecords, "income");
   const totalOut = sumByKind(rangeRecords, "expense");
   const net = Math.round((totalIn - totalOut) * 100) / 100;
+  // Latest point vs the previous one (month over month / year over year).
+  const changes = useMemo(
+    () => latestPointChanges(series, visibleIds),
+    [series, visibleIds]
+  );
+  const prevLabel = series.length >= 2 ? series[series.length - 2].label : null;
 
   function switchGranularity(g: "month" | "year") {
     setGranularity(g);
@@ -134,6 +142,22 @@ export function TrendsPage({ onNavigate }: { onNavigate: (path: string) => void 
           </button>
         ))}
       </div>
+      {granularity === "month" ? (
+        <div className="segmented" role="tablist" aria-label="Month range">
+          {MONTH_RANGES.map((r) => (
+            <button
+              key={r}
+              type="button"
+              role="tab"
+              aria-selected={monthRange === r}
+              className={`segmented-btn${monthRange === r ? " is-active" : ""}`}
+              onClick={() => setMonthRange(r)}
+            >
+              {r}M
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 
@@ -214,6 +238,41 @@ export function TrendsPage({ onNavigate }: { onNavigate: (path: string) => void 
                   {money(Math.abs(net), currency)}
                 </b>
               </p>
+              {hasSeriesData && changes.length > 0 && prevLabel ? (
+                <div className="trend-changes">
+                  <p className="trend-changes-title">vs {prevLabel}</p>
+                  {changes.map((ch) => {
+                    const cat = visible.find((c) => c.id === ch.categoryId);
+                    if (!cat) return null;
+                    const good =
+                      ch.delta === 0 ? null : kind === "expense" ? ch.delta < 0 : ch.delta > 0;
+                    const label =
+                      ch.deltaPct === null
+                        ? ch.current > 0
+                          ? "new"
+                          : "—"
+                        : ch.delta === 0
+                          ? "±0%"
+                          : `${ch.delta > 0 ? "▲" : "▼"} ${Math.abs(ch.deltaPct)}%`;
+                    return (
+                      <p key={ch.categoryId} className="trend-change">
+                        <span className="trend-change-name">
+                          <span className="lg-dot" style={{ background: cat.color }} />
+                          {cat.name}
+                        </span>
+                        <span>{money(ch.current, currency)}</span>
+                        <span
+                          className={`trend-change-delta${
+                            good === null ? " is-flat" : good ? " is-good" : " is-bad"
+                          }`}
+                        >
+                          {label}
+                        </span>
+                      </p>
+                    );
+                  })}
+                </div>
+              ) : null}
             </>
           )}
         </Card>

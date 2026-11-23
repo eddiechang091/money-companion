@@ -264,6 +264,41 @@ export function categoryYearlySeries(
   return trendRows(buckets, years, (y) => y);
 }
 
+export interface TrendPointChange {
+  categoryId: string;
+  current: number;
+  previous: number;
+  delta: number;
+  /** Percent change vs the previous point; null when the previous point is 0. */
+  deltaPct: number | null;
+}
+
+/**
+ * Latest point vs the previous point, per category (month-over-month in
+ * the month view, year-over-year in the year view). Needs at least two
+ * points; otherwise there is nothing to compare against.
+ */
+export function latestPointChanges(
+  rows: CategoryTrendRow[],
+  categoryIds: string[]
+): TrendPointChange[] {
+  if (rows.length < 2) return [];
+  const current = rows[rows.length - 1];
+  const previous = rows[rows.length - 2];
+  return categoryIds.map((id) => {
+    const cur = Math.round(((current[id] as number) ?? 0) * 100) / 100;
+    const prev = Math.round(((previous[id] as number) ?? 0) * 100) / 100;
+    const delta = Math.round((cur - prev) * 100) / 100;
+    return {
+      categoryId: id,
+      current: cur,
+      previous: prev,
+      delta,
+      deltaPct: prev > 0 ? Math.round((delta / prev) * 1000) / 10 : null,
+    };
+  });
+}
+
 export function dailyTotals(expenses: Expense[], key: string): DayTotal[] {
   if (!/^\d{4}-\d{2}$/.test(key)) return [];
   const year = Number(key.slice(0, 4));

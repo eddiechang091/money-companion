@@ -360,6 +360,14 @@ select option {
 .trend-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
 .trend-chips .chip { cursor: pointer; }
 .trend-chips .chip[aria-pressed="false"] { opacity: 0.45; }
+.trend-changes { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+.trend-changes-title { font-size: 12px; color: var(--text-muted); margin: 0 0 6px; }
+.trend-change { display: flex; align-items: baseline; gap: 8px; font-size: 13px; margin: 4px 0; }
+.trend-change-name { flex: 1; min-width: 0; }
+.trend-change-delta { min-width: 64px; text-align: right; }
+.trend-change-delta.is-good { color: var(--success); }
+.trend-change-delta.is-bad { color: var(--expense); }
+.trend-change-delta.is-flat { color: var(--text-muted); }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
 .chart-legend span { white-space: nowrap; }
 .lg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }

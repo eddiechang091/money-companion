@@ -13,6 +13,7 @@ import {
   monthlyTotals,
   categoryMonthlySeries,
   categoryYearlySeries,
+  latestPointChanges,
   trendKey,
 } from "@/lib/analytics";
 import type { Expense } from "@/lib/types";
@@ -559,5 +560,33 @@ describe("category trend series", () => {
     const rows = categoryMonthlySeries(sample, "income", ["2026-10"]);
     expect(rows[0]["main-salary"]).toBe(100);
     expect(rows[0]["groceries-fresh"]).toBeUndefined();
+  });
+});
+
+describe("latestPointChanges", () => {
+  const rows = [
+    { date: "2026-09", label: "Sep ’26", "groceries-fresh": 400, "dining-out": 100 },
+    { date: "2026-10", label: "Oct ’26", "groceries-fresh": 440, "dining-out": 0 },
+    { date: "2026-11", label: "Nov ’26", "groceries-fresh": 440, "dining-out": 50 },
+  ];
+
+  it("compares the latest point with the previous one", () => {
+    const changes = latestPointChanges(rows, ["groceries-fresh", "dining-out"]);
+    expect(changes).toHaveLength(2);
+    expect(changes[0]).toEqual({
+      categoryId: "groceries-fresh",
+      current: 440,
+      previous: 440,
+      delta: 0,
+      deltaPct: 0,
+    });
+    expect(changes[1].current).toBe(50);
+    expect(changes[1].previous).toBe(0);
+    expect(changes[1].deltaPct).toBeNull();
+  });
+
+  it("returns nothing with fewer than two points", () => {
+    expect(latestPointChanges(rows.slice(0, 1), ["groceries-fresh"])).toEqual([]);
+    expect(latestPointChanges([], ["groceries-fresh"])).toEqual([]);
   });
 });

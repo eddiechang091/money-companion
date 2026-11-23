@@ -1,4 +1,5 @@
 import {
+  CartesianGrid,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -54,6 +55,7 @@ export default function CategoryTrendChart({
     <div className="chart-wrap chart-wrap-tall" aria-hidden="true">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: "var(--text-muted)" }}
