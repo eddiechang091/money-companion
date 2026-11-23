@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n";
 import type { KvStore } from "@/services/anna/storage";
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS, STORAGE_VERSION, DEFAULT_CURRENCY } from "@/lib/constants";
@@ -53,11 +54,11 @@ export class ExpenseStoreError extends Error {
 export const MAX_VALUE_BYTES = 262144;
 
 export function storageError(): ExpenseStoreError {
-  return new ExpenseStoreError("storage", "Couldn't reach your expense storage. Please try again.");
+  return new ExpenseStoreError("storage", translate("store.expenseStorageError"));
 }
 
 export function notFoundError(): ExpenseStoreError {
-  return new ExpenseStoreError("not-found", "That expense is already gone.");
+  return new ExpenseStoreError("not-found", translate("store.expenseGone"));
 }
 
 // Serializes read-modify-write cycles on the expense index so concurrent
@@ -108,20 +109,17 @@ export function normalizeRecord(value: Expense): Expense {
 export function assertStorable(value: unknown, key: string): void {
   const payload = JSON.stringify(value);
   if (payload.length > MAX_VALUE_BYTES) {
-    throw new ExpenseStoreError(
-      "too-large",
-      "That expense is too large to save. Try removing notes first."
-    );
+    throw new ExpenseStoreError("too-large", translate("store.expenseTooLarge"));
   }
   void key;
 }
 
 export function sanitizeNewExpense(input: NewExpenseInput): NewExpenseInput {
   if (!Number.isFinite(input.amount) || input.amount <= 0) {
-    throw new ExpenseStoreError("storage", "That expense couldn't be saved. Check the amount and try again.");
+    throw new ExpenseStoreError("storage", translate("store.expenseSaveAmount"));
   }
   if (!input.date || !isValidIsoDate(input.date)) {
-    throw new ExpenseStoreError("storage", "That expense couldn't be saved. Check the date and try again.");
+    throw new ExpenseStoreError("storage", translate("store.expenseSaveDate"));
   }
   return {
     amount: Math.round(input.amount * 100) / 100,

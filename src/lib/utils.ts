@@ -1,13 +1,12 @@
-const CURRENCY_LOCALES: Record<string, string> = {
-  CAD: "en-CA",
-  USD: "en-US",
-  EUR: "de-DE",
-  GBP: "en-GB",
-};
+import { getIntlLocale } from "./i18n";
+
+export { getIntlLocale } from "./i18n";
 
 export function money(amount: number, currency = "USD"): string {
   const safe = Number.isFinite(amount) ? amount : 0;
-  const locale = CURRENCY_LOCALES[currency] ?? "en-CA";
+  // The amount is shown in the UI language's number format, with the
+  // currency's own symbol (e.g. 1 234,56 $ in fr-CA, $1,234.56 in en-US).
+  const locale = getIntlLocale();
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",
@@ -22,7 +21,7 @@ export function money(amount: number, currency = "USD"): string {
 /** Short money for axis labels ("$1.1K", "CA$500"). */
 export function compactMoney(amount: number, currency = "USD"): string {
   const safe = Number.isFinite(amount) ? amount : 0;
-  const locale = CURRENCY_LOCALES[currency] ?? "en-CA";
+  const locale = getIntlLocale();
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",
@@ -32,6 +31,15 @@ export function compactMoney(amount: number, currency = "USD"): string {
     }).format(safe);
   } catch {
     return money(safe, currency);
+  }
+}
+
+/** Localized currency name ("Canadian dollar", "dollar canadien", …) via Intl. */
+export function currencyDisplayName(code: string): string {
+  try {
+    return new Intl.DisplayNames(getIntlLocale(), { type: "currency" }).of(code) ?? code;
+  } catch {
+    return code;
   }
 }
 
@@ -55,7 +63,7 @@ export function formatMonthLabel(key: string): string {
   const y = parts[0];
   const m = parts[1];
   if (!y || !m) return key;
-  return new Date(y, m - 1, 1).toLocaleString("en", { month: "long", year: "numeric" });
+  return new Date(y, m - 1, 1).toLocaleString(getIntlLocale(), { month: "long", year: "numeric" });
 }
 
 export function newId(): string {
@@ -77,7 +85,15 @@ export function isValidIsoDate(value: string): boolean {
 }
 
 export function parseAmountInput(value: string): number | null {
-  const cleaned = value.replace(/[$,]/g, "").trim();
+  // Accept the UI locale's decimal separator: "," is the decimal mark in
+  // French/Arabic ("1 234,56"), a grouping mark in English ("1,234.56").
+  const decimalComma = getIntlLocale().startsWith("fr") || getIntlLocale() === "ar";
+  let cleaned = value.replace(/[$\s\u00a0\u202f]/g, "").trim();
+  if (decimalComma) {
+    cleaned = cleaned.replace(/\./g, "").replace(/,/g, ".");
+  } else {
+    cleaned = cleaned.replace(/,/g, "");
+  }
   if (cleaned === "") return null;
   const amount = Number(cleaned);
   if (!Number.isFinite(amount) || amount < 0) return null;

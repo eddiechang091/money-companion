@@ -11,6 +11,7 @@
  * shares 钱迹's 时间/类型/金额 columns but adds transfer-account
  * （转出账户/转入账户） or merchant （商家） columns.
  */
+import { translate } from "@/lib/i18n";
 import {
   parseAmountLoose,
   parseDateLoose,
@@ -65,7 +66,7 @@ function pushRow(
   if (!date || !(amount > 0)) return;
   out.push({
     date,
-    description: description || "(no description)",
+    description: description || translate("import.noDescription"),
     amount,
     isCredit,
     categoryHint,

@@ -3,7 +3,7 @@ import type { InsightResult } from "@/lib/aiSchema";
 import type { ConversationContext } from "./conversationContext";
 import type { ConversationMessage } from "./conversationTypes";
 import { MAX_LLM_HISTORY_TURNS } from "./conversationTypes";
-import { SYSTEM_PROMPT } from "./prompts";
+import { systemPromptForLocale } from "./prompts";
 
 const SCHEMA_HINT = `Respond ONLY with a valid JSON object. No markdown:
 {"mode":"casual|conversation|insight|coaching|purchase_reflection","tone":"playful|warm|curious|supportive","headline":"...","smallTalk":null,"context":null,"financialObservation":null,"suggestion":null,"followUpQuestion":null,"confidence":0.0}`;
@@ -69,7 +69,7 @@ export function buildConversationMessages(
   ctx: ConversationContext,
   history: ConversationMessage[]
 ): LlmMessage[] {
-  const messages: LlmMessage[] = [{ role: "system", content: SYSTEM_PROMPT }];
+  const messages: LlmMessage[] = [{ role: "system", content: systemPromptForLocale() }];
   const contextSummary = buildContextSummary(ctx);
   const recentHistory = history.slice(-(MAX_LLM_HISTORY_TURNS * 2));
 

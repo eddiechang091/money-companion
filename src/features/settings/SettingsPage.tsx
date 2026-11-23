@@ -3,7 +3,9 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
-import { AnnaStatusCard } from "./AnnaStatusCard";
+import { LOCALES, useLanguage } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
+import { currencyDisplayName } from "@/lib/utils";
 import { THEMES } from "@/services/theme/themes";
 import { useTheme } from "@/services/theme/useTheme";
 import { CURRENCIES } from "@/lib/currencies";
@@ -12,25 +14,57 @@ import { useExpenses } from "@/services/expenses/useExpenses";
 import { useBudgets } from "@/services/budgets/useBudgets";
 import { getRate } from "@/services/fx/rates";
 import { convertAllToCurrency } from "@/services/fx/convert";
+import { AnnaStatusCard } from "./AnnaStatusCard";
+
+function LanguagePicker() {
+  const { locale, setLocale, t } = useLanguage();
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <label
+        htmlFor="app-language"
+        style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 8 }}
+      >
+        {t("settings.language")}
+      </label>
+      <select
+        id="app-language"
+        value={locale}
+        onChange={(e) => setLocale(e.target.value as Locale)}
+        className="input"
+        style={{ maxWidth: 320 }}
+      >
+        {LOCALES.map((l) => (
+          <option key={l.id} value={l.id}>
+            {l.nativeLabel}
+          </option>
+        ))}
+      </select>
+      <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+        {t("settings.languageDescription")}
+      </p>
+    </div>
+  );
+}
 
 function ThemePicker() {
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
   return (
-    <div className="theme-grid" role="group" aria-label="App theme">
-      {THEMES.map((t) => (
+    <div className="theme-grid" role="group" aria-label={t("settings.theme")}>
+      {THEMES.map((th) => (
         <button
-          key={t.id}
+          key={th.id}
           type="button"
-          className={`theme-card${theme === t.id ? " is-selected" : ""}`}
-          onClick={() => setTheme(t.id)}
-          aria-pressed={theme === t.id}
+          className={`theme-card${theme === th.id ? " is-selected" : ""}`}
+          onClick={() => setTheme(th.id)}
+          aria-pressed={theme === th.id}
         >
-          <span className="theme-swatch" style={{ background: t.swatch }} aria-hidden="true">
-            <span className="theme-emoji">{t.emoji}</span>
+          <span className="theme-swatch" style={{ background: th.swatch }} aria-hidden="true">
+            <span className="theme-emoji">{th.emoji}</span>
           </span>
-          <span className="theme-name">{t.name}</span>
-          <span className="theme-tagline">{t.tagline}</span>
-          {theme === t.id && <span className="theme-check" aria-hidden="true">✓</span>}
+          <span className="theme-name">{t(th.nameKey)}</span>
+          <span className="theme-tagline">{t(th.taglineKey)}</span>
+          {theme === th.id && <span className="theme-check" aria-hidden="true">✓</span>}
         </button>
       ))}
     </div>
@@ -38,6 +72,7 @@ function ThemePicker() {
 }
 
 function CurrencyPicker() {
+  const { t } = useLanguage();
   const { profile, update } = useProfile();
   const { notify } = useToast();
   const { expenses, updateExpense } = useExpenses();
@@ -57,7 +92,7 @@ function CurrencyPicker() {
     // Fetch the rate first so the dialog can show it
     const rate = await getRate(from, to);
     if (rate === null) {
-      notify("Couldn't fetch the exchange rate. Try again later.", "error");
+      notify(t("settings.currencyFetchFailed"), "error");
       return;
     }
     setPreviewRate(rate);
@@ -72,10 +107,13 @@ function CurrencyPicker() {
       const plan = await convertAllToCurrency(expenses, budgets, to, updateExpense, saveBudget);
       update({ currency: pending });
       notify(
-        `Currency changed. Converted ${plan.expenseCount} expense${plan.expenseCount === 1 ? "" : "s"} and ${plan.budgetCount} budget${plan.budgetCount === 1 ? "" : "s"}.`
+        t("settings.convertedSummary", {
+          expenses: t("settings.expenseCount", { count: plan.expenseCount }),
+          budgets: t("settings.budgetCount", { count: plan.budgetCount }),
+        })
       );
     } catch {
-      notify("Conversion failed — currency not changed. Try again later.", "error");
+      notify(t("settings.conversionFailed"), "error");
     } finally {
       setConverting(false);
       setPending(null);
@@ -89,7 +127,7 @@ function CurrencyPicker() {
         htmlFor="default-currency"
         style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 8 }}
       >
-        Default currency
+        {t("settings.defaultCurrency")}
       </label>
       <select
         id="default-currency"
@@ -101,26 +139,29 @@ function CurrencyPicker() {
       >
         {CURRENCIES.map((c) => (
           <option key={c.code} value={c.code}>
-            {c.code} — {c.name} ({c.symbol})
+            {c.code} — {currencyDisplayName(c.code)} ({c.symbol})
           </option>
         ))}
       </select>
       <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-        Used as the default when logging expenses and setting budgets. Expenses
-        logged in another currency are converted to this using live rates.
-        Changing it converts all existing expenses and budgets at the current rate.
+        {t("settings.currencyDescription")}
       </p>
       <ConfirmDialog
         open={pending !== null}
-        title="Change default currency?"
+        title={t("settings.changeCurrencyTitle")}
         body={
           previewRate !== null && pending
-            ? `All amounts will be converted from ${current} to ${pending} at 1 ${current} = ${previewRate.toFixed(4)} ${pending} ` +
-              `(${toConvertExpenses} expense${toConvertExpenses === 1 ? "" : "s"}, ${toConvertBudgets} budget${toConvertBudgets === 1 ? "" : "s"}). This cannot be undone automatically.`
+            ? t("settings.convertBody", {
+                from: current,
+                to: pending,
+                rate: previewRate.toFixed(4),
+                expenses: t("settings.expenseCount", { count: toConvertExpenses }),
+                budgets: t("settings.budgetCount", { count: toConvertBudgets }),
+              })
             : undefined
         }
-        confirmLabel={converting ? "Converting…" : "Convert everything"}
-        cancelLabel="Keep it"
+        confirmLabel={converting ? t("settings.converting") : t("settings.convertEverything")}
+        cancelLabel={t("settings.keepIt")}
         onConfirm={() => void handleConfirm()}
         onCancel={() => {
           setPending(null);
@@ -132,13 +173,15 @@ function CurrencyPicker() {
 }
 
 export function SettingsPage() {
+  const { t } = useLanguage();
   return (
     <>
-      <PageHeader title="Settings" lede="Preferences, currency, and data controls." />
+      <PageHeader title={t("settings.title")} lede={t("settings.lede")} />
       <AnnaStatusCard />
-      <Card title="Preferences">
+      <Card title={t("settings.preferences")}>
+        <LanguagePicker />
         <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
-          Pick a theme — it recolors the whole app, your cat companion, and the page background.
+          {t("settings.themeIntro")}
         </p>
         <ThemePicker />
         <div style={{ marginTop: 24 }}>

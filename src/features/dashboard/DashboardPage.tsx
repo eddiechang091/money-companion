@@ -18,6 +18,8 @@ import {
   trendKey,
 } from "@/lib/analytics";
 import { money, formatMonthLabel } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
+import type { TranslateVars } from "@/lib/i18n";
 import { DEFAULT_CURRENCY } from "@/lib/constants";
 import { sortExpensesByRecency } from "@/lib/categories";
 import type { RecordKind } from "@/lib/types";
@@ -25,26 +27,29 @@ import { CategoryBreakdown } from "./CategoryBreakdown";
 import { RecentExpenses } from "./RecentExpenses";
 import { DailyDelightCard } from "@/features/delight/DailyDelightCard";
 
-function periodText(delta: number, direction: string, currency: string): string {
+type T = (key: string, vars?: TranslateVars) => string;
+
+function periodText(t: T, delta: number, direction: string, currency: string): string {
   const amount = money(Math.abs(delta), currency);
-  if (direction === "flat") return "About the same as last month.";
-  if (direction === "down") return `${amount} less than last month 🎉`;
-  return `${amount} more than last month.`;
+  if (direction === "flat") return t("dashboard.sameAsLast");
+  if (direction === "down") return t("dashboard.lessThanLast", { amount });
+  return t("dashboard.moreThanLast", { amount });
 }
 
-function budgetSummaryText(spent: number, limit: number, currency: string): string {
+function budgetSummaryText(t: T, spent: number, limit: number, currency: string): string {
   if (limit <= 0) return "";
   const info = calculateBudgetProgress(spent, limit);
   if (info.status === "over") {
-    return `Looks like we went ${money(spent - limit, currency)} over this month, and that's okay — let's soft-adjust for next month.`;
+    return t("dashboard.overBudget", { amount: money(spent - limit, currency) });
   }
   if (info.status === "watch") {
-    return `Getting close — ${money(info.remaining, currency)} left.`;
+    return t("dashboard.closeToBudget", { amount: money(info.remaining, currency) });
   }
-  return `You're ${money(info.remaining, currency)} under budget. `;
+  return t("dashboard.underBudget", { amount: money(info.remaining, currency) });
 }
 
 export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const { t } = useLanguage();
   const { status: expStatus, expenses } = useExpenses();
   const { status: budgetStatus, monthlyBudget } = useBudgets();
   const isLoading = expStatus === "loading" || budgetStatus === "loading";
@@ -77,9 +82,9 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   if (isLoading) {
     return (
       <>
-        <PageHeader title="Dashboard" lede="How is your money doing?" />
+        <PageHeader title={t("dashboard.title")} lede={t("dashboard.lede")} />
         <Card>
-          <LoadingState label="Loading your spending…" />
+          <LoadingState label={t("dashboard.loading")} />
         </Card>
       </>
     );
@@ -91,11 +96,11 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   return (
     <>
       <PageHeader
-        title="Dashboard"
+        title={t("dashboard.title")}
         lede={monthLabel}
         actions={
           <Dropdown
-            ariaLabel="Select month"
+            ariaLabel={t("common.selectMonth")}
             value={now}
             onChange={setMonthKey}
             options={[
@@ -114,26 +119,26 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
         {monthRecords.length === 0 ? (
           <EmptyState
             emoji="🌱"
-            title="Nothing yet this month"
+            title={t("dashboard.nothingYet")}
             action={
-              <Button onClick={() => onNavigate("/add-expense")}>Add your first transaction</Button>
+              <Button onClick={() => onNavigate("/add-expense")}>{t("dashboard.addFirst")}</Button>
             }
           >
-            Your money story starts here.
+            {t("dashboard.nothingYetBody")}
           </EmptyState>
         ) : (
           <div className="dashboard-hero">
             <div className="money-stats">
               <div className="money-stat">
-                <p className="dashboard-label muted">Money in</p>
+                <p className="dashboard-label muted">{t("dashboard.moneyIn")}</p>
                 <p className="money-stat-value is-income">{money(monthIn, currency)}</p>
               </div>
               <div className="money-stat">
-                <p className="dashboard-label muted">Money out</p>
+                <p className="dashboard-label muted">{t("dashboard.moneyOut")}</p>
                 <p className="money-stat-value">{money(monthOut, currency)}</p>
               </div>
               <div className="money-stat">
-                <p className="dashboard-label muted">Balance</p>
+                <p className="dashboard-label muted">{t("dashboard.balance")}</p>
                 <p className="money-stat-value">
                   {balance >= 0 ? "+" : "−"}
                   {money(Math.abs(balance), currency)}
@@ -142,26 +147,26 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
             </div>
             {balance > 0 ? (
               <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>
-                Your Nesting Fund grew by {money(balance, currency)} this month.
+                {t("dashboard.nestingGrew", { amount: money(balance, currency) })}
               </p>
             ) : null}
             {comparison && comparison.previousTotal > 0 ? (
               <p className="dashboard-comparison muted">
-                {periodText(comparison.delta, comparison.direction, currency)}
-                {prevLabel ? ` (vs ${prevLabel})` : ""}
+                {periodText(t, comparison.delta, comparison.direction, currency)}
+                {prevLabel ? ` ${t("dashboard.vsPrevious", { month: prevLabel })}` : ""}
               </p>
             ) : null}
             {monthlyBudget ? (
               <div style={{ marginTop: 14 }}>
                 <BudgetProgress spent={monthOut} limit={monthlyBudget.amount} currency={currency} />
                 <p className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-                  {budgetSummaryText(monthOut, monthlyBudget.amount, currency)}
+                  {budgetSummaryText(t, monthOut, monthlyBudget.amount, currency)}
                 </p>
               </div>
             ) : null}
             {recentExpenses.length > 0 ? (
               <div className="dashboard-recent">
-                <p className="dashboard-recent-title muted">Recent</p>
+                <p className="dashboard-recent-title muted">{t("dashboard.recent")}</p>
                 <RecentExpenses expenses={recentExpenses} monthKey={now} onNavigate={onNavigate} />
               </div>
             ) : null}
@@ -172,9 +177,9 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
       {/* Category breakdown */}
       {expenseTotals.length > 0 || incomeTotals.length > 0 ? (
         <Card
-          title="Where it went"
+          title={t("dashboard.whereItWent")}
           action={
-            <div className="segmented" role="tablist" aria-label="Breakdown">
+            <div className="segmented" role="tablist" aria-label={t("dashboard.breakdown")}>
               {(["expense", "income"] as const).map((k) => (
                 <button
                   key={k}
@@ -184,7 +189,7 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
                   className={`segmented-btn${breakdownKind === k ? " is-active" : ""}`}
                   onClick={() => setBreakdownKind(k)}
                 >
-                  {k === "expense" ? "Expenses" : "Income"}
+                  {k === "expense" ? t("common.expenses") : t("common.income")}
                 </button>
               ))}
             </div>
@@ -201,7 +206,7 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
             />
           ) : (
             <p className="muted" style={{ fontSize: 14 }}>
-              {breakdownKind === "income" ? "No income this month." : "No spending this month."}
+              {breakdownKind === "income" ? t("dashboard.noIncome") : t("dashboard.noSpending")}
             </p>
           )}
         </Card>
@@ -211,9 +216,9 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
       {!monthlyBudget && monthRecords.length > 0 ? (
         <Card>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <p className="muted" style={{ fontSize: 14 }}>No monthly budget set yet.</p>
+            <p className="muted" style={{ fontSize: 14 }}>{t("dashboard.noBudget")}</p>
             <Button variant="secondary" size="sm" onClick={() => onNavigate("/budgets")}>
-              Set a budget
+              {t("dashboard.setBudget")}
             </Button>
           </div>
         </Card>

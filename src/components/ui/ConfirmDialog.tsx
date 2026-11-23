@@ -1,12 +1,13 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { translate } from "@/lib/i18n";
 
 export function ConfirmDialog({
   open,
   title,
   body,
   confirmLabel,
-  cancelLabel = "Keep it",
+  cancelLabel = translate("settings.keepIt"),
   onConfirm,
   onCancel,
 }: {

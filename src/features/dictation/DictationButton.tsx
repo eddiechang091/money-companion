@@ -1,4 +1,5 @@
 import { Mic } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 import type { DictationControls } from "./dictation";
 import "./dictation.css";
 
@@ -14,6 +15,7 @@ export function DictationButton({
   toggle,
   disabled,
 }: DictationControls & { disabled?: boolean }) {
+  const { t } = useLanguage();
   if (!supported) return null;
   return (
     <>
@@ -23,9 +25,9 @@ export function DictationButton({
           className={listening ? "dictation-mic listening" : "dictation-mic"}
           onClick={toggle}
           disabled={disabled}
-          aria-label={listening ? "Stop dictation" : "Start dictation"}
+          aria-label={listening ? t("dictation.stop") : t("dictation.start")}
           aria-pressed={listening}
-          title={listening ? "Stop dictation" : "Dictate"}
+          title={listening ? t("dictation.stop") : t("dictation.dictate")}
         >
           <Mic size={16} aria-hidden="true" />
         </button>

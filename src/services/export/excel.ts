@@ -3,6 +3,7 @@ import type { Expense } from "@/lib/types";
 import { recordKind } from "@/lib/types";
 import { sumByKind } from "@/lib/analytics";
 import { categoryLabel } from "@/lib/categories";
+import { translate } from "@/lib/i18n";
 
 export interface ExcelExportOptions {
   expenses: Expense[];
@@ -14,17 +15,17 @@ export interface ExcelExportOptions {
 /** Export expenses and income as a .xlsx file and trigger download. */
 export function exportExpensesExcel({ expenses, monthKey, currency }: ExcelExportOptions): void {
   const rows = expenses.map((e) => ({
-    Date: e.date,
-    Type: recordKind(e) === "income" ? "Income" : "Expense",
-    Description: e.description || categoryLabel(e.categoryId),
-    Category: categoryLabel(e.categoryId),
-    Amount: e.amount,
-    Currency: e.currency,
-    "Payment Method": e.paymentMethod ?? "",
-    Notes: e.notes ?? "",
-    "Original Amount":
+    [translate("form.date")]: e.date,
+    [translate("form.type")]: recordKind(e) === "income" ? translate("common.income") : translate("export.typeExpense"),
+    [translate("form.description")]: e.description || categoryLabel(e.categoryId),
+    [translate("form.category")]: categoryLabel(e.categoryId),
+    [translate("form.amount")]: e.amount,
+    [translate("form.currency")]: e.currency,
+    [translate("export.paymentMethod")]: e.paymentMethod ?? "",
+    [translate("form.notes")]: e.notes ?? "",
+    [translate("export.originalAmount")]:
       e.originalAmount != null && e.originalCurrency ? `${e.originalAmount} ${e.originalCurrency}` : "",
-    "FX Rate": e.fxRate ?? "",
+    [translate("export.fxRate")]: e.fxRate ?? "",
   }));
 
   const totalOut = sumByKind(expenses, "expense");
@@ -35,11 +36,11 @@ export function exportExpensesExcel({ expenses, monthKey, currency }: ExcelExpor
   const ws = XLSX.utils.json_to_sheet(rows);
   // Totals rows (the Amount column is 5th now that Type was added).
   const totals: Array<Array<string | number>> = [
-    [`Total expenses (${expenseCount})`, "", "", "", totalOut, currency],
+    [translate("export.totalExpenses", { count: expenseCount }), "", "", "", totalOut, currency],
   ];
   if (incomeCount > 0) {
-    totals.push([`Total income (${incomeCount})`, "", "", "", totalIn, currency]);
-    totals.push(["Net", "", "", "", Math.round((totalIn - totalOut) * 100) / 100, currency]);
+    totals.push([translate("export.totalIncome", { count: incomeCount }), "", "", "", totalIn, currency]);
+    totals.push([translate("export.net"), "", "", "", Math.round((totalIn - totalOut) * 100) / 100, currency]);
   }
   XLSX.utils.sheet_add_aoa(ws, totals, { origin: -1 });
   ws["!cols"] = [
@@ -56,6 +57,6 @@ export function exportExpensesExcel({ expenses, monthKey, currency }: ExcelExpor
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Expenses");
+  XLSX.utils.book_append_sheet(wb, ws, translate("common.expenses"));
   XLSX.writeFile(wb, `money-companion-${monthKey}.xlsx`);
 }

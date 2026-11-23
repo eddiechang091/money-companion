@@ -1,6 +1,6 @@
 import type { Category, RecordKind } from "@/lib/types";
-import { UNCATEGORIZED_ICON, UNCATEGORIZED_LABEL } from "@/lib/constants";
-import { categoriesForKind } from "@/lib/categories";
+import { UNCATEGORIZED_ICON } from "@/lib/constants";
+import { categoriesForKind, categoryName } from "@/lib/categories";
 import { Select } from "./Input";
 
 export function CategoryPicker({
@@ -24,12 +24,12 @@ export function CategoryPicker({
     <Select id={id} value={value} onChange={(event) => onChange(event.target.value)}>
       {includeUncategorized ? (
         <option value="">
-          {UNCATEGORIZED_ICON} {UNCATEGORIZED_LABEL}
+          {UNCATEGORIZED_ICON} {categoryName(null)}
         </option>
       ) : null}
       {list.map((category) => (
         <option key={category.id} value={category.id}>
-          {category.icon} {category.name}
+          {category.icon} {categoryName(category.id)}
         </option>
       ))}
     </Select>

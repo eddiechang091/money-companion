@@ -12,6 +12,7 @@
  * Chrome, Apple in Safari) instead of staying on-device, and Firefox
  * does not ship it — so the mic button only appears where the API exists.
  */
+import { translate } from "@/lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /* ─── Minimal SpeechRecognition shapes ───────────────────────────────────
@@ -69,7 +70,7 @@ export function isDictationSupported(): boolean {
 
 function defaultFactory(): SpeechRecognitionLike {
   const Ctor = getRecognitionConstructor();
-  if (!Ctor) throw new Error("Speech recognition is not supported in this browser.");
+  if (!Ctor) throw new Error(translate("dictation.notSupported"));
   return new Ctor();
 }
 
@@ -109,14 +110,24 @@ export type DictationErrorKind =
   | "restart"
   | "unknown";
 
-export const DICTATION_ERROR_MESSAGES: Record<DictationErrorKind, string> = {
-  denied: "Microphone access was blocked. Allow microphone access in your browser and try again.",
-  "no-microphone": "No microphone was found on this device.",
-  network: "Dictation needs a network connection. Check your connection and try again.",
-  language: "This language is not supported for dictation in this browser.",
-  restart: "Dictation stopped unexpectedly. Tap the microphone to try again.",
-  unknown: "Dictation stopped. Tap the microphone to try again.",
-};
+/** Error message for a dictation failure, in the current UI language.
+ * A function (not a module-level map) so it follows a language switch. */
+export function dictationErrorMessage(kind: DictationErrorKind): string {
+  switch (kind) {
+    case "denied":
+      return translate("dictation.micBlocked");
+    case "no-microphone":
+      return translate("dictation.noMic");
+    case "network":
+      return translate("dictation.needsNetwork");
+    case "language":
+      return translate("dictation.langUnsupported");
+    case "restart":
+      return translate("dictation.stoppedUnexpected");
+    case "unknown":
+      return translate("dictation.stopped");
+  }
+}
 
 export interface DictationSessionCallbacks {
   /** Fired on every result event: accumulated finals + current interim. */
@@ -307,7 +318,7 @@ export function useDictation(
       },
       onListeningChange: (next) => setListening(next),
       onError: (kind) => {
-        setError(DICTATION_ERROR_MESSAGES[kind]);
+        setError(dictationErrorMessage(kind));
         sessionRef.current = null;
       },
     });

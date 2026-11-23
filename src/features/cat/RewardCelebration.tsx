@@ -1,27 +1,23 @@
 // Progressive reward celebration — reveals claimed items one at a time,
 // like the badge celebration. Explains what each item is for.
 
+import { useLanguage } from "@/lib/i18n";
+import { itemName, itemBlurb } from "@/services/cat/items";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { CatItem } from "@/services/cat/types";
 import { CELEBRATION_SLIDE_MS } from "@/features/gamification/badgeEvents";
 
-function itemPurpose(item: CatItem): string {
+function itemPurposeKey(item: CatItem): "reward.feedHint" | "reward.playHint" | "reward.groomHint" {
   switch (item.kind) {
     case "food":
-      return "Feed it to your cat for a happiness boost 🍖";
+      return "reward.feedHint";
     case "toy":
-      return "Play with your cat using this toy 🐾";
+      return "reward.playHint";
     case "care":
-      return "Use it when grooming your cat 💆";
+      return "reward.groomHint";
   }
 }
-
-const RARITY_LABEL: Record<CatItem["rarity"], string> = {
-  common: "Common",
-  rare: "Rare",
-  epic: "Epic",
-};
 
 export function RewardCelebration({
   title,
@@ -34,6 +30,7 @@ export function RewardCelebration({
   items: CatItem[];
   onDone: () => void;
 }) {
+  const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const item = items[index];
 
@@ -61,7 +58,7 @@ export function RewardCelebration({
       className="celebration-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label={`Reward claimed: ${item.name}`}
+      aria-label={t("reward.claimed", { name: itemName(item.id) })}
       onClick={next}
     >
       <div className="celebration-card" onClick={(e) => e.stopPropagation()}>
@@ -69,19 +66,19 @@ export function RewardCelebration({
         <div key={item.id} className="celebration-emoji" aria-hidden="true">
           {item.emoji}
         </div>
-        <h2 className="celebration-name">{item.name}</h2>
+        <h2 className="celebration-name">{itemName(item.id)}</h2>
         <p className="celebration-hint muted">
-          {RARITY_LABEL[item.rarity]} · {item.blurb}
+          {t(`reward.${item.rarity}`)} · {itemBlurb(item.id)}
         </p>
-        <p className="celebration-purpose">{itemPurpose(item)}</p>
+        <p className="celebration-purpose">{t(itemPurposeKey(item))}</p>
         {items.length > 1 && (
           <p className="celebration-progress muted">
-            {index + 1} of {items.length}
+            {t("common.of", { a: index + 1, b: items.length })}
           </p>
         )}
         <div className="celebration-actions">
           <Button variant="ghost" onClick={next}>
-            {index + 1 < items.length ? "Next" : "Awesome!"}
+            {index + 1 < items.length ? t("common.next") : t("reward.awesome")}
           </Button>
         </div>
       </div>

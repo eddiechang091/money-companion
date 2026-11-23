@@ -1,8 +1,9 @@
 import { useState } from "react";
 import type { Expense } from "@/lib/types";
 import { recordKind } from "@/lib/types";
-import { getCategoryById } from "@/lib/categories";
-import { money } from "@/lib/utils";
+import { categoryName, getCategoryById } from "@/lib/categories";
+import { getIntlLocale, money } from "@/lib/utils";
+import { paymentMethodDisplayName, useLanguage } from "@/lib/i18n";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CategoryChip } from "@/components/ui/CategoryChip";
@@ -15,7 +16,7 @@ function formatDateLabel(iso: string): string {
   if (parts.length !== 3) return iso;
   const date = new Date(parts[0], parts[1] - 1, parts[2]);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString("en", { month: "short", day: "numeric" });
+  return date.toLocaleDateString(getIntlLocale(), { month: "short", day: "numeric" });
 }
 
 export function ExpenseRow({
@@ -38,11 +39,12 @@ export function ExpenseRow({
   onDelete: () => Promise<void>;
 }) {
   const { profile } = useProfile();
+  const { t } = useLanguage();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const category = getCategoryById(expense.categoryId);
   const isIncome = recordKind(expense) === "income";
-  const title = expense.description || category?.name || (isIncome ? "Income" : "Expense");
+  const title = expense.description || categoryName(expense.categoryId) || (isIncome ? t("dashboard.income") : t("dashboard.expense"));
 
   if (editing) {
     return (
@@ -59,7 +61,7 @@ export function ExpenseRow({
             notes: expense.notes ?? "",
           }}
           defaultCurrency={profile.currency || "USD"}
-          submitLabel="Save changes"
+          submitLabel={t("row.saveChanges")}
           saving={savingEdit}
           onCancel={onCancelEdit}
           onSubmit={async (values) => {
@@ -81,12 +83,12 @@ export function ExpenseRow({
         <div className="expense-main">
           <div className="expense-title-row">
             <span className="expense-title">{title}</span>
-            {pending ? <span className="saving-pill">Saving…</span> : null}
+            {pending ? <span className="saving-pill">{t("form.saving")}</span> : null}
           </div>
           <div className="expense-meta">
             <CategoryChip category={category} />
             <span className="muted">{formatDateLabel(expense.date)}</span>
-            {expense.paymentMethod ? <span className="muted">{expense.paymentMethod}</span> : null}
+            {expense.paymentMethod ? <span className="muted">{paymentMethodDisplayName(expense.paymentMethod)}</span> : null}
           </div>
         </div>
         <div className="expense-side">
@@ -101,7 +103,7 @@ export function ExpenseRow({
           ) : null}
           <div className="row expense-actions">
             <Button type="button" variant="ghost" size="sm" onClick={onEdit} disabled={deleting}>
-              Edit
+              {t("common.edit")}
             </Button>
             <Button
               type="button"
@@ -110,15 +112,15 @@ export function ExpenseRow({
               onClick={() => setConfirmOpen(true)}
               disabled={deleting}
             >
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? t("row.deleting") : t("common.delete")}
             </Button>
           </div>
         </div>
         <ConfirmDialog
           open={confirmOpen}
-          title={isIncome ? "Delete this income?" : "Delete this expense?"}
-          body={`${title} · ${money(expense.amount, expense.currency)}. This cannot be undone.`}
-          confirmLabel={deleting ? "Deleting…" : "Delete"}
+          title={isIncome ? t("row.deleteIncomeTitle") : t("row.deleteExpenseTitle")}
+          body={t("row.deleteBody", { title, amount: money(expense.amount, expense.currency) })}
+          confirmLabel={deleting ? t("row.deleting") : t("common.delete")}
           onCancel={() => setConfirmOpen(false)}
           onConfirm={async () => {
             await onDelete();

@@ -1,8 +1,7 @@
 import type { Expense, MonthlyBudget } from "@/lib/types";
 import { recordKind } from "@/lib/types";
 import type { ExpenseContext, FinancialSummaryContext } from "@/lib/aiContext";
-import { getCategoryById } from "@/lib/categories";
-import { UNCATEGORIZED_LABEL } from "@/lib/constants";
+import { categoryName, getCategoryById } from "@/lib/categories";
 import {
   calculateBudgetProgress,
   comparePeriods,
@@ -50,7 +49,7 @@ export function buildConversationContext(
       kind: recordKind(activeExpense),
       amount: activeExpense.amount,
       currency: activeExpense.currency,
-      category: cat?.name ?? UNCATEGORIZED_LABEL,
+      category: categoryName(cat?.id ?? null),
       categoryId: activeExpense.categoryId,
       description: activeExpense.description,
       date: activeExpense.date,
@@ -67,7 +66,7 @@ export function buildConversationContext(
       balance: Math.round((monthIncome - monthTotal) * 100) / 100,
       topCategories: catTotals.map((t) => ({
         categoryId: t.categoryId,
-        category: getCategoryById(t.categoryId)?.name ?? UNCATEGORIZED_LABEL,
+        category: categoryName(t.categoryId),
         total: t.total,
         count: t.count,
       })),
@@ -81,7 +80,7 @@ export function buildConversationContext(
                 .slice(0, MAX_CATEGORIES)
                 .map((t) => ({
                   categoryId: t.categoryId,
-                  category: getCategoryById(t.categoryId)?.name ?? UNCATEGORIZED_LABEL,
+                  category: categoryName(t.categoryId),
                   total: t.total,
                   count: t.count,
                 })),
@@ -100,7 +99,7 @@ export function buildConversationContext(
         : null,
       changes: changes.map((c) => ({
         kind: c.kind,
-        category: getCategoryById(c.categoryId)?.name ?? UNCATEGORIZED_LABEL,
+        category: categoryName(c.categoryId),
         delta: c.delta,
       })),
     },

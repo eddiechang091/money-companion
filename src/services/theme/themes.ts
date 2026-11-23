@@ -2,10 +2,11 @@ export type ThemeId = "cozy" | "cyberpunk" | "verdant" | "starry" | "ocean";
 
 export interface ThemeDef {
   id: ThemeId;
-  /** English display name. */
-  name: string;
+  /** Dictionary key for the localized display name. */
+  nameKey: string;
   emoji: string;
-  tagline: string;
+  /** Dictionary key for the localized tagline. */
+  taglineKey: string;
   /** Gradient swatch shown in the picker. */
   swatch: string;
   /**
@@ -20,41 +21,41 @@ export const DEFAULT_THEME: ThemeId = "cozy";
 export const THEMES: ThemeDef[] = [
   {
     id: "cozy",
-    name: "Cozy Home",
+    nameKey: "theme.cozy",
     emoji: "🏠",
-    tagline: "Warm and homey",
+    taglineKey: "theme.cozyTag",
     swatch: "linear-gradient(135deg, #ffb347, #ff7b54)",
     catFilter: "none",
   },
   {
     id: "cyberpunk",
-    name: "Cyberpunk",
+    nameKey: "theme.cyberpunk",
     emoji: "🌃",
-    tagline: "Neon nights",
+    taglineKey: "theme.cyberpunkTag",
     swatch: "linear-gradient(135deg, #ff2fb3, #00e5ff)",
     catFilter: "hue-rotate(-70deg) saturate(1.7)",
   },
   {
     id: "verdant",
-    name: "Verdant",
+    nameKey: "theme.verdant",
     emoji: "🌿",
-    tagline: "Lush and green",
+    taglineKey: "theme.verdantTag",
     swatch: "linear-gradient(135deg, #7bc96f, #2f9e5f)",
     catFilter: "hue-rotate(100deg) saturate(1.1)",
   },
   {
     id: "starry",
-    name: "Starry Night",
+    nameKey: "theme.starry",
     emoji: "✨",
-    tagline: "Calm under stars",
+    taglineKey: "theme.starryTag",
     swatch: "linear-gradient(135deg, #3a4a8f, #7c9bff)",
     catFilter: "hue-rotate(180deg) saturate(0.9)",
   },
   {
     id: "ocean",
-    name: "Deep Ocean",
+    nameKey: "theme.ocean",
     emoji: "🌊",
-    tagline: "Quiet deep blue",
+    taglineKey: "theme.oceanTag",
     swatch: "linear-gradient(135deg, #2fbfa8, #1e6f9e)",
     catFilter: "hue-rotate(140deg) saturate(1.1)",
   },

@@ -3,6 +3,7 @@
 // Draggable companion button that opens the interactive cat modal.
 // Shows a red dot when the daily check-in is available.
 
+import { useLanguage } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import { useCat } from "@/services/cat/useCat";
@@ -18,12 +19,10 @@ interface Pos {
   dy: number;
 }
 
-const BUBBLE_MESSAGES = [
-  "👋 Look at me!",
-  "🎧 Tap me — let's hang out!",
-];
+const BUBBLE_MESSAGE_KEYS = ["cat.lookAtMe", "cat.tapMe"] as const;
 
 export function CatLauncher({ onOpen }: { onOpen: () => void }) {
+  const { t } = useLanguage();
   const { canCheckIn } = useCat();
   const [pos, setPos] = useState<Pos>({ dx: 0, dy: 0 });
   const [bubbleOn, setBubbleOn] = useState(true);
@@ -125,7 +124,7 @@ export function CatLauncher({ onOpen }: { onOpen: () => void }) {
     <div className="cat-launcher-wrap" style={{ transform: `translate(${pos.dx}px, ${pos.dy}px)` }}>
       <button
         className="cat-launcher"
-        aria-label="Open lucky cat companion"
+        aria-label={t("cat.openCompanion")}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -138,7 +137,7 @@ export function CatLauncher({ onOpen }: { onOpen: () => void }) {
       </button>
       {bubbleOn && (
         <div className="cat-launcher-bubble" role="status">
-          {canCheckIn ? "📅 Check-in time!" : BUBBLE_MESSAGES[bubbleIndex % BUBBLE_MESSAGES.length]}
+          {canCheckIn ? t("cat.checkinTime") : t(BUBBLE_MESSAGE_KEYS[bubbleIndex % BUBBLE_MESSAGE_KEYS.length])}
         </div>
       )}
     </div>

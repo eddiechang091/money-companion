@@ -1,64 +1,41 @@
 import type { ConversationContext } from "./conversationContext";
-import { getCategoryById } from "@/lib/categories";
+import { categoryName, getCategoryById } from "@/lib/categories";
+import { translate } from "@/lib/i18n";
 
 type SuggestionSet = readonly string[];
 
-const WELCOME_SUGGESTIONS: SuggestionSet = [
-  "How am I doing this month?",
-  "What am I spending the most on?",
-  "Am I on track with my budget?",
-];
+function q(key: string): string {
+  return translate(`ai.${key}`);
+}
+
+// Question lists are built lazily (functions, not module-level arrays)
+// so they follow a language switch without a reload.
+function welcomeSuggestions(): SuggestionSet {
+  return [q("qWelcome1"), q("qWelcome2"), q("qWelcome3")];
+}
 
 /** Keyed by category id. Income categories get their own questions. */
-const CATEGORY_SUGGESTIONS: Record<string, SuggestionSet> = {
-  "dining-out": [
-    "Was it worth it?",
-    "How much have I spent eating out?",
-    "Am I eating out more than usual?",
-  ],
-  "daily-commute": [
-    "How much am I spending on getting around?",
-    "Is this my usual amount?",
-    "Am I spending more on transport than last month?",
-  ],
-  "apparel-style": [
-    "Was this planned?",
-    "How much have I spent shopping this month?",
-    "Can I keep spending this month?",
-  ],
-  "utilities-bills": [
-    "Am I on track with bills this month?",
-    "Are my bills going up?",
-    "What fixed costs do I have?",
-  ],
-  "hobbies-passions": [
-    "How much fun spending am I doing?",
-    "Is this my usual amount?",
-    "How does this compare to last month?",
-  ],
-  "health-pharmacy": [
-    "What's my health spending like?",
-    "Is this a regular expense?",
-    "How much have I spent on health?",
-  ],
-  "main-salary": [
-    "How does this compare to last month?",
-    "Is this my usual pay?",
-    "Anything else coming in this month?",
-  ],
+const CATEGORY_QUESTION_KEYS: Record<string, readonly string[]> = {
+  "dining-out": ["qDining1", "qDining2", "qDining3"],
+  "daily-commute": ["qCommute1", "qCommute2", "qCommute3"],
+  "apparel-style": ["qApparel1", "qApparel2", "qApparel3"],
+  "utilities-bills": ["qBills1", "qBills2", "qBills3"],
+  "hobbies-passions": ["qHobbies1", "qHobbies2", "qHobbies3"],
+  "health-pharmacy": ["qHealth1", "qHealth2", "qHealth3"],
+  "main-salary": ["qSalary1", "qSalary2", "qSalary3"],
 };
 
-const BUDGET_QUESTIONS: SuggestionSet = [
-  "How much budget do I have left?",
-  "Am I over budget?",
-  "How do I get back on track?",
-];
+function categoryQuestions(catId: string): SuggestionSet {
+  return (CATEGORY_QUESTION_KEYS[catId] ?? []).map(q);
+}
 
-const PATTERN_QUESTIONS: SuggestionSet = [
-  "What's changed in my spending?",
-  "Do I have any recurring expenses?",
-  "Which category went up the most?",
-];
+function budgetQuestions(): SuggestionSet {
+  return [q("qBudget1"), q("qBudget2"), q("qBudget3")];
+}
+
+function patternQuestions(): SuggestionSet {
+  return [q("qPattern1"), q("qPattern2"), q("qPattern3")];
+}
 
 /** Normalize for comparison: lowercase, strip punctuation. */
 function norm(s: string): string {
@@ -120,7 +97,7 @@ export function buildSuggestedQuestions(
   userMessages: string[] = [],
   allMessages: ConversationMessage[] = []
 ): string[] {
-  if (!hasMessages) return [...WELCOME_SUGGESTIONS];
+  if (!hasMessages) return [...welcomeSuggestions()];
 
   const asked = userMessages.map(norm).filter(Boolean);
   const suggestions: string[] = [];
@@ -133,28 +110,28 @@ export function buildSuggestedQuestions(
 
   // Category-specific suggestions from the active expense
   const catId = ctx.currentExpense?.categoryId ?? null;
-  if (catId && CATEGORY_SUGGESTIONS[catId]) {
-    for (const q of CATEGORY_SUGGESTIONS[catId]) pushIfNew(q);
+  if (catId && CATEGORY_QUESTION_KEYS[catId]) {
+    for (const question of categoryQuestions(catId)) pushIfNew(question);
   }
 
   // Budget-based suggestions
   const budgetStatus = ctx.financialSummary.budget?.status;
   if (budgetStatus === "over" || budgetStatus === "watch") {
-    for (const q of BUDGET_QUESTIONS) pushIfNew(q);
+    for (const question of budgetQuestions()) pushIfNew(question);
   }
 
   // Pattern suggestions when meaningful changes exist
   if (ctx.financialSummary.changes.length > 0) {
-    for (const q of PATTERN_QUESTIONS) pushIfNew(q);
+    for (const question of patternQuestions()) pushIfNew(question);
   }
 
   // Unexplored topics: suggest categories with spending that haven't been discussed.
   // A category counts as discussed when the user named it.
   const discussedCats = new Set<string>();
   for (const m of asked) {
-    for (const key of Object.keys(CATEGORY_SUGGESTIONS)) {
+    for (const key of Object.keys(CATEGORY_QUESTION_KEYS)) {
       const cat = getCategoryById(key);
-      const names = [cat?.name]
+      const names = [categoryName(key), cat?.name]
         .filter((n): n is string => !!n)
         .map((n) => n.toLowerCase());
       if (names.some((n) => m.includes(n))) discussedCats.add(key);
@@ -163,20 +140,16 @@ export function buildSuggestedQuestions(
   for (const top of ctx.financialSummary.topCategories.slice(0, 3)) {
     const catId = top.categoryId;
     if (!catId || discussedCats.has(catId)) continue;
-    if (CATEGORY_SUGGESTIONS[catId]) {
-      for (const q of CATEGORY_SUGGESTIONS[catId].slice(0, 1)) pushIfNew(q);
+    if (CATEGORY_QUESTION_KEYS[catId]) {
+      for (const question of categoryQuestions(catId).slice(0, 1)) pushIfNew(question);
       if (suggestions.length >= 3) break;
     }
   }
 
   // If nothing specific (or all asked), use generic unexplored suggestions
   if (suggestions.length === 0) {
-    for (const q of [
-      "How am I doing this month?",
-      "What am I spending the most on?",
-      "Am I on track with my budget?",
-    ]) {
-      pushIfNew(q);
+    for (const question of welcomeSuggestions()) {
+      pushIfNew(question);
     }
   }
 

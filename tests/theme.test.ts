@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { THEMES, themeDef, isThemeId, DEFAULT_THEME } from "../src/services/theme/themes";
 import { THEME_BACKGROUNDS } from "../src/services/theme/themeBackgrounds";
 import { THEME_CAT_ART } from "../src/services/theme/art/themeArt";
+import { en } from "../src/lib/locales/en";
 
 describe("themes", () => {
   it("has five themes with cozy as default", () => {
@@ -18,8 +19,8 @@ describe("themes", () => {
 
   it("every theme has English name, tagline, swatch and cat filter", () => {
     for (const t of THEMES) {
-      expect(t.name).toMatch(/^[A-Za-z ]+$/);
-      expect(t.tagline.length).toBeGreaterThan(0);
+      expect(en[t.nameKey]).toMatch(/^[A-Za-z ]+$/);
+      expect(String(en[t.taglineKey]).length).toBeGreaterThan(0);
       expect(t.swatch).toContain("linear-gradient");
       expect(typeof t.catFilter).toBe("string");
     }

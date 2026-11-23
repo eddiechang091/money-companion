@@ -9,15 +9,16 @@ import {
 
 export interface NavItem {
   path: string;
-  label: string;
+  /** Dictionary key for the label, e.g. "nav.dashboard". */
+  labelKey: string;
   icon: LucideIcon;
   bottom: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, bottom: true },
-  { path: "/expenses", label: "Expenses", icon: ReceiptText, bottom: true },
-  { path: "/trends", label: "Trends", icon: TrendingUp, bottom: true },
-  { path: "/budgets", label: "Budgets", icon: PiggyBank, bottom: true },
-  { path: "/settings", label: "Settings", icon: Settings, bottom: true },
+  { path: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard, bottom: true },
+  { path: "/expenses", labelKey: "nav.expenses", icon: ReceiptText, bottom: true },
+  { path: "/trends", labelKey: "nav.trends", icon: TrendingUp, bottom: true },
+  { path: "/budgets", labelKey: "nav.budgets", icon: PiggyBank, bottom: true },
+  { path: "/settings", labelKey: "nav.settings", icon: Settings, bottom: true },
 ];

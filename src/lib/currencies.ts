@@ -1,3 +1,5 @@
+import { currencyDisplayName } from "./utils";
+
 export interface CurrencyInfo {
   code: string;
   name: string;
@@ -43,5 +45,5 @@ export const CURRENCY_CODES = new Set(CURRENCIES.map((c) => c.code));
 
 export function currencyLabel(code: string): string {
   const c = CURRENCIES.find((x) => x.code === code);
-  return c ? `${c.code} — ${c.name}` : code;
+  return c ? `${c.code} — ${currencyDisplayName(c.code)}` : code;
 }

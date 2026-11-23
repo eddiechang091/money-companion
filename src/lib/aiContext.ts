@@ -1,7 +1,6 @@
 import type { Expense, MonthlyBudget, RecordKind } from "./types";
 import { recordKind } from "./types";
-import { getCategoryById } from "./categories";
-import { UNCATEGORIZED_LABEL } from "./constants";
+import { categoryName, getCategoryById } from "./categories";
 import {
   calculateBudgetProgress,
   comparePeriods,
@@ -138,7 +137,7 @@ export function buildTrendInsightContext(
     const change = changes.get(id);
     return {
       categoryId: id,
-      category: getCategoryById(id === "uncategorized" ? null : id)?.name ?? UNCATEGORIZED_LABEL,
+      category: categoryName(id === "uncategorized" ? null : id),
       total: round2(catTotals.get(id) ?? 0),
       latest: change?.current ?? 0,
       previous: change?.previous ?? 0,
@@ -184,7 +183,7 @@ export function buildTrendInsightContext(
       );
       const info = calculateBudgetProgress(spent, budget.amount);
       return {
-        category: getCategoryById(id)?.name ?? UNCATEGORIZED_LABEL,
+        category: categoryName(id),
         limit: budget.amount,
         spent,
         pct: info.pct,
@@ -237,7 +236,7 @@ export function buildInsightContext(
       kind: recordKind(expense),
       amount: expense.amount,
       currency: expense.currency,
-      category: cat?.name ?? UNCATEGORIZED_LABEL,
+      category: categoryName(cat?.id ?? null),
       categoryId: expense.categoryId,
       description: expense.description,
       date: expense.date,
@@ -249,7 +248,7 @@ export function buildInsightContext(
       balance: Math.round((monthIncome - monthTotal) * 100) / 100,
       topCategories: catTotals.map((t) => ({
         categoryId: t.categoryId,
-        category: getCategoryById(t.categoryId)?.name ?? UNCATEGORIZED_LABEL,
+        category: categoryName(t.categoryId),
         total: t.total,
         count: t.count,
       })),
@@ -263,7 +262,7 @@ export function buildInsightContext(
                 .slice(0, MAX_CATEGORIES)
                 .map((t) => ({
                   categoryId: t.categoryId,
-                  category: getCategoryById(t.categoryId)?.name ?? UNCATEGORIZED_LABEL,
+                  category: categoryName(t.categoryId),
                   total: t.total,
                   count: t.count,
                 })),
@@ -283,7 +282,7 @@ export function buildInsightContext(
           : null,
       changes: changes.map((c) => ({
         kind: c.kind,
-        category: getCategoryById(c.categoryId)?.name ?? UNCATEGORIZED_LABEL,
+        category: categoryName(c.categoryId),
         delta: c.delta,
       })),
     },

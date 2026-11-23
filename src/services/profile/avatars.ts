@@ -5,6 +5,7 @@
 // with zero extra file requests.
 
 import { AVATAR_DATA_URIS } from "./avatarData";
+import { translate } from "@/lib/i18n";
 
 export interface AvatarOption {
   id: string;
@@ -34,6 +35,15 @@ export const AVATAR_OPTIONS: AvatarOption[] = META.map((m) => ({
 export const AVATARS: AvatarOption[] = AVATAR_OPTIONS;
 
 export const DEFAULT_AVATAR_ID = "avatar-lucky-cat";
+
+/** Display label of an avatar in the current UI language ("avatar.<slug>"). */
+export function avatarLabel(id: string): string {
+  const slug = id.replace(/^avatar-/, "");
+  const key = `avatar.${slug}`;
+  const translated = translate(key);
+  if (translated !== key) return translated;
+  return AVATAR_OPTIONS.find((a) => a.id === id)?.label ?? id;
+}
 
 /** Returns the avatar image (data URI) for an id, or undefined. */
 export function avatarSrc(id: string | undefined): string | undefined {

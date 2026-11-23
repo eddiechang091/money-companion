@@ -1,3 +1,6 @@
+import { useLanguage } from "@/lib/i18n";
+import type { TranslateVars } from "@/lib/i18n";
+import { categoryName } from "@/lib/categories";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import type { MonthlyBudget } from "@/lib/types";
@@ -7,16 +10,18 @@ import { Button } from "@/components/ui/Button";
 import { AmountInput, Field, Select } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getCategoryById } from "@/lib/categories";
-import { UNCATEGORIZED_LABEL } from "@/lib/constants";
+
 import { calculateBudgetProgress } from "@/lib/analytics";
 import { money, parseAmountInput } from "@/lib/utils";
 import { CURRENCIES, currencyLabel } from "@/lib/currencies";
 
-function budgetStatusLabel(spent: number, limit: number, currency: string): string {
+type T = (key: string, vars?: TranslateVars) => string;
+
+function budgetStatusLabel(t: T, spent: number, limit: number, currency: string): string {
   const info = calculateBudgetProgress(spent, limit);
-  if (info.status === "over") return `${money(spent - limit, currency)} over budget`;
-  if (info.status === "watch") return `${money(info.remaining, currency)} left — getting close`;
-  return `${money(info.remaining, currency)} remaining`;
+  if (info.status === "over") return t("budgets.overBy", { amount: money(spent - limit, currency) });
+  if (info.status === "watch") return t("budgets.leftClose", { amount: money(info.remaining, currency) });
+  return t("budgets.remainingBy", { amount: money(info.remaining, currency) });
 }
 
 export function BudgetRow({
@@ -30,6 +35,7 @@ export function BudgetRow({
   onSave: (input: BudgetInput) => Promise<void>;
   onDelete: () => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -40,16 +46,16 @@ export function BudgetRow({
 
   const cat = getCategoryById(budget.categoryId);
   const isOverall = budget.categoryId === null;
-  const label = isOverall ? "Monthly total" : cat?.name ?? UNCATEGORIZED_LABEL;
+  const label = isOverall ? t("budgets.monthlyTotal") : categoryName(budget.categoryId);
   const icon = isOverall ? "🐷" : cat?.icon ?? "📦";
-  const statusLabel = budgetStatusLabel(spent, budget.amount, budget.currency);
+  const statusLabel = budgetStatusLabel(t, spent, budget.amount, budget.currency);
   const info = calculateBudgetProgress(spent, budget.amount);
 
   async function handleSave(event: FormEvent) {
     event.preventDefault();
     const amount = parseAmountInput(amountText);
     if (amount === null || amount <= 0) {
-      setAmountError("Enter an amount greater than zero.");
+      setAmountError(t("validation.amountZero"));
       return;
     }
     setAmountError("");
@@ -69,7 +75,7 @@ export function BudgetRow({
           <span className="budget-item-icon" aria-hidden="true">{icon}</span>
           <span className="budget-item-name">{label}</span>
         </div>
-        <Field label="Monthly limit">
+        <Field label={t("budgets.monthlyLimit")}>
           <AmountInput
             value={amountText}
             onChange={(e) => setAmountText(e.target.value)}
@@ -78,7 +84,7 @@ export function BudgetRow({
           />
           {amountError ? <span className="field-error" role="alert">{amountError}</span> : null}
         </Field>
-        <Field label="Currency">
+        <Field label={t("form.currency")}>
           <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
             {CURRENCIES.map((c) => (
               <option key={c.code} value={c.code}>
@@ -89,10 +95,10 @@ export function BudgetRow({
         </Field>
         <div className="row" style={{ marginTop: 10 }}>
           <Button type="submit" size="sm" disabled={saving}>
-            {saving ? "Saving…" : "Save"}
+            {saving ? t("form.saving") : t("common.save")}
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={() => { setEditing(false); setAmountText(String(budget.amount)); }} disabled={saving}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         </div>
       </form>
@@ -117,7 +123,7 @@ export function BudgetRow({
             onClick={() => setEditing(true)}
             disabled={deleting}
           >
-            Edit
+            {t("common.edit")}
           </Button>
           <Button
             type="button"
@@ -126,16 +132,16 @@ export function BudgetRow({
             onClick={() => setConfirmOpen(true)}
             disabled={deleting}
           >
-            {deleting ? "Removing…" : "Remove"}
+            {deleting ? t("budgets.removing") : t("common.remove")}
           </Button>
         </div>
       </div>
       <ConfirmDialog
         open={confirmOpen}
-        title={`Remove ${label} budget?`}
-        body="This will delete your budget limit. Your expense history stays intact."
-        confirmLabel={deleting ? "Removing…" : "Remove"}
-        cancelLabel="Keep it"
+        title={t("budgets.removeTitle", { label })}
+        body={t("budgets.removeBody")}
+        confirmLabel={deleting ? t("budgets.removing") : t("common.remove")}
+        cancelLabel={t("settings.keepIt")}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={async () => {
           setDeleting(true);

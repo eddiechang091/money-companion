@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/i18n";
 import { Card } from "@/components/ui/Card";
 import { connectAnna } from "@/services/anna/runtime";
 import { getKvStore } from "@/services/anna/storage";
@@ -13,6 +14,7 @@ const INITIAL: AnnaStatus = {
 };
 
 export function AnnaStatusCard() {
+  const { t } = useLanguage();
   const [status, setStatus] = useState<AnnaStatus>(INITIAL);
   const [roundTrip, setRoundTrip] = useState("checking");
 
@@ -44,20 +46,20 @@ export function AnnaStatusCard() {
   }, []);
 
   return (
-    <Card title="Anna connection">
+    <Card title={t("anna.connection")}>
       <ul className="stack" style={{ gap: 8 }}>
         <li>
-          Runtime: <strong>{status.state}</strong>
-          {status.isHosted ? " (inside Anna host)" : " (standalone)"}
+          {t("anna.runtime")}: <strong>{status.state}</strong>
+          {status.isHosted ? ` ${t("anna.insideHost")}` : ` ${t("anna.standalone")}`}
         </li>
         <li>
-          Storage backend: <strong>{status.storageKind}</strong>
+          {t("anna.storageBackend")}: <strong>{status.storageKind}</strong>
         </li>
         <li>
-          Host LLM available: <strong>{status.llmAvailable ? "yes" : "no"}</strong>
+          {t("anna.llmAvailable")}: <strong>{status.llmAvailable ? t("common.yes") : t("common.no")}</strong>
         </li>
         <li>
-          Storage round-trip: <strong>{roundTrip}</strong>
+          {t("anna.roundTrip")}: <strong>{roundTrip}</strong>
         </li>
       </ul>
     </Card>

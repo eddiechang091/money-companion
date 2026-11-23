@@ -3,6 +3,7 @@ import type { ExpensePatch } from "@/services/expenses/store";
 import type { BudgetInput } from "@/services/budgets/repository";
 import { getRate } from "./rates";
 import { money } from "@/lib/utils";
+import { translate } from "@/lib/i18n";
 
 export interface ConversionPlan {
   rate: number;
@@ -56,7 +57,7 @@ export async function convertAllToCurrency(
     }
     const rate = await getRate(srcCurrency, to);
     if (rate === null) {
-      throw new Error(`Rate unavailable for ${srcCurrency} → ${to}`);
+      throw new Error(translate("fx.rateUnavailable", { from: srcCurrency, to }));
     }
     if (primaryRate === null) primaryRate = rate;
     const note = revalueNote(srcCurrency, to, rate);
@@ -75,7 +76,7 @@ export async function convertAllToCurrency(
     if (b.currency.toUpperCase() === to) continue;
     const rate = await getRate(b.currency.toUpperCase(), to);
     if (rate === null) {
-      throw new Error(`Rate unavailable for ${b.currency} → ${to}`);
+      throw new Error(translate("fx.rateUnavailable", { from: b.currency, to }));
     }
     if (primaryRate === null) primaryRate = rate;
     await saveBudget({
@@ -98,9 +99,9 @@ export function conversionSummary(
   budgetCount: number
 ): string {
   const parts = [`1 ${from} = ${rate.toFixed(4)} ${to}`];
-  if (expenseCount > 0) parts.push(`${expenseCount} expense${expenseCount > 1 ? "s" : ""}`);
-  if (budgetCount > 0) parts.push(`${budgetCount} budget${budgetCount > 1 ? "s" : ""}`);
-  return `Convert ${parts.slice(1).join(" and ")} at ${parts[0]}?`;
+  if (expenseCount > 0) parts.push(translate("settings.expenseCount", { count: expenseCount }));
+  if (budgetCount > 0) parts.push(translate("settings.budgetCount", { count: budgetCount }));
+  return translate("fx.convertConfirm", { items: parts.slice(1).join(" "), rate: parts[0] });
 }
 
 export function previewConversion(from: string, to: string, rate: number): string {

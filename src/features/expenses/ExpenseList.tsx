@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -63,6 +64,7 @@ export function ExpenseList({
 }) {
   const { updateExpense } = useExpenses();
   const { notify } = useToast();
+  const { t } = useLanguage();
   const [visibleCount, setVisibleCount] = useState(EXPENSE_PAGE_SIZE);
 
   // A new period/kind filter starts a fresh page; "Load more" progress from
@@ -98,7 +100,7 @@ export function ExpenseList({
   if (status === "loading") {
     return (
       <Card>
-        <LoadingState label="Loading your expenses…" />
+        <LoadingState label={t("list.loading")} />
       </Card>
     );
   }
@@ -106,7 +108,7 @@ export function ExpenseList({
   if (status === "error") {
     return (
       <Card>
-        <ErrorState action={<Button onClick={onRetry}>Try again</Button>}>{error}</ErrorState>
+        <ErrorState action={<Button onClick={onRetry}>{t("common.retry")}</Button>}>{error}</ErrorState>
       </Card>
     );
   }
@@ -115,20 +117,20 @@ export function ExpenseList({
     const emptyCopy =
       kindFilter === "income"
         ? {
-            title: "No income yet",
-            action: "Add transaction",
-            body: "Add your first transaction and your money story will start taking shape.",
+            title: t("list.noIncomeYet"),
+            action: t("nav.addTransaction"),
+            body: t("list.addFirstBody"),
           }
         : kindFilter === "expense"
           ? {
-              title: "No expenses yet",
-              action: "Add transaction",
-              body: "Add your first transaction and your money story will start taking shape.",
+              title: t("list.noExpensesYet"),
+              action: t("nav.addTransaction"),
+              body: t("list.addFirstBody"),
             }
           : {
-              title: "Nothing here yet",
-              action: "Add transaction",
-              body: "Add your first transaction and your money story will start taking shape.",
+              title: t("expenses.nothingHere"),
+              action: t("nav.addTransaction"),
+              body: t("list.addFirstBody"),
             };
     return (
       <Card>
@@ -145,7 +147,7 @@ export function ExpenseList({
 
   return (
     <>
-      <div className="stack" role="list" aria-label="Expenses">
+      <div className="stack" role="list" aria-label={t("common.expenses")}>
         {visibleExpenses.map((expense) => (
           <div key={expense.id} role="listitem" className="expense-item">
             <ExpenseRow
@@ -166,7 +168,7 @@ export function ExpenseList({
                   paymentMethod: values.paymentMethod || undefined,
                   notes: values.notes || undefined,
                 });
-                notify("Saved!");
+                notify(t("list.saved"));
                 onCancelEdit();
               }}
               onDelete={() => onDelete(expense)}
@@ -182,14 +184,14 @@ export function ExpenseList({
               setVisibleCount((count) => Math.min(count + EXPENSE_PAGE_SIZE, expenses.length))
             }
           >
-            Load more
+            {t("list.loadMore")}
           </Button>
         </div>
       ) : null}
       {hasMore && infiniteScroll ? (
         <div ref={sentinelRef} className="load-more-sentinel" aria-hidden="true" />
       ) : null}
-      {showBottomLine ? <p className="bottom-line">You reach the bottom line 🧡</p> : null}
+      {showBottomLine ? <p className="bottom-line">{t("list.bottomLine")}</p> : null}
     </>
   );
 }

@@ -7,6 +7,7 @@ import {
   type TooltipProps,
 } from "recharts";
 import { money } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 import type { FlowDatum } from "@/lib/analytics";
 
 export interface ChartDatum {
@@ -27,6 +28,7 @@ export default function SpendingChart({
   currency?: string;
   visible?: FlowVisibility;
 }) {
+  const { t } = useLanguage();
   const hasData = data.some((d) => d.expense > 0 || d.income > 0);
   if (!hasData) return null;
   // Dense daily view (28–31 bars): thin out labels. Year view (12 bars): show all.
@@ -42,10 +44,10 @@ export default function SpendingChart({
       <div className="chart-tooltip">
         <span className="chart-tooltip-date">{datum.date}</span>
         {showExpense && datum.expense > 0 ? (
-          <span>Out&nbsp;&nbsp;{money(datum.expense, currency)}</span>
+          <span>{t("chart.out")}&nbsp;&nbsp;{money(datum.expense, currency)}</span>
         ) : null}
         {showIncome && datum.income > 0 ? (
-          <span>In&nbsp;&nbsp;{money(datum.income, currency)}</span>
+          <span>{t("chart.in")}&nbsp;&nbsp;{money(datum.income, currency)}</span>
         ) : null}
       </div>
     );

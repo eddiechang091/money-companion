@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { translate } from "@/lib/i18n";
 
 export function EmptyState({
   emoji = "\uD83C\uDF31",
@@ -21,7 +22,7 @@ export function EmptyState({
   );
 }
 
-export function LoadingState({ label = "Loading" }: { label?: string }) {
+export function LoadingState({ label = translate("states.loading") }: { label?: string }) {
   return (
     <div className="state" role="status" aria-live="polite">
       <div className="spinner" aria-hidden="true" />
@@ -31,7 +32,7 @@ export function LoadingState({ label = "Loading" }: { label?: string }) {
 }
 
 export function ErrorState({
-  title = "Oops - something went a little sideways.",
+  title = translate("states.error"),
   children,
   action,
 }: {

@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Expense, MonthlyBudget } from "@/lib/types";
@@ -63,7 +64,7 @@ function header(doc: jsPDF, opts: StatementOptions): number {
   doc.setFontSize(11);
   doc.setTextColor(...pal.muted);
   y += 7;
-  doc.text(`Monthly Statement — ${opts.monthLabel}`, MARGIN, y);
+  doc.text(translate("export.monthlyStatement", { month: opts.monthLabel }), MARGIN, y);
   y += 4;
   doc.setDrawColor(...pal.line);
   doc.line(MARGIN, y, PAGE_W - MARGIN, y);
@@ -79,24 +80,24 @@ function summary(doc: jsPDF, opts: StatementOptions, y: number): number {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...pal.title);
-  doc.text("Summary", MARGIN, y);
+  doc.text(translate("export.summary"), MARGIN, y);
   y += 7;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   doc.setTextColor(...pal.title);
-  doc.text(`Total spent: ${money(total, opts.currency)}`, MARGIN, y);
+  doc.text(translate("export.totalSpent", { amount: money(total, opts.currency) }), MARGIN, y);
   y += 6;
-  doc.text(`Transactions: ${opts.expenses.length}`, MARGIN, y);
+  doc.text(translate("export.transactions", { count: opts.expenses.length }), MARGIN, y);
   y += 6;
   if (overallBudget) {
-    doc.text(`Budget: ${money(overallBudget.amount, overallBudget.currency)}`, MARGIN, y);
+    doc.text(translate("export.budget", { amount: money(overallBudget.amount, overallBudget.currency) }), MARGIN, y);
     y += 6;
   }
   if (byCat.length > 0) {
     y += 2;
     doc.setFont("helvetica", "bold");
-    doc.text("By category", MARGIN, y);
+    doc.text(translate("export.byCategory"), MARGIN, y);
     y += 6;
     doc.setFont("helvetica", "normal");
     for (const c of byCat.slice(0, 8)) {
@@ -122,7 +123,7 @@ function transactionsTable(doc: jsPDF, opts: StatementOptions, startY: number): 
   let firstPageSkipped = false;
   autoTable(doc, {
     startY,
-    head: [["Date", "Description", "Category", "Amount"]],
+    head: [[translate("common.date"), translate("common.description"), translate("common.category"), translate("common.amount")]],
     body: rows,
     margin: { left: MARGIN, right: MARGIN },
     styles: { fontSize: 9, cellPadding: 2.5 },

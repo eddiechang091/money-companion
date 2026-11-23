@@ -4,6 +4,7 @@ import { statusDef } from "@/services/profile/profile";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { NAV_ITEMS } from "./navItems";
+import { useLanguage } from "@/lib/i18n";
 
 export function SideNav({
   route,
@@ -13,14 +14,15 @@ export function SideNav({
   onNavigate: (path: string) => void;
 }) {
   const { profile } = useProfile();
+  const { t } = useLanguage();
   const status = statusDef(profile.status);
   return (
-    <nav className="side-nav" aria-label="Primary">
+    <nav className="side-nav" aria-label={t("nav.primary")}>
       <button
         type="button"
         className="profile-chip"
         onClick={() => onNavigate("/profile")}
-        aria-label="Open profile"
+        aria-label={t("nav.openProfile")}
       >
         <span className="profile-chip-avatar">
           <Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={64} />
@@ -43,14 +45,14 @@ export function SideNav({
             }}
           >
             <Icon size={18} aria-hidden="true" />
-            <span>{item.label}</span>
+            <span>{t(item.labelKey)}</span>
           </a>
         );
       })}
       <span className="nav-spacer" />
       <Button block variant="warm" onClick={() => onNavigate("/add-expense")}>
         <Plus size={16} aria-hidden="true" />
-        Add transaction
+        {t("nav.addTransaction")}
       </Button>
     </nav>
   );

@@ -16,6 +16,7 @@ import { BudgetsProvider } from "@/services/budgets/useBudgets";
 import { CatProvider } from "@/services/cat/useCat";
 import { BadgeHost } from "@/features/gamification/BadgeHost";
 import { CatCompanionHost } from "@/features/cat/CatCompanionHost";
+import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider, useTheme } from "@/services/theme/useTheme";
 
 function ThemedBackground() {
@@ -40,6 +41,7 @@ export function App() {
 
   return (
     <ToastProvider>
+      <LanguageProvider>
       <ThemeProvider>
       <ProfileProvider>
       <CurrencyGate>
@@ -58,6 +60,7 @@ export function App() {
       </CurrencyGate>
       </ProfileProvider>
       </ThemeProvider>
+      </LanguageProvider>
     </ToastProvider>
   );
 }

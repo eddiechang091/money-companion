@@ -8,10 +8,12 @@ import { loadConversation } from "@/features/ai/conversationStorage";
 import {
   checkBadgeUnlocks,
   badgeDefById,
+  badgeName,
   countConsecutiveMonths,
   type BadgeDef,
   type BadgeContext,
 } from "./badges";
+import { translate } from "@/lib/i18n";
 import { emitCelebration, type RewardBundle } from "./badgeEvents";
 import { randomItems } from "@/services/cat/items";
 import { historyRarityBoost } from "@/services/cat/milestones";
@@ -66,7 +68,7 @@ async function grantBadgeRewards(
       for (const item of items) inventory[item.id] = (inventory[item.id] ?? 0) + 1;
       const def = badgeDefById(id);
       bundles.push({
-        title: def ? `${def.name} reward` : "Badge reward",
+        title: def ? translate("badges.reward", { name: badgeName(def.id) }) : translate("badges.rewardFallback"),
         items,
       });
     }

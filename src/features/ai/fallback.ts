@@ -2,8 +2,8 @@ import type { Expense } from "@/lib/types";
 import { recordKind } from "@/lib/types";
 import type { InsightContext, TrendInsightContext } from "@/lib/aiContext";
 import type { InsightResult } from "@/lib/aiSchema";
-import { getCategoryById } from "@/lib/categories";
-import { UNCATEGORIZED_LABEL } from "@/lib/constants";
+import { categoryName, getCategoryById } from "@/lib/categories";
+import { translate } from "@/lib/i18n";
 import { money } from "@/lib/utils";
 
 function categoryEmoji(categoryId: string | null, isIncome: boolean): string {
@@ -14,31 +14,31 @@ export function buildFallbackResponse(
   expense: Expense,
   context: InsightContext
 ): InsightResult {
-  const cat = getCategoryById(expense.categoryId);
   const isIncome = recordKind(expense) === "income";
-  const catName = cat?.name ?? (isIncome ? "income" : UNCATEGORIZED_LABEL);
+  const catName = categoryName(expense.categoryId);
   const emoji = categoryEmoji(expense.categoryId, isIncome);
   const amount = money(expense.amount, expense.currency);
   const budget = context.financialSummary.budget;
 
+  const catVars = { amount, category: catName, emoji };
   let headline: string;
   if (isIncome) {
-    headline = `${amount} ${catName} income — logged! ${emoji}`;
+    headline = translate("ai.fallbackIncomeHeadline", catVars);
   } else if (expense.amount < 10) {
-    headline = `${amount} in ${catName} ${emoji}`;
+    headline = translate("ai.fallbackSmallHeadline", catVars);
   } else if (expense.amount < 50) {
-    headline = `${amount} in ${catName} — logged! ${emoji}`;
+    headline = translate("ai.fallbackLoggedHeadline", catVars);
   } else if (expense.amount < 150) {
-    headline = `${amount} in ${catName} — a noticeable one. Logged! ${emoji}`;
+    headline = translate("ai.fallbackNoticeableHeadline", catVars);
   } else {
-    headline = `${amount} in ${catName} — that's a bigger expense. Logged! ${emoji}`;
+    headline = translate("ai.fallbackBiggerHeadline", catVars);
   }
 
   let financialObservation: string | null = null;
   if (budget?.status === "over") {
-    financialObservation = "Heads up — the monthly budget is over for now.";
+    financialObservation = translate("ai.fallbackBudgetOver");
   } else if (budget?.status === "watch") {
-    financialObservation = `Budget is at ${budget.pct}% — getting close.`;
+    financialObservation = translate("ai.fallbackBudgetWatch", { pct: budget.pct });
   }
 
   return {
@@ -74,30 +74,47 @@ export function buildTrendFallbackResponse(ctx: TrendInsightContext): InsightRes
   if (!biggest) {
     headline =
       ctx.categories.length > 0
-        ? `Here's your picture for ${ctx.rangeLabel} — ${money(ctx.totals.totalOut, currency)} out, ${money(ctx.totals.totalIn, currency)} in.`
-        : `Not much to compare yet in ${ctx.rangeLabel} — give it another ${periodWord} or two.`;
+        ? translate("ai.trendPicture", {
+            range: ctx.rangeLabel,
+            out: money(ctx.totals.totalOut, currency),
+            in: money(ctx.totals.totalIn, currency),
+          })
+        : translate(periodWord === "month" ? "ai.trendThinMonth" : "ai.trendThinYear", {
+            range: ctx.rangeLabel,
+          });
   } else {
-    const direction = (biggest.deltaPct ?? 0) > 0 ? "up" : "down";
-    headline = `${biggest.category} is ${direction} ${Math.abs(biggest.deltaPct ?? 0)}% vs the previous ${periodWord} (${money(biggest.latest, currency)}).`;
+    const up = (biggest.deltaPct ?? 0) > 0;
+    const moverKey =
+      periodWord === "month"
+        ? up
+          ? "ai.trendMoverUpMonth"
+          : "ai.trendMoverDownMonth"
+        : up
+          ? "ai.trendMoverUpYear"
+          : "ai.trendMoverDownYear";
+    headline = translate(moverKey, {
+      category: biggest.category,
+      pct: Math.abs(biggest.deltaPct ?? 0),
+      amount: money(biggest.latest, currency),
+    });
   }
 
   let financialObservation: string | null = null;
   if (ctx.categories.length > 0) {
-    financialObservation =
-      ctx.totals.net >= 0
-        ? `Overall you're ${money(ctx.totals.net, currency)} ahead across ${ctx.rangeLabel}.`
-        : `Overall spending ran ${money(Math.abs(ctx.totals.net), currency)} ahead of income across ${ctx.rangeLabel}.`;
+    financialObservation = translate(ctx.totals.net >= 0 ? "ai.trendAhead" : "ai.trendBehind", {
+      net: money(Math.abs(ctx.totals.net), currency),
+      range: ctx.rangeLabel,
+    });
     if (ctx.overallBudget?.status === "over") {
-      financialObservation +=
-        " The monthly budget is over for the latest month — one month doesn't define the trend.";
+      financialObservation += translate("ai.trendBudgetOver");
     } else if (ctx.overallBudget?.status === "watch") {
-      financialObservation += ` The monthly budget is at ${ctx.overallBudget.pct}% for the latest month.`;
+      financialObservation += translate("ai.trendBudgetWatch", { pct: ctx.overallBudget.pct });
     }
   }
 
   const suggestion =
     biggest && (biggest.deltaPct ?? 0) > 0 && ctx.kind === "expense"
-      ? `If ${biggest.category} keeps climbing, a small cap next month could help — no pressure, just a nudge.`
+      ? translate("ai.trendSuggestion", { category: biggest.category })
       : null;
 
   return {
