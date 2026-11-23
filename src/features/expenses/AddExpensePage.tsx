@@ -7,6 +7,7 @@ import { useProfile } from "@/services/profile/useProfile";
 import { getRate, fxNote } from "@/services/fx/rates";
 import { money } from "@/lib/utils";
 import { ExpenseForm } from "./ExpenseForm";
+import { useLanguage } from "@/lib/i18n";
 
 export function AddExpensePage({
   onNavigate,
@@ -16,6 +17,7 @@ export function AddExpensePage({
   /** Preselects the form's Money out / Money in toggle ("/add-income" uses "income"). */
   initialKind?: "expense" | "income";
 }) {
+  const { t } = useLanguage();
   const { notify } = useToast();
   const { createExpense } = useExpenses();
   const { profile } = useProfile();
@@ -23,11 +25,11 @@ export function AddExpensePage({
   const [saving, setSaving] = useState(false);
   return (
     <>
-      <PageHeader title="Add transaction" lede="Quick capture." />
+      <PageHeader title={t("nav.addTransaction")} lede={t("add.lede")} />
       <Card>
         <ExpenseForm
           initial={{ kind: initialKind }}
-          submitLabel="Save"
+          submitLabel={t("common.save")}
           saving={saving}
           defaultCurrency={defaultCurrency}
           onCancel={() => onNavigate("/expenses")}
@@ -50,10 +52,14 @@ export function AddExpensePage({
                   fxRate = rate;
                   amount = Math.round(values.amount * rate * 100) / 100;
                   currency = defaultCurrency;
-                  const note = `${fxNote(originalCurrency, defaultCurrency, rate)} — converted ${money(originalAmount, originalCurrency)} to ${money(amount, defaultCurrency)}`;
+                  const note = t("add.converted", {
+                    rateNote: fxNote(originalCurrency, defaultCurrency, rate),
+                    fromAmount: money(originalAmount, originalCurrency),
+                    toAmount: money(amount, defaultCurrency),
+                  });
                   notes = notes ? `${notes}\n${note}` : note;
                 } else {
-                  notify("Live rate unavailable — saved in original currency.", "error");
+                  notify(t("add.rateUnavailable"), "error");
                 }
               }
 
@@ -70,7 +76,7 @@ export function AddExpensePage({
                 originalCurrency,
                 fxRate,
               });
-              notify("Added! \uD83C\uDF89");
+              notify(t("add.added"));
               onNavigate("/expenses");
             } finally {
               setSaving(false);

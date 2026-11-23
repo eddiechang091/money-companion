@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -37,6 +38,7 @@ export function ExportDialog({
   budgets: MonthlyBudget[];
 }) {
   const { notify } = useToast();
+  const { t } = useLanguage();
   const { profile } = useProfile();
   const { theme } = useTheme();
   const months = availableMonths(expenses);
@@ -62,12 +64,12 @@ export function ExportDialog({
 
   function handleExport() {
     if (monthExpenses.length === 0) {
-      notify("No expenses in this month to export.", "error");
+      notify(t("export.emptyMonth"), "error");
       return;
     }
     if (format === "excel") {
       exportExpensesExcel({ expenses: monthExpenses, monthKey, currency });
-      notify("Excel downloaded.");
+      notify(t("export.excelDone"));
     } else {
       exportMonthlyStatement({
         expenses: monthExpenses,
@@ -77,7 +79,7 @@ export function ExportDialog({
         currency,
         theme,
       });
-      notify("PDF statement downloaded.");
+      notify(t("export.pdfDone"));
     }
     // Celebrate the first export immediately.
     void awardBadge("first-export");
@@ -90,13 +92,13 @@ export function ExportDialog({
         className="dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="Export expenses"
+        aria-label={t("export.title")}
         onClick={(event) => event.stopPropagation()}
       >
-        <p className="dialog-title">Export expenses</p>
+        <p className="dialog-title">{t("export.title")}</p>
         <div className="stack" style={{ margin: "12px 0" }}>
           <label style={{ fontSize: 13, fontWeight: 600 }}>
-            Month
+            {t("common.month")}
             <select
               value={monthKey}
               onChange={(e) => setMonthKey(e.target.value)}
@@ -111,7 +113,7 @@ export function ExportDialog({
             </select>
           </label>
           <div style={{ fontSize: 13, fontWeight: 600 }}>
-            Format
+            {t("export.format")}
             <div className="row" style={{ marginTop: 6, gap: 8 }}>
               <label style={{ fontWeight: 400, display: "flex", alignItems: "center", gap: 6 }}>
                 <input
@@ -129,20 +131,20 @@ export function ExportDialog({
                   checked={format === "pdf"}
                   onChange={() => setFormat("pdf")}
                 />
-                PDF statement
+                {t("export.pdfFormat")}
               </label>
             </div>
           </div>
           <span className="muted" style={{ fontSize: 12 }}>
-            {monthExpenses.length} expense{monthExpenses.length === 1 ? "" : "s"} in {monthLabel(monthKey)}
+            {t("export.countInMonth", { count: monthExpenses.length, month: monthLabel(monthKey) })}
           </span>
         </div>
         <div className="row dialog-actions">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="button" onClick={handleExport}>
-            Export
+            {t("expenses.export")}
           </Button>
         </div>
       </div>

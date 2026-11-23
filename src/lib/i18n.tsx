@@ -85,6 +85,20 @@ export function translate(key: string, vars?: TranslateVars, locale: Locale = cu
   );
 }
 
+/** Display name of a stored payment-method value ("Card" -> "Carte"). */
+export function paymentMethodDisplayName(method: string): string {
+  switch (method) {
+    case "Card":
+      return translate("form.card");
+    case "Cash":
+      return translate("form.cash");
+    case "Transfer":
+      return translate("form.transfer");
+    default:
+      return translate("form.other");
+  }
+}
+
 // Module-level locale for code outside React (money/date formatting,
 // category names, LLM fallback text). The provider keeps it in sync.
 let currentLocale: Locale = "en";

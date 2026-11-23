@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Plus } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 import { useProfile } from "@/services/profile/useProfile";
 import { Avatar } from "@/components/ui/Avatar";
 import { SideNav } from "./SideNav";
@@ -15,6 +16,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   const { profile } = useProfile();
+  const { t } = useLanguage();
   return (
     <div className="app-shell">
       <button
@@ -25,7 +27,7 @@ export function AppShell({
           if (main) main.focus();
         }}
       >
-        Skip to content
+        {t("nav.skipToContent")}
       </button>
       <SideNav route={route} onNavigate={onNavigate} />
       <main className="app-main" id="main-content" tabIndex={-1}>
@@ -34,16 +36,16 @@ export function AppShell({
       <button
         type="button"
         className="fab"
-        aria-label="Add transaction"
+        aria-label={t("nav.addTransaction")}
         onClick={() => onNavigate("/add-expense")}
       >
         <Plus size={18} aria-hidden="true" />
-        <span>Add transaction</span>
+        <span>{t("nav.addTransaction")}</span>
       </button>
       <button
         type="button"
         className="profile-fab"
-        aria-label="Open profile"
+        aria-label={t("nav.openProfile")}
         onClick={() => onNavigate("/profile")}
       >
         <Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={36} />

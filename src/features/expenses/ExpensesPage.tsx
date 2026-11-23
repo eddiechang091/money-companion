@@ -22,6 +22,7 @@ import { useExpenses } from "@/services/expenses/useExpenses";
 import { useBudgets } from "@/services/budgets/useBudgets";
 import { ImportDialog } from "@/features/import/ImportDialog";
 import { useProfile } from "@/services/profile/useProfile";
+import { useLanguage } from "@/lib/i18n";
 import { ExpenseList } from "./ExpenseList";
 import { ExportDialog } from "./ExportDialog";
 
@@ -37,6 +38,7 @@ export function ExpensesPage({
   /** Month from the route (?month=YYYY-MM), e.g. Dashboard "View all". */
   initialMonthKey?: string | null;
 }) {
+  const { t } = useLanguage();
   const { status, expenses, error, refresh, deleteExpense, isPending } = useExpenses();
   const { budgets } = useBudgets();
   const { profile } = useProfile();
@@ -76,7 +78,7 @@ export function ExpensesPage({
 
   const chartControls = (
     <div className="chart-controls">
-      <div className="segmented" role="tablist" aria-label="Chart view">
+      <div className="segmented" role="tablist" aria-label={t("expenses.chartView")}>
         {(["month", "year"] as const).map((m) => (
           <button
             key={m}
@@ -86,13 +88,13 @@ export function ExpensesPage({
             className={`segmented-btn${chartMode === m ? " is-active" : ""}`}
             onClick={() => setChartMode(m)}
           >
-            {m === "month" ? "Month" : "Year"}
+            {m === "month" ? t("common.month") : t("common.year")}
           </button>
         ))}
       </div>
       {chartMode === "month" ? (
         <Dropdown
-          ariaLabel="Select month"
+          ariaLabel={t("common.selectMonth")}
           value={activeMonth}
           onChange={setMonthKey}
           options={[
@@ -104,7 +106,7 @@ export function ExpensesPage({
         />
       ) : (
         <Dropdown
-          ariaLabel="Select year"
+          ariaLabel={t("common.selectYear")}
           value={activeYear}
           onChange={setYearKey}
           options={[
@@ -113,7 +115,7 @@ export function ExpensesPage({
           ]}
         />
       )}
-      <div className="segmented" role="tablist" aria-label="Show">
+      <div className="segmented" role="tablist" aria-label={t("common.show")}>
         {(["all", "expense", "income"] as const).map((k) => (
           <button
             key={k}
@@ -123,7 +125,7 @@ export function ExpensesPage({
             className={`segmented-btn${kindFilter === k ? " is-active" : ""}`}
             onClick={() => setKindFilter(k)}
           >
-            {k === "all" ? "All" : k === "expense" ? "Expenses" : "Income"}
+            {k === "all" ? t("common.all") : k === "expense" ? t("common.expenses") : t("common.income")}
           </button>
         ))}
       </div>
@@ -133,18 +135,18 @@ export function ExpensesPage({
   return (
     <>
       <PageHeader
-        title="Expenses"
-        lede="Everything you have tracked."
+        title={t("expenses.title")}
+        lede={t("expenses.lede")}
         actions={
           <div className="row" style={{ gap: 8 }}>
             <Button variant="secondary" size="sm" onClick={() => onNavigate("/add-expense")}>
-              Add transaction
+              {t("nav.addTransaction")}
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setExportOpen(true)}>
-              Export
+              {t("expenses.export")}
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
-              Import
+              {t("expenses.import")}
             </Button>
           </div>
         }
@@ -152,24 +154,24 @@ export function ExpensesPage({
       {hasChartData ? (
         <Card
           className="expenses-chart-card"
-          title={chartMode === "month" ? "Daily money flow" : "Monthly money flow"}
+          title={chartMode === "month" ? t("expenses.dailyFlow") : t("expenses.monthlyFlow")}
           action={chartControls}
         >
           <div className="chart-legend" aria-hidden="true">
             {kindFilter !== "income" ? (
               <span>
                 <span className="lg-dot" style={{ background: "var(--chart-expense, var(--primary))" }} />
-                Expenses
+                {t("common.expenses")}
               </span>
             ) : null}
             {kindFilter !== "expense" ? (
               <span>
                 <span className="lg-dot" style={{ background: "var(--chart-income, var(--success))" }} />
-                Income
+                {t("common.income")}
               </span>
             ) : null}
           </div>
-          <Suspense fallback={<LoadingState label="Loading chart…" />}>
+          <Suspense fallback={<LoadingState label={t("expenses.loadingChart")} />}>
             <SpendingChart
               data={chartData}
               currency={currency}
@@ -177,7 +179,7 @@ export function ExpensesPage({
             />
           </Suspense>
           <p className="flow-summary">
-            In <b>{money(totalIn, currency)}</b> · Out <b>{money(totalOut, currency)}</b> · Net{" "}
+            {t("expenses.in")} <b>{money(totalIn, currency)}</b> · {t("expenses.out")} <b>{money(totalOut, currency)}</b> · {t("expenses.net")}{" "}
             <b>
               {net >= 0 ? "+" : "−"}
               {money(Math.abs(net), currency)}

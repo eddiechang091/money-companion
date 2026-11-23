@@ -1,5 +1,6 @@
 import type { CategoryTotal } from "@/lib/analytics";
-import { categoryLabel, getCategoryById } from "@/lib/categories";
+import { categoryName, getCategoryById } from "@/lib/categories";
+import { useLanguage } from "@/lib/i18n";
 import { money } from "@/lib/utils";
 
 export function CategoryBreakdown({
@@ -16,6 +17,7 @@ export function CategoryBreakdown({
   onSelect: (categoryId: string | null) => void;
   maxRows?: number;
 }) {
+  const { t } = useLanguage();
   if (totals.length === 0) return null;
   const rows = totals.slice(0, maxRows);
   const largest = rows[0]?.total ?? 1;
@@ -31,10 +33,10 @@ export function CategoryBreakdown({
             type="button"
             className="cat-row"
             onClick={() => onSelect(row.categoryId)}
-            aria-label={`${categoryLabel(row.categoryId)}: view trend`}
+            aria-label={t("dashboard.viewTrend", { category: categoryName(row.categoryId) })}
           >
             <span className="cat-icon" aria-hidden="true">{cat?.icon ?? "📦"}</span>
-            <span className="cat-name">{categoryLabel(row.categoryId)}</span>
+            <span className="cat-name">{categoryName(row.categoryId)}</span>
             <span className="cat-bar" aria-hidden="true">
               <span
                 className="progress"
@@ -54,7 +56,7 @@ export function CategoryBreakdown({
               </span>
             </span>
             <span className="cat-amount">
-              <span className="sr-only">{categoryLabel(row.categoryId)}: </span>
+              <span className="sr-only">{categoryName(row.categoryId)}: </span>
               {money(row.total, currency)}
               {ofTotal > 0 ? (
                 <span className="cat-pct muted"> {ofTotal}%</span>

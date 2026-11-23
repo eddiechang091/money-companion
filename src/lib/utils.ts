@@ -1,5 +1,7 @@
 import { getIntlLocale } from "./i18n";
 
+export { getIntlLocale } from "./i18n";
+
 export function money(amount: number, currency = "USD"): string {
   const safe = Number.isFinite(amount) ? amount : 0;
   // The amount is shown in the UI language's number format, with the

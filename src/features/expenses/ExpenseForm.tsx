@@ -7,6 +7,7 @@ import { defaultCategoryIdForKind } from "@/lib/categories";
 import { CURRENCIES, currencyLabel } from "@/lib/currencies";
 import { todayIso, parseAmountInput } from "@/lib/utils";
 import { validateExpenseDraft, type ExpenseFieldErrors } from "@/lib/validation";
+import { paymentMethodDisplayName, useLanguage } from "@/lib/i18n";
 import type { RecordKind } from "@/lib/types";
 
 export interface ExpenseFormValues {
@@ -58,6 +59,9 @@ export function ExpenseForm({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [errors, setErrors] = useState<ExpenseFieldErrors>({});
   const [touched, setTouched] = useState(false);
+  const { t } = useLanguage();
+
+
 
   function handleKindChange(next: RecordKind) {
     if (next === kind) return;
@@ -106,15 +110,15 @@ export function ExpenseForm({
       {/* Not wrapped in Field: a <label> ancestor would pollute these
           buttons' accessible names with the whole label text. */}
       <div className="field">
-        <span>Type</span>
-        <div className="kind-toggle" role="group" aria-label="Record type">
+        <span>{t("form.type")}</span>
+        <div className="kind-toggle" role="group" aria-label={t("form.recordType")}>
           <button
             type="button"
             aria-pressed={kind === "expense"}
             className={`kind-option${kind === "expense" ? " is-active" : ""}`}
             onClick={() => handleKindChange("expense")}
           >
-            Money out
+            {t("dashboard.moneyOut")}
           </button>
           <button
             type="button"
@@ -122,11 +126,11 @@ export function ExpenseForm({
             className={`kind-option${kind === "income" ? " is-active" : ""}`}
             onClick={() => handleKindChange("income")}
           >
-            Money in
+            {t("dashboard.moneyIn")}
           </button>
         </div>
       </div>
-      <Field label="Amount" hint={amountPreview !== null ? undefined : "Numbers only, e.g. 12.50"}>
+      <Field label={t("form.amount")} hint={amountPreview !== null ? undefined : t("form.amountHint")}>
         <AmountInput
           value={amountText}
           onChange={(event) => setAmountText(event.target.value)}
@@ -141,7 +145,7 @@ export function ExpenseForm({
           </span>
         ) : null}
       </Field>
-      <Field label="Currency">
+      <Field label={t("form.currency")}>
         <Select value={currency} onChange={(event) => setCurrency(event.target.value)}>
           {CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>
@@ -150,7 +154,7 @@ export function ExpenseForm({
           ))}
         </Select>
       </Field>
-      <Field label="Category">
+      <Field label={t("form.category")}>
         <CategoryPicker value={categoryId} onChange={setCategoryId} kind={kind} />
         {errors.category ? (
           <span className="field-error" role="alert">
@@ -158,11 +162,11 @@ export function ExpenseForm({
           </span>
         ) : null}
       </Field>
-      <Field label="Description" hint="Optional">
+      <Field label={t("form.description")} hint={t("form.optional")}>
         <TextInput
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder={kind === "income" ? "Monthly salary" : "Weekly groceries"}
+          placeholder={kind === "income" ? t("form.descIncomeExample") : t("form.descExpenseExample")}
           maxLength={140}
           aria-invalid={errors.description ? "true" : undefined}
         />
@@ -172,7 +176,7 @@ export function ExpenseForm({
           </span>
         ) : null}
       </Field>
-      <Field label="Date">
+      <Field label={t("form.date")}>
         <TextInput
           type="date"
           value={date}
@@ -185,20 +189,20 @@ export function ExpenseForm({
           </span>
         ) : null}
       </Field>
-      <Field label="Payment method" hint="Optional">
+      <Field label={t("form.paymentMethod")} hint={t("form.optional")}>
         <Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
           {PAYMENT_METHODS.map((method) => (
             <option key={method} value={method}>
-              {method}
+              {paymentMethodDisplayName(method)}
             </option>
           ))}
         </Select>
       </Field>
-      <Field label="Notes" hint="Optional">
+      <Field label={t("form.notes")} hint={t("form.optional")}>
         <Textarea
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
-          placeholder="Anything worth remembering"
+          placeholder={t("form.notesPlaceholder")}
           rows={2}
           maxLength={500}
         />
@@ -210,11 +214,11 @@ export function ExpenseForm({
       </Field>
       <div className="row">
         <Button type="submit" disabled={saving}>
-          {saving ? "Saving…" : submitLabel}
+          {saving ? t("form.saving") : submitLabel}
         </Button>
         {onCancel ? (
           <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         ) : null}
       </div>

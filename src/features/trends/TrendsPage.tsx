@@ -4,6 +4,8 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { useExpenses } from "@/services/expenses/useExpenses";
+import { useLanguage } from "@/lib/i18n";
+import { categoryName } from "@/lib/categories";
 import { useBudgets } from "@/services/budgets/useBudgets";
 import { useProfile } from "@/services/profile/useProfile";
 import { buildTrendInsightContext } from "@/lib/aiContext";
@@ -42,6 +44,7 @@ export function TrendsPage({
   initialKind?: RecordKind;
 }) {
   const { status, expenses, error, refresh } = useExpenses();
+  const { t } = useLanguage();
   const { budgets } = useBudgets();
   const { profile } = useProfile();
   const currency = expenses[0]?.currency ?? profile.currency ?? "USD";
@@ -157,7 +160,7 @@ export function TrendsPage({
 
   const controls = (
     <div className="chart-controls">
-      <div className="segmented" role="tablist" aria-label="Trend view">
+      <div className="segmented" role="tablist" aria-label={t("trends.view")}>
         {(["month", "year"] as const).map((m) => (
           <button
             key={m}
@@ -167,11 +170,11 @@ export function TrendsPage({
             className={`segmented-btn${granularity === m ? " is-active" : ""}`}
             onClick={() => switchGranularity(m)}
           >
-            {m === "month" ? "Month" : "Year"}
+            {m === "month" ? t("common.month") : t("common.year")}
           </button>
         ))}
       </div>
-      <div className="segmented" role="tablist" aria-label="Show">
+      <div className="segmented" role="tablist" aria-label={t("common.show")}>
         {(["expense", "income"] as const).map((k) => (
           <button
             key={k}
@@ -181,12 +184,12 @@ export function TrendsPage({
             className={`segmented-btn${kind === k ? " is-active" : ""}`}
             onClick={() => switchKind(k)}
           >
-            {k === "expense" ? "Expenses" : "Income"}
+            {k === "expense" ? t("common.expenses") : t("common.income")}
           </button>
         ))}
       </div>
       {granularity === "month" ? (
-        <div className="segmented" role="tablist" aria-label="Month range">
+        <div className="segmented" role="tablist" aria-label={t("trends.monthRange")}>
           {MONTH_RANGES.map((r) => (
             <button
               key={r}
@@ -196,7 +199,7 @@ export function TrendsPage({
               className={`segmented-btn${monthRange === r ? " is-active" : ""}`}
               onClick={() => setMonthRange(r)}
             >
-              {r}M
+              {r === 3 ? t("trends.range3m") : r === 6 ? t("trends.range6m") : t("trends.range12m")}
             </button>
           ))}
         </div>
@@ -206,38 +209,38 @@ export function TrendsPage({
 
   return (
     <>
-      <PageHeader title="Trends" lede="How each category moves over time." />
+      <PageHeader title={t("trends.title")} lede={t("trends.lede")} />
       {status === "loading" ? (
-        <LoadingState label="Loading trends…" />
+        <LoadingState label={t("trends.loading")} />
       ) : error && expenses.length === 0 ? (
         <Card>
-          <ErrorState action={<Button onClick={() => void refresh()}>Retry</Button>}>
-            Something went wrong loading your records.
+          <ErrorState action={<Button onClick={() => void refresh()}>{t("common.retry")}</Button>}>
+            {t("trends.loadError")}
           </ErrorState>
         </Card>
       ) : expenses.length === 0 ? (
         <Card>
           <EmptyState
             emoji="📈"
-            title="No transactions yet"
-            action={<Button onClick={() => onNavigate("/add-expense")}>Add transaction</Button>}
+            title={t("trends.noTransactions")}
+            action={<Button onClick={() => onNavigate("/add-expense")}>{t("nav.addTransaction")}</Button>}
           >
-            Add your first expense or income to see trends here.
+            {t("trends.emptyBody")}
           </EmptyState>
         </Card>
       ) : (
         <>
         <Card
-          title={granularity === "month" ? "Monthly trends by category" : "Yearly trends by category"}
+          title={granularity === "month" ? t("trends.monthlyTitle") : t("trends.yearlyTitle")}
           action={controls}
         >
           {allIds.length === 0 ? (
             <p className="flow-summary">
-              No {kind === "expense" ? "spending" : "income"} in this range yet.
+              {kind === "expense" ? t("trends.noData") : t("trends.noIncomeRange")}
             </p>
           ) : (
             <>
-              <div className="trend-chips" role="group" aria-label="Categories">
+              <div className="trend-chips" role="group" aria-label={t("trends.categories")}>
                 {allCategories.map((c) => {
                   const active = visibleIds.includes(c.id);
                   return (
@@ -249,34 +252,34 @@ export function TrendsPage({
                       onClick={() => toggleCategory(c.id)}
                     >
                       <span className="dot" style={{ background: c.color }} />
-                      {c.name}
+                      {categoryName(c.id)}
                     </button>
                   );
                 })}
               </div>
               {visibleIds.length === 0 ? (
-                <p className="flow-summary">Select at least one category to see its trend.</p>
+                <p className="flow-summary">{t("trends.selectCategory")}</p>
               ) : hasSeriesData ? (
                 <>
                   <div className="chart-legend" aria-hidden="true">
                     {visible.map((c) => (
                       <span key={c.id}>
                         <span className="lg-dot" style={{ background: c.color }} />
-                        {c.name}
+                        {categoryName(c.id)}
                       </span>
                     ))}
                   </div>
-                  <Suspense fallback={<LoadingState label="Loading chart…" />}>
+                  <Suspense fallback={<LoadingState label={t("expenses.loadingChart")} />}>
                     <CategoryTrendChart data={series} categories={visible} currency={currency} />
                   </Suspense>
                 </>
               ) : (
                 <p className="flow-summary">
-                  No {kind === "expense" ? "spending" : "income"} in this range yet.
+                  {kind === "expense" ? t("trends.noData") : t("trends.noIncomeRange")}
                 </p>
               )}
               <p className="flow-summary">
-                In <b>{money(totalIn, currency)}</b> · Out <b>{money(totalOut, currency)}</b> · Net{" "}
+                {t("expenses.in")} <b>{money(totalIn, currency)}</b> · {t("expenses.out")} <b>{money(totalOut, currency)}</b> · {t("expenses.net")}{" "}
                 <b>
                   {net >= 0 ? "+" : "−"}
                   {money(Math.abs(net), currency)}
@@ -284,7 +287,7 @@ export function TrendsPage({
               </p>
               {hasSeriesData && changes.length > 0 && prevLabel ? (
                 <div className="trend-changes">
-                  <p className="trend-changes-title">vs {prevLabel}</p>
+                  <p className="trend-changes-title">{t("trends.vsPrevious", { label: prevLabel })}</p>
                   {changes.map((ch) => {
                     const cat = visible.find((c) => c.id === ch.categoryId);
                     if (!cat) return null;
@@ -293,7 +296,7 @@ export function TrendsPage({
                     const label =
                       ch.deltaPct === null
                         ? ch.current > 0
-                          ? "new"
+                          ? t("trends.new")
                           : "—"
                         : ch.delta === 0
                           ? "±0%"
@@ -302,7 +305,7 @@ export function TrendsPage({
                       <p key={ch.categoryId} className="trend-change">
                         <span className="trend-change-name">
                           <span className="lg-dot" style={{ background: cat.color }} />
-                          {cat.name}
+                          {categoryName(cat.id)}
                         </span>
                         <span>{money(ch.current, currency)}</span>
                         <span
@@ -324,25 +327,24 @@ export function TrendsPage({
         {trendInsight.status === "idle" ? (
           <div className="trend-insight-cta">
             <Button variant="secondary" onClick={handleAnalyze}>
-              Analyze trends
+              {t("trends.analyze")}
             </Button>
             <p className="muted" style={{ fontSize: 13 }}>
-              Lucky Cat looks at the totals above — only totals are shared, no individual
-              transactions.
+              {t("trends.analyzeNote")}
             </p>
           </div>
         ) : trendInsight.status === "loading" ? (
           <Card>
-            <LoadingState label="Asking Lucky Cat…" />
+            <LoadingState label={t("trends.asking")} />
           </Card>
         ) : trendInsight.status === "error" ? (
           <Card>
-            <ErrorState action={<Button onClick={handleAnalyze}>Retry</Button>}>
-              The analysis didn&rsquo;t come back — try again in a moment.
+            <ErrorState action={<Button onClick={handleAnalyze}>{t("common.retry")}</Button>}>
+              {t("trends.analyzeError")}
             </ErrorState>
           </Card>
         ) : trendInsight.result ? (
-          <Card title="Lucky Cat's take">
+          <Card title={t("trends.takeTitle")}>
             <p className="bubble-headline">{trendInsight.result.headline}</p>
             {trendInsight.result.financialObservation ? (
               <p className="bubble-text muted">{trendInsight.result.financialObservation}</p>
@@ -355,13 +357,12 @@ export function TrendsPage({
             ) : null}
             {trendInsight.result.isFallback ? (
               <p className="trend-insight-note">
-                Made on your device — Lucky Cat was unreachable, so this is a local summary of
-                the same totals.
+                {t("trends.localNote")}
               </p>
             ) : null}
             <div className="trend-insight-cta">
               <Button variant="secondary" onClick={handleAnalyze}>
-                Analyze again
+                {t("trends.analyzeAgain")}
               </Button>
             </div>
           </Card>
