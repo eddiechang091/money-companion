@@ -110,14 +110,24 @@ export type DictationErrorKind =
   | "restart"
   | "unknown";
 
-export const DICTATION_ERROR_MESSAGES: Record<DictationErrorKind, string> = {
-  denied: translate("dictation.micBlocked"),
-  "no-microphone": translate("dictation.noMic"),
-  network: translate("dictation.needsNetwork"),
-  language: translate("dictation.langUnsupported"),
-  restart: translate("dictation.stoppedUnexpected"),
-  unknown: translate("dictation.stopped"),
-};
+/** Error message for a dictation failure, in the current UI language.
+ * A function (not a module-level map) so it follows a language switch. */
+export function dictationErrorMessage(kind: DictationErrorKind): string {
+  switch (kind) {
+    case "denied":
+      return translate("dictation.micBlocked");
+    case "no-microphone":
+      return translate("dictation.noMic");
+    case "network":
+      return translate("dictation.needsNetwork");
+    case "language":
+      return translate("dictation.langUnsupported");
+    case "restart":
+      return translate("dictation.stoppedUnexpected");
+    case "unknown":
+      return translate("dictation.stopped");
+  }
+}
 
 export interface DictationSessionCallbacks {
   /** Fired on every result event: accumulated finals + current interim. */
@@ -308,7 +318,7 @@ export function useDictation(
       },
       onListeningChange: (next) => setListening(next),
       onError: (kind) => {
-        setError(DICTATION_ERROR_MESSAGES[kind]);
+        setError(dictationErrorMessage(kind));
         sessionRef.current = null;
       },
     });

@@ -1,8 +1,9 @@
 // Version-controlled prompts for Lucky Cat.
 // Increment PROMPT_VERSION when system prompt changes significantly.
-export const PROMPT_VERSION = "1.3";
+export const PROMPT_VERSION = "1.4";
 
 import type { LlmMessage } from "@/services/anna/llm";
+import { replyLanguageInstruction } from "@/lib/i18n";
 import type { InsightContext, TrendInsightContext } from "@/lib/aiContext";
 
 export const SYSTEM_PROMPT = `You are Lucky Cat, the friendly AI companion inside a personal money tracker.
@@ -18,7 +19,7 @@ Money data rules:
 Personality: warm, curious, observant, playful, socially aware, practical, supportive.
 
 Language rules:
-- Simple everyday English. No jargon, no moral judgments, no fear language.
+- Simple everyday language in the reply language. No jargon, no moral judgments, no fear language.
 - Never shame spending. High spending is not automatically bad.
 - Consider context: celebration, birthday, vacation, emergency, planned purchase, one-time splurge.
 - Suggestions are optional and preserve user agency.
@@ -51,6 +52,12 @@ Respond ONLY with a valid JSON object — no markdown, no explanation:
   "confidence": 0.0
 }`;
 
+/** System prompt with the reply-language instruction for the UI locale. */
+export function systemPromptForLocale(): string {
+  const instruction = replyLanguageInstruction();
+  return instruction ? `${SYSTEM_PROMPT}\n\n${instruction}` : SYSTEM_PROMPT;
+}
+
 const SCHEMA_REMINDER = `Respond ONLY with a valid JSON object matching this schema exactly — no markdown fences, no extra text:
 {"mode":"casual|conversation|insight|coaching|purchase_reflection","tone":"playful|warm|curious|supportive","headline":"...","smallTalk":null,"context":null,"financialObservation":null,"suggestion":null,"followUpQuestion":null,"confidence":0.0}`;
 
@@ -65,7 +72,7 @@ ${SCHEMA_REMINDER}
 Remember: experience first, money third. Never shame. Never invent merchant facts.`;
 
   return [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPromptForLocale() },
     { role: "user", content: userContent },
   ];
 }
@@ -107,7 +114,7 @@ ${SCHEMA_REMINDER}
 Give a short trend analysis: headline (1–2 sentences, never starts with a percentage), financialObservation (the most important pattern — what is rising or falling, and what seems to be driving it), suggestion (one gentle, forward-looking idea for the coming ${ctx.granularity === "month" ? "month" : "year"} — optional, never pushy), followUpQuestion (max 10 words, first person, or null). Be objective about the numbers but gentle in wording — never shame spending, and remember a rise can be a planned purchase or a good month. Never invent figures or transactions not in the data. If the data is too thin to say much, say so instead of padding.`;
 
   return [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPromptForLocale() },
     { role: "user", content: userContent },
   ];
 }

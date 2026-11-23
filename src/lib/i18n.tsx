@@ -85,6 +85,42 @@ export function translate(key: string, vars?: TranslateVars, locale: Locale = cu
   );
 }
 
+/**
+ * Instruction appended to LLM system prompts so Lucky Cat replies in the
+ * UI language. Empty for English (the prompts are already English).
+ * JSON keys and enum values (mode, tone) stay in English.
+ */
+export function replyLanguageInstruction(): string {
+  switch (getLocale()) {
+    case "fr":
+      return "Reply in French. All JSON field values (headline, smallTalk, context, financialObservation, suggestion, followUpQuestion) must be in French. JSON keys and enum values (mode, tone) stay in English.";
+    case "es":
+      return "Reply in Spanish. All JSON field values (headline, smallTalk, context, financialObservation, suggestion, followUpQuestion) must be in Spanish. JSON keys and enum values (mode, tone) stay in English.";
+    case "ar":
+      return "Reply in Arabic. All JSON field values (headline, smallTalk, context, financialObservation, suggestion, followUpQuestion) must be in Arabic. JSON keys and enum values (mode, tone) stay in English.";
+    case "zh-CN":
+      return "Reply in Simplified Chinese. All JSON field values (headline, smallTalk, context, financialObservation, suggestion, followUpQuestion) must be in Simplified Chinese. JSON keys and enum values (mode, tone) stay in English.";
+    default:
+      return "";
+  }
+}
+
+/** Language name for prompts that need it as a plain word ("Write it in French."). */
+export function replyLanguageName(): string {
+  switch (getLocale()) {
+    case "fr":
+      return "French";
+    case "es":
+      return "Spanish";
+    case "ar":
+      return "Arabic";
+    case "zh-CN":
+      return "Simplified Chinese";
+    default:
+      return "";
+  }
+}
+
 /** Display name of a stored payment-method value ("Card" -> "Carte"). */
 export function paymentMethodDisplayName(method: string): string {
   switch (method) {

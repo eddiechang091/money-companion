@@ -12,7 +12,7 @@
  * unit-testable, and works with either line's LLM service — both expose the
  * same `{ messages, maxTokens, temperature, json }` request shape.
  */
-import { categoriesForKind, getCategoryById } from "@/lib/categories";
+import { categoriesForKind, categoryName, getCategoryById } from "@/lib/categories";
 import type { RecordKind } from "@/lib/types";
 
 export interface SuggestItem {
@@ -43,7 +43,7 @@ export function suggestionKey(description: string, kind: RecordKind): string {
 
 function taxonomyLines(kind: RecordKind): string {
   return categoriesForKind(kind)
-    .map((c) => `${c.id}: ${c.name}`)
+    .map((c) => `${c.id}: ${categoryName(c.id)}`)
     .join("\n");
 }
 
