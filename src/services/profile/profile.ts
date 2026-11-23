@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n";
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { connectAnna } from "@/services/anna/runtime";
@@ -85,6 +86,12 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
   await store.set(STORAGE_KEYS.profile, profile);
 }
 
+/** Display label of a profile status in the current UI language. */
+export function statusLabel(id: ProfileStatus): string {
+  return translate(`profile.status.${id}`);
+}
+
 export function statusDef(id: ProfileStatus): ProfileStatusDef {
-  return PROFILE_STATUSES.find((s) => s.id === id) ?? PROFILE_STATUSES[0];
+  const found = PROFILE_STATUSES.find((s) => s.id === id) ?? PROFILE_STATUSES[0];
+  return { ...found, label: statusLabel(id) };
 }

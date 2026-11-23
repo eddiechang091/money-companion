@@ -18,7 +18,10 @@ import {
 import { BadgesRow } from "@/features/gamification/BadgesRow";
 import { awardBadge } from "@/features/gamification/awardBadges";
 import { Avatar } from "@/components/ui/Avatar";
-import { AVATARS } from "@/services/profile/avatars";
+import { AVATARS, avatarLabel } from "@/services/profile/avatars";
+import { statusLabel } from "@/services/profile/profile";
+import { useLanguage } from "@/lib/i18n";
+import { getIntlLocale } from "@/lib/utils";
 import { BadgeCelebration } from "@/features/gamification/BadgeCelebration";
 import type { BadgeDef } from "@/features/gamification/badges";
 import { useGamification } from "@/features/gamification/useGamification";
@@ -33,7 +36,10 @@ function HeatmapYear({
 }) {
   const weeks = useMemo(() => buildYearHeatmap(expenses, year), [expenses, year]);
   const stats = useMemo(() => yearStats(expenses, year), [expenses, year]);
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const { t } = useLanguage();
+  const months = Array.from({ length: 12 }, (_, i) =>
+    new Intl.DateTimeFormat(getIntlLocale(), { month: "short" }).format(new Date(2024, i, 1)),
+  );
 
   // Month label per column: show when the first day of the column is in a new month.
   let prevMonth = -1;
@@ -52,18 +58,18 @@ function HeatmapYear({
       <div className="profile-stats">
         <div className="profile-stat">
           <span className="profile-stat-value">{stats.daysLogged}</span>
-          <span className="profile-stat-label">days logged</span>
+          <span className="profile-stat-label">{t("profile.daysLogged")}</span>
         </div>
         <div className="profile-stat">
           <span className="profile-stat-value">{stats.expenseCount}</span>
-          <span className="profile-stat-label">expenses</span>
+          <span className="profile-stat-label">{t("common.expenses")}</span>
         </div>
         <div className="profile-stat">
           <span className="profile-stat-value">{stats.longestStreak}</span>
-          <span className="profile-stat-label">longest streak</span>
+          <span className="profile-stat-label">{t("profile.longestStreak")}</span>
         </div>
       </div>
-      <div className="heatmap" role="img" aria-label={`Activity in ${year}`}>
+      <div className="heatmap" role="img" aria-label={t("profile.activityInYear", { year })}>
         <div className="heatmap-months heatmap-months--year">
           {labels.map((label, i) => (
             <span key={i} className="heatmap-month">{label ?? ""}</span>
@@ -95,6 +101,7 @@ function HeatmapYear({
 }
 
 export function ProfilePage() {
+  const { t } = useLanguage();
   const { expenses } = useExpenses();
   const { budgets } = useBudgets();
   const { profile, loaded, update } = useProfile();
@@ -114,7 +121,7 @@ export function ProfilePage() {
 
   return (
     <>
-      <PageHeader title="Profile" lede="Your money-logging journey." />
+      <PageHeader title={t("nav.profile")} lede={t("profile.lede")} />
 
       <Card>
         <div className="profile-head">
@@ -125,8 +132,8 @@ export function ProfilePage() {
               setAvatarDraft(profile.avatarId ?? null);
               setAvatarModalOpen(true);
             }}
-            aria-label="Change avatar"
-            title="Change avatar"
+            aria-label={t("profile.changeAvatar")}
+            title={t("profile.changeAvatar")}
           >
             <Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={68} />
             <span className="profile-avatar-edit" aria-hidden="true">✏️</span>
@@ -138,19 +145,19 @@ export function ProfilePage() {
                   className="profile-name-input"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
+                  placeholder={t("profile.yourName")}
                   maxLength={24}
-                  aria-label="Display name"
+                  aria-label={t("profile.displayName")}
                 />
-                <div className="profile-avatar-pick" role="group" aria-label="Choose avatar">
+                <div className="profile-avatar-pick" role="group" aria-label={t("profile.chooseAvatar")}>
                   {AVATARS.map((a) => (
                     <button
                       key={a.id}
                       type="button"
                       className={`avatar-choice${profile.avatarId === a.id ? " is-selected" : ""}`}
                       onClick={() => update({ avatarId: a.id })}
-                      aria-label={a.label}
-                      title={a.label}
+                      aria-label={avatarLabel(a.id)}
+                      title={avatarLabel(a.id)}
                     >
                       <img src={a.src} alt="" aria-hidden="true" width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover" }} />
                     </button>
@@ -165,10 +172,10 @@ export function ProfilePage() {
                       setEditing(false);
                     }}
                   >
-                    Save
+                    {t("common.save")}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                 </div>
               </div>
@@ -183,8 +190,8 @@ export function ProfilePage() {
                       setName(profile.displayName);
                       setEditing(true);
                     }}
-                    title="Edit name"
-                    aria-label="Edit display name"
+                    title={t("profile.editName")}
+                    aria-label={t("profile.editDisplayName")}
                   >
                     <span aria-hidden="true">✏️</span>
                   </button>
@@ -197,7 +204,7 @@ export function ProfilePage() {
           </div>
         </div>
         {!editing && (
-          <div className="profile-status-row" role="group" aria-label="Set status">
+          <div className="profile-status-row" role="group" aria-label={t("profile.setStatus")}>
             {PROFILE_STATUSES.map((s) => (
               <button
                 key={s.id}
@@ -210,9 +217,9 @@ export function ProfilePage() {
                     void awardBadge("status-set");
                   }
                 }}
-                title={s.label}
+                title={statusLabel(s.id)}
               >
-                <span aria-hidden="true">{s.emoji}</span> {s.label}
+                <span aria-hidden="true">{s.emoji}</span> {statusLabel(s.id)}
               </button>
             ))}
           </div>
@@ -220,9 +227,9 @@ export function ProfilePage() {
       </Card>
 
       <Card
-        title={`${activeYear} activity`}
+        title={t("profile.yearActivity", { year: activeYear })}
         action={
-          <div className="year-tabs" role="tablist" aria-label="Select year">
+          <div className="year-tabs" role="tablist" aria-label={t("common.selectYear")}>
             {years.map((y) => (
               <button
                 key={y}
@@ -240,26 +247,26 @@ export function ProfilePage() {
       >
         {streak.current > 0 && (
           <p className="profile-streak-line">
-            🔥 <strong>{streak.current}-day streak</strong>
-            {streak.aliveButIdleToday ? " — log today to keep it going!" : " — keep it up!"}
+            🔥 <strong>{t("profile.streak", { count: streak.current })}</strong>
+            {streak.aliveButIdleToday ? ` — ${t("profile.keepGoing")}` : ` — ${t("profile.keepItUp")}`}
           </p>
         )}
         <HeatmapYear year={activeYear} expenses={expenses} />
       </Card>
 
       {avatarModalOpen && (
-        <div className="avatar-modal-backdrop" onClick={() => setAvatarModalOpen(false)} role="dialog" aria-modal="true" aria-label="Choose avatar">
+        <div className="avatar-modal-backdrop" onClick={() => setAvatarModalOpen(false)} role="dialog" aria-modal="true" aria-label={t("profile.chooseAvatar")}>
           <div className="avatar-modal" onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ fontSize: 15, margin: "0 0 12px" }}>Choose your avatar</h3>
-            <div className="profile-avatar-pick" role="group" aria-label="Choose avatar">
+            <h3 style={{ fontSize: 15, margin: "0 0 12px" }}>{t("profile.chooseAvatarTitle")}</h3>
+            <div className="profile-avatar-pick" role="group" aria-label={t("profile.chooseAvatar")}>
               {AVATARS.map((a) => (
                 <button
                   key={a.id}
                   type="button"
                   className={`avatar-choice${avatarDraft === a.id ? " is-selected" : ""}`}
                   onClick={() => setAvatarDraft(a.id)}
-                  aria-label={a.label}
-                  title={a.label}
+                  aria-label={avatarLabel(a.id)}
+                  title={avatarLabel(a.id)}
                 >
                   <img src={a.src} alt="" aria-hidden="true" width={48} height={48} style={{ borderRadius: "50%", objectFit: "cover" }} />
                 </button>

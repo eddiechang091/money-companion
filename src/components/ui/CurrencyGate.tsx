@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import { useState } from "react";
 import { CURRENCIES, currencyLabel } from "@/lib/currencies";
 import { useProfile } from "@/services/profile/useProfile";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/Button";
  * block the app with a picker. No silent default.
  */
 export function CurrencyGate({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const { profile, loaded, update } = useProfile();
   const [picked, setPicked] = useState("USD");
 
@@ -19,7 +21,7 @@ export function CurrencyGate({ children }: { children: React.ReactNode }) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Choose your currency"
+      aria-label={t("auth.chooseCurrency")}
       style={{
         position: "fixed",
         inset: 0,
@@ -36,7 +38,7 @@ export function CurrencyGate({ children }: { children: React.ReactNode }) {
         style={{ maxWidth: 420, width: "100%", padding: 24, textAlign: "center" }}
       >
         <div style={{ fontSize: 40, marginBottom: 8 }}>💱</div>
-        <h2 style={{ margin: "0 0 8px" }}>Choose your currency</h2>
+        <h2 style={{ margin: "0 0 8px" }}>{t("auth.chooseCurrency")}</h2>
         <p className="muted" style={{ fontSize: 14, margin: "0 0 16px" }}>
           This will be used for expenses, budgets, and reports. You can change
           it anytime in Settings.
@@ -46,7 +48,7 @@ export function CurrencyGate({ children }: { children: React.ReactNode }) {
           onChange={(e) => setPicked(e.target.value)}
           className="input"
           style={{ width: "100%", marginBottom: 16, fontSize: 16 }}
-          aria-label="Default currency"
+          aria-label={t("settings.defaultCurrency")}
         >
           {CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>

@@ -1,3 +1,4 @@
+import { translate } from "./i18n";
 import { isValidIsoDate, parseAmountInput } from "./utils";
 import { getCategoryById, normalizeCategoryId } from "./categories";
 import { DEFAULT_CURRENCY } from "./constants";
@@ -48,9 +49,9 @@ export function validateExpenseDraft(draft: ExpenseDraft): {
 
   const amount = parseAmountInput(draft.amountText);
   if (amount === null || amount <= 0) {
-    errors.amount = "Enter an amount greater than zero.";
+    errors.amount = translate("validation.amountZero");
   } else if (amount > MAX_AMOUNT) {
-    errors.amount = "That amount looks too large.";
+    errors.amount = translate("validation.amountTooLarge");
   }
 
   const categoryId = draft.categoryId ? draft.categoryId.trim() : "";
@@ -59,27 +60,27 @@ export function validateExpenseDraft(draft: ExpenseDraft): {
     const normalized = normalizeCategoryId(categoryId);
     const category = getCategoryById(normalized);
     if (!category || category.kind !== kind) {
-      errors.category = "Pick a category from the list.";
+      errors.category = translate("validation.pickCategory");
     }
   }
 
   const description = draft.description.trim();
   if (description.length > MAX_DESCRIPTION) {
-    errors.description = `Keep it under ${MAX_DESCRIPTION} characters.`;
+    errors.description = translate("validation.descTooLong", { max: MAX_DESCRIPTION });
   }
 
   if (!draft.date || !isValidIsoDate(draft.date)) {
-    errors.date = "Pick a valid date.";
+    errors.date = translate("validation.validDate");
   }
 
   const paymentMethod = draft.paymentMethod.trim();
   if (paymentMethod.length > MAX_PAYMENT_METHOD) {
-    errors.paymentMethod = `Keep it under ${MAX_PAYMENT_METHOD} characters.`;
+    errors.paymentMethod = translate("validation.descTooLong", { max: MAX_PAYMENT_METHOD });
   }
 
   const notes = draft.notes.trim();
   if (notes.length > MAX_NOTES) {
-    errors.notes = `Keep notes under ${MAX_NOTES} characters.`;
+    errors.notes = translate("validation.notesTooLong", { max: MAX_NOTES });
   }
 
   if (Object.keys(errors).length > 0) return { value: null, errors };

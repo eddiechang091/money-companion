@@ -1,3 +1,5 @@
+import { useLanguage } from "@/lib/i18n";
+import { categoryName } from "@/lib/categories";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
@@ -20,6 +22,7 @@ export function BudgetForm({
   onCancel: () => void;
   saving: boolean;
 }) {
+  const { t } = useLanguage();
   const { profile } = useProfile();
   const defaultCurrency = profile.currency || "USD";
   const takenCategories = new Set(existingBudgets.map((b) => b.categoryId ?? "__overall__"));
@@ -27,13 +30,13 @@ export function BudgetForm({
 
   const availableOptions: Array<{ value: string; label: string }> = [];
   if (!overallTaken) {
-    availableOptions.push({ value: "", label: "Overall monthly total" });
+    availableOptions.push({ value: "", label: t("budgets.overall") });
   }
   for (const cat of DEFAULT_CATEGORIES) {
     // Budgets cap spending — income categories are not budgetable.
     if (cat.kind !== "expense") continue;
     if (!takenCategories.has(cat.id)) {
-      availableOptions.push({ value: cat.id, label: `${cat.icon} ${cat.name}` });
+      availableOptions.push({ value: cat.id, label: `${cat.icon} ${categoryName(cat.id)}` });
     }
   }
 
@@ -54,7 +57,7 @@ export function BudgetForm({
     event.preventDefault();
     const amount = parseAmountInput(amountText);
     if (amount === null || amount <= 0) {
-      setAmountError("Enter an amount greater than zero.");
+      setAmountError(t("validation.amountZero"));
       return;
     }
     setAmountError("");
@@ -67,7 +70,7 @@ export function BudgetForm({
 
   return (
     <form className="budget-add-form" onSubmit={handleSubmit} noValidate>
-      <Field label="Category">
+      <Field label={t("form.category")}>
         <Select value={categoryValue} onChange={(e) => setCategoryValue(e.target.value)}>
           {availableOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -76,7 +79,7 @@ export function BudgetForm({
           ))}
         </Select>
       </Field>
-      <Field label="Monthly limit">
+      <Field label={t("budgets.monthlyLimit")}>
         <AmountInput
           value={amountText}
           onChange={(e) => setAmountText(e.target.value)}
@@ -91,7 +94,7 @@ export function BudgetForm({
           </span>
         ) : null}
       </Field>
-      <Field label="Currency">
+      <Field label={t("form.currency")}>
         <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>
@@ -102,7 +105,7 @@ export function BudgetForm({
       </Field>
       <div className="row">
         <Button type="submit" disabled={saving}>
-          {saving ? "Saving…" : "Save budget"}
+          {saving ? t("form.saving") : t("budgets.saveBudget")}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
           Cancel

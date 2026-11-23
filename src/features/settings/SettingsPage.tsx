@@ -51,20 +51,20 @@ function ThemePicker() {
   const { t } = useLanguage();
   return (
     <div className="theme-grid" role="group" aria-label={t("settings.theme")}>
-      {THEMES.map((t) => (
+      {THEMES.map((th) => (
         <button
-          key={t.id}
+          key={th.id}
           type="button"
-          className={`theme-card${theme === t.id ? " is-selected" : ""}`}
-          onClick={() => setTheme(t.id)}
-          aria-pressed={theme === t.id}
+          className={`theme-card${theme === th.id ? " is-selected" : ""}`}
+          onClick={() => setTheme(th.id)}
+          aria-pressed={theme === th.id}
         >
-          <span className="theme-swatch" style={{ background: t.swatch }} aria-hidden="true">
-            <span className="theme-emoji">{t.emoji}</span>
+          <span className="theme-swatch" style={{ background: th.swatch }} aria-hidden="true">
+            <span className="theme-emoji">{th.emoji}</span>
           </span>
-          <span className="theme-name">{t.name}</span>
-          <span className="theme-tagline">{t.tagline}</span>
-          {theme === t.id && <span className="theme-check" aria-hidden="true">✓</span>}
+          <span className="theme-name">{t(th.nameKey)}</span>
+          <span className="theme-tagline">{t(th.taglineKey)}</span>
+          {theme === th.id && <span className="theme-check" aria-hidden="true">✓</span>}
         </button>
       ))}
     </div>

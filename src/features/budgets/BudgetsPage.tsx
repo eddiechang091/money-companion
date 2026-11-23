@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -11,6 +12,7 @@ import { BudgetRow } from "./BudgetRow";
 import { useToast } from "@/components/ui/Toast";
 
 export function BudgetsPage() {
+  const { t } = useLanguage();
   const { status: budgetStatus, budgets, monthlyBudget, categoryBudgets, error, saveBudget, deleteBudget, refresh } = useBudgets();
   const { expenses } = useExpenses();
   const { notify } = useToast();
@@ -31,9 +33,9 @@ export function BudgetsPage() {
   if (budgetStatus === "loading") {
     return (
       <>
-        <PageHeader title="Budgets" lede="Simple monthly limits." />
+        <PageHeader title={t("budgets.title")} lede={t("budgets.lede")} />
         <Card>
-          <LoadingState label="Loading your budgets…" />
+          <LoadingState label={t("budgets.loading")} />
         </Card>
       </>
     );
@@ -42,7 +44,7 @@ export function BudgetsPage() {
   if (budgetStatus === "error") {
     return (
       <>
-        <PageHeader title="Budgets" lede="Simple monthly limits." />
+        <PageHeader title={t("budgets.title")} lede={t("budgets.lede")} />
         <Card>
           <ErrorState
             action={<Button onClick={() => void refresh()}>Try again</Button>}
@@ -61,19 +63,19 @@ export function BudgetsPage() {
   return (
     <>
       <PageHeader
-        title="Budgets"
-        lede="Simple monthly limits that stay out of your way."
+        title={t("budgets.title")}
+        lede={t("budgets.intro")}
         actions={
           !showForm ? (
             <Button variant="secondary" size="sm" onClick={() => setShowForm(true)}>
-              Add budget
+              {t("budgets.addBudget")}
             </Button>
           ) : null
         }
       />
 
       {showForm ? (
-        <Card title="New budget">
+        <Card title={t("budgets.newBudget")}>
           <BudgetForm
             existingBudgets={budgets}
             saving={saving}
@@ -82,7 +84,7 @@ export function BudgetsPage() {
               setSaving(true);
               try {
                 await saveBudget(input);
-                notify("Budget saved! 🐷");
+                notify(t("budgets.saved"));
                 setShowForm(false);
               } finally {
                 setSaving(false);
@@ -96,10 +98,10 @@ export function BudgetsPage() {
         <Card>
           <EmptyState
             emoji="🐷"
-            title="No budgets yet"
-            action={<Button onClick={() => setShowForm(true)}>Set your first budget</Button>}
+            title={t("budgets.none")}
+            action={<Button onClick={() => setShowForm(true)}>{t("budgets.setFirst")}</Button>}
           >
-            A monthly limit helps you see when things add up faster than expected.
+            {t("budgets.emptyBody")}
           </EmptyState>
         </Card>
       ) : (
@@ -110,11 +112,11 @@ export function BudgetsPage() {
               spent={spentForBudget(budget.categoryId)}
               onSave={async (input) => {
                 await saveBudget(input);
-                notify("Budget updated!");
+                notify(t("budgets.updated"));
               }}
               onDelete={async () => {
                 await deleteBudget(budget.id);
-                notify("Budget removed.");
+                notify(t("budgets.removed"));
               }}
             />
           </Card>

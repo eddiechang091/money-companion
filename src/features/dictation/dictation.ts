@@ -12,6 +12,7 @@
  * Chrome, Apple in Safari) instead of staying on-device, and Firefox
  * does not ship it — so the mic button only appears where the API exists.
  */
+import { translate } from "@/lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /* ─── Minimal SpeechRecognition shapes ───────────────────────────────────
@@ -69,7 +70,7 @@ export function isDictationSupported(): boolean {
 
 function defaultFactory(): SpeechRecognitionLike {
   const Ctor = getRecognitionConstructor();
-  if (!Ctor) throw new Error("Speech recognition is not supported in this browser.");
+  if (!Ctor) throw new Error(translate("dictation.notSupported"));
   return new Ctor();
 }
 
@@ -110,12 +111,12 @@ export type DictationErrorKind =
   | "unknown";
 
 export const DICTATION_ERROR_MESSAGES: Record<DictationErrorKind, string> = {
-  denied: "Microphone access was blocked. Allow microphone access in your browser and try again.",
-  "no-microphone": "No microphone was found on this device.",
-  network: "Dictation needs a network connection. Check your connection and try again.",
-  language: "This language is not supported for dictation in this browser.",
-  restart: "Dictation stopped unexpectedly. Tap the microphone to try again.",
-  unknown: "Dictation stopped. Tap the microphone to try again.",
+  denied: translate("dictation.micBlocked"),
+  "no-microphone": translate("dictation.noMic"),
+  network: translate("dictation.needsNetwork"),
+  language: translate("dictation.langUnsupported"),
+  restart: translate("dictation.stoppedUnexpected"),
+  unknown: translate("dictation.stopped"),
 };
 
 export interface DictationSessionCallbacks {
