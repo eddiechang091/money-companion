@@ -68,7 +68,10 @@ function renderRoute(route: string, navigate: (path: string) => void) {
     case "/dashboard":
       return <DashboardPage onNavigate={navigate} />;
     case "/expenses":
-      return <ExpensesPage onNavigate={navigate} />;
+      // Key by the full route (including query) so "View all" from a
+      // different dashboard month remounts with the new month — useState
+      // initializers only run on mount.
+      return <ExpensesPage key={route} onNavigate={navigate} initialMonthKey={params.get("month")} />;
     case "/trends": {
       const kindParam = params.get("kind");
       const initialKind =

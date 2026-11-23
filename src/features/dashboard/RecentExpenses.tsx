@@ -13,9 +13,12 @@ function dateLabel(iso: string): string {
 
 export function RecentExpenses({
   expenses,
+  monthKey,
   onNavigate,
 }: {
   expenses: Expense[];
+  /** The month these rows belong to — "View all" opens Expenses on it. */
+  monthKey: string;
   onNavigate: (path: string) => void;
 }) {
   if (expenses.length === 0) return null;
@@ -47,7 +50,7 @@ export function RecentExpenses({
         <button
           type="button"
           className="btn ghost small"
-          onClick={() => onNavigate("/expenses")}
+          onClick={() => onNavigate(`/expenses?month=${monthKey}`)}
         >
           View all →
         </button>

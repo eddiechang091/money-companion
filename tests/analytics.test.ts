@@ -10,10 +10,14 @@ import {
   totalsByCategory,
   availableMonths,
   availableYears,
+  currentMonthKey,
+  defaultMonthKey,
+  defaultYearKey,
   monthlyTotals,
   categoryMonthlySeries,
   categoryYearlySeries,
   latestPointChanges,
+  previousMonthKey,
   trendKey,
 } from "@/lib/analytics";
 import type { Expense } from "@/lib/types";
@@ -588,5 +592,49 @@ describe("latestPointChanges", () => {
   it("returns nothing with fewer than two points", () => {
     expect(latestPointChanges(rows.slice(0, 1), ["groceries-fresh"])).toEqual([]);
     expect(latestPointChanges([], ["groceries-fresh"])).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// defaultMonthKey / defaultYearKey — opening period when the current one is empty
+// ---------------------------------------------------------------------------
+describe("defaultMonthKey", () => {
+  it("opens the current month when it has data", () => {
+    const now = currentMonthKey();
+    const expenses = [makeExpense({ id: "a", date: `${now}-05`, amount: 10 })];
+    expect(defaultMonthKey(expenses)).toBe(now);
+  });
+
+  it("falls back to the latest month with data when the current month is empty", () => {
+    const now = currentMonthKey();
+    const prev = previousMonthKey(now);
+    expect(prev).not.toBeNull();
+    const expenses = [
+      makeExpense({ id: "a", date: `${prev}-05`, amount: 10 }),
+      makeExpense({ id: "b", date: "2025-01-05", amount: 10 }),
+    ];
+    expect(defaultMonthKey(expenses)).toBe(prev);
+  });
+
+  it("opens the current month when there is no data at all", () => {
+    expect(defaultMonthKey([])).toBe(currentMonthKey());
+  });
+});
+
+describe("defaultYearKey", () => {
+  it("opens the current year when it has data", () => {
+    const year = String(new Date().getFullYear());
+    const expenses = [makeExpense({ id: "a", date: `${year}-05-05`, amount: 10 })];
+    expect(defaultYearKey(expenses)).toBe(year);
+  });
+
+  it("falls back to the latest year with data when the current year is empty", () => {
+    const year = String(new Date().getFullYear() - 1);
+    const expenses = [makeExpense({ id: "a", date: `${year}-05-05`, amount: 10 })];
+    expect(defaultYearKey(expenses)).toBe(year);
+  });
+
+  it("opens the current year when there is no data at all", () => {
+    expect(defaultYearKey([])).toBe(String(new Date().getFullYear()));
   });
 });
