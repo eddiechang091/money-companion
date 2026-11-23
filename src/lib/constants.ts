@@ -16,7 +16,9 @@ export const STORAGE_KEYS = {
   // Gamification — streaks, badges, daily delight
   badgesUnlocked: "gamification:badges",
   longestStreak: "gamification:longest_streak",
-  dailyDelight: (dateKey: string) => `daily:delight:${dateKey}`,
+  // Keyed by locale too: a language switch re-generates today's delight
+  // in the new language instead of reusing the cached other-language text.
+  dailyDelight: (dateKey: string, locale = "en") => `daily:delight:${dateKey}:${locale}`,
 } as const;
 
 /** Flat taxonomy: 24 expense categories + 7 income categories, each with its

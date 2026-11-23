@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/i18n";
 import { getLlmService } from "@/services/anna/llm";
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -24,13 +25,14 @@ interface DelightState {
  */
 export function useDailyDelight(): DelightState {
   const [state, setState] = useState<DelightState>({ status: "loading", delight: null });
+  const { locale } = useLanguage();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const dateKey = todayIso();
       const store = await getKvStore();
-      const cached = await store.get<DailyDelight>(STORAGE_KEYS.dailyDelight(dateKey));
+      const cached = await store.get<DailyDelight>(STORAGE_KEYS.dailyDelight(dateKey, locale));
       if (cached && cached.date === dateKey) {
         if (!cancelled) setState({ status: "ready", delight: cached });
         return;
@@ -44,7 +46,7 @@ export function useDailyDelight(): DelightState {
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
           d.getDate()
         ).padStart(2, "0")}`;
-        const prev = await store.get<DailyDelight>(STORAGE_KEYS.dailyDelight(key));
+        const prev = await store.get<DailyDelight>(STORAGE_KEYS.dailyDelight(key, locale));
         if (prev?.text) recent.push(prev.text);
         if (cancelled) return;
       }
@@ -52,7 +54,7 @@ export function useDailyDelight(): DelightState {
       let delight: DailyDelight;
       try {
         const llm = await getLlmService();
-        if (!llm.available) throw new Error("unavailable");
+        if (!llm || !llm.available) throw new Error("unavailable");
         const result = await llm.complete({ messages: buildDelightMessages(recent) });
         const text = cleanDelightText(result.text ?? "");
         delight = text
@@ -62,7 +64,7 @@ export function useDailyDelight(): DelightState {
         delight = fallbackDelight(dateKey);
       }
 
-      await store.set(STORAGE_KEYS.dailyDelight(dateKey), delight);
+      await store.set(STORAGE_KEYS.dailyDelight(dateKey, locale), delight);
       if (!cancelled) setState({ status: "ready", delight });
     })();
     return () => {
