@@ -40,12 +40,16 @@ export default function CategoryTrendChart({
     if (!active || !payload || payload.length === 0) return null;
     const datum = payload[0]?.payload as CategoryTrendRow | undefined;
     if (!datum) return null;
+    // Rows with money first. On a month where every visible category is
+    // $0 (e.g. toggled down to one category with no record that month),
+    // show the $0 rows instead of an empty tooltip.
     const rows = categories.filter((c) => (datum[c.id] as number) > 0);
-    if (rows.length === 0) return null;
+    const shown = rows.length > 0 ? rows : categories;
+    if (shown.length === 0) return null;
     return (
       <div className="chart-tooltip">
         <span className="chart-tooltip-date">{datum.label}</span>
-        {rows.map((c) => (
+        {shown.map((c) => (
           <span key={c.id}>
             <span className="lg-dot" style={{ background: c.color }} />
             {c.name}&nbsp;&nbsp;{money(datum[c.id] as number, currency)}
@@ -64,7 +68,7 @@ export default function CategoryTrendChart({
             dataKey="label"
             tick={{ fontSize: 11, fill: "var(--text-muted)" }}
             tickLine={false}
-            axisLine={{ stroke: "var(--border)" }}
+            axisLine={{ stroke: "var(--text-muted)" }}
             interval={labelInterval}
             padding={{ left: 24, right: 24 }}
           />
@@ -72,7 +76,7 @@ export default function CategoryTrendChart({
             width={44}
             tick={{ fontSize: 11, fill: "var(--text-muted)" }}
             tickLine={false}
-            axisLine={{ stroke: "var(--border)" }}
+            axisLine={{ stroke: "var(--text-muted)" }}
             tickFormatter={(value: number) => compactMoney(value, currency)}
             domain={[0, "auto"]}
             allowDecimals={false}
@@ -86,7 +90,10 @@ export default function CategoryTrendChart({
               stroke={c.color}
               strokeWidth={2}
               dot={{
-                r: 3,
+                r: 4,
+                fill: c.color,
+                stroke: "var(--surface)",
+                strokeWidth: 1.5,
                 // Recharts drops event handlers from the Line's own props
                 // (renderDots uses filterProps(..., false)) but keeps them
                 // from the dot object (filterProps(..., true)). At runtime
@@ -98,7 +105,7 @@ export default function CategoryTrendChart({
                   if (point) onPointClick?.(point);
                 },
               }}
-              activeDot={{ r: 4 }}
+              activeDot={{ r: 6, fill: c.color, stroke: "var(--surface)", strokeWidth: 2 }}
             />
           ))}
         </LineChart>
