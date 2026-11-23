@@ -153,6 +153,14 @@ export function TrendsPage({
     setSelected(null);
   }
 
+  // Tap a point → its transactions: Expenses for that month (or year),
+  // filtered to the point's category and the current kind.
+  function handlePointClick(point: { periodKey: string; categoryId: string }) {
+    const periodParam =
+      granularity === "month" ? `month=${point.periodKey}` : `year=${point.periodKey}`;
+    onNavigate(`/expenses?${periodParam}&category=${point.categoryId}&kind=${kind}`);
+  }
+
   function toggleCategory(id: string) {
     const base = selected ?? allIds.slice(0, TOP_DEFAULT);
     setSelected(base.includes(id) ? base.filter((x) => x !== id) : [...base, id]);
@@ -270,8 +278,16 @@ export function TrendsPage({
                     ))}
                   </div>
                   <Suspense fallback={<LoadingState label={t("expenses.loadingChart")} />}>
-                    <CategoryTrendChart data={series} categories={visible} currency={currency} />
+                    <CategoryTrendChart
+                      data={series}
+                      categories={visible}
+                      currency={currency}
+                      onPointClick={handlePointClick}
+                    />
                   </Suspense>
+                  <p className="flow-summary muted" style={{ fontSize: 13 }}>
+                    {t("trends.tapHint")}
+                  </p>
                 </>
               ) : (
                 <p className="flow-summary">

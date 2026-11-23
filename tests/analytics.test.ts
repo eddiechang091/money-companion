@@ -5,7 +5,9 @@ import {
   dailyTotals,
   detectMeaningfulChanges,
   detectRecurringExpenses,
+  filterByCategory,
   filterByMonth,
+  resolveTrendPointClick,
   sumExpenses,
   totalsByCategory,
   availableMonths,
@@ -133,6 +135,71 @@ describe("filterByMonth", () => {
 
   it("returns empty for an invalid key format", () => {
     expect(filterByMonth([], "invalid")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// filterByCategory
+// ---------------------------------------------------------------------------
+describe("filterByCategory", () => {
+  const expenses = [
+    makeExpense({ id: "a", date: "2026-11-02", amount: 10, categoryId: "groceries-fresh" }),
+    makeExpense({ id: "b", date: "2026-11-03", amount: 20, categoryId: "dining-out" }),
+    makeExpense({ id: "c", date: "2026-11-04", amount: 30, categoryId: null }),
+  ];
+
+  it("returns only the named category", () => {
+    expect(filterByCategory(expenses, "groceries-fresh").map((e) => e.id)).toEqual(["a"]);
+  });
+
+  it("maps 'uncategorized' to a null categoryId", () => {
+    expect(filterByCategory(expenses, "uncategorized").map((e) => e.id)).toEqual(["c"]);
+  });
+
+  it("returns everything for a null key", () => {
+    expect(filterByCategory(expenses, null)).toHaveLength(3);
+  });
+
+  it("returns empty for an unknown category", () => {
+    expect(filterByCategory(expenses, "nope")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveTrendPointClick
+// ---------------------------------------------------------------------------
+describe("resolveTrendPointClick", () => {
+  it("resolves a dot click to period + category + value", () => {
+    expect(
+      resolveTrendPointClick({
+        dataKey: "groceries-fresh",
+        value: 320.5,
+        payload: { date: "2026-11", label: "Nov ’25" },
+      })
+    ).toEqual({ periodKey: "2026-11", categoryId: "groceries-fresh", value: 320.5 });
+  });
+
+  it("resolves a year point the same way", () => {
+    expect(
+      resolveTrendPointClick({
+        dataKey: "uncategorized",
+        value: 45,
+        payload: { date: "2026", label: "2026" },
+      })
+    ).toEqual({ periodKey: "2026", categoryId: "uncategorized", value: 45 });
+  });
+
+  it("returns null for a missing dataKey or garbage", () => {
+    expect(resolveTrendPointClick({ value: 10, payload: { date: "2026-11" } })).toBeNull();
+    expect(resolveTrendPointClick({ dataKey: "dining-out", value: 10, payload: {} })).toBeNull();
+    expect(resolveTrendPointClick(null)).toBeNull();
+    expect(resolveTrendPointClick("nope")).toBeNull();
+  });
+
+  it("still resolves a $0 point — its destination shows the empty state", () => {
+    expect(
+      resolveTrendPointClick({ dataKey: "dining-out", value: 0, payload: { date: "2026-11" } })
+    ).toEqual({ periodKey: "2026-11", categoryId: "dining-out", value: 0 });
   });
 });
 
