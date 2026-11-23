@@ -1,6 +1,5 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { ToastProvider } from "@/components/ui/Toast";
-import { InstallPrompt } from "@/components/ui/InstallPrompt";
 import { useRoute, parseRoute } from "@/router";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { ExpensesPage } from "@/features/expenses/ExpensesPage";
@@ -13,8 +12,6 @@ import { NotFoundPage } from "@/features/NotFoundPage";
 import { ExpensesProvider } from "@/services/expenses/useExpenses";
 import { ProfileProvider } from "@/services/profile/useProfile";
 import { CurrencyGate } from "@/components/ui/CurrencyGate";
-import { AuthGate } from "@/features/auth/AuthGate";
-import { UsernameGate } from "@/features/auth/UsernameGate";
 import { BudgetsProvider } from "@/services/budgets/useBudgets";
 import { CatProvider } from "@/services/cat/useCat";
 import { BadgeHost } from "@/features/gamification/BadgeHost";
@@ -45,8 +42,6 @@ export function App() {
     <ToastProvider>
       <ThemeProvider>
       <ProfileProvider>
-      <AuthGate>
-      <UsernameGate>
       <CurrencyGate>
       <ExpensesProvider>
         <BudgetsProvider>
@@ -57,13 +52,10 @@ export function App() {
           </AppShell>
           <BadgeHost />
           <CatCompanionHost />
-          <InstallPrompt />
           </CatProvider>
         </BudgetsProvider>
       </ExpensesProvider>
       </CurrencyGate>
-      </UsernameGate>
-      </AuthGate>
       </ProfileProvider>
       </ThemeProvider>
     </ToastProvider>
