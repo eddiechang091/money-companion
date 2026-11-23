@@ -27,16 +27,34 @@ const TOP_DEFAULT = 5;
 const YEAR_WINDOW = 6;
 const MONTH_RANGES = [3, 6, 12] as const;
 
-export function TrendsPage({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function TrendsPage({
+  onNavigate,
+  initialCategoryId,
+  initialKind,
+}: {
+  onNavigate: (path: string) => void;
+  /** Drill-down entry: pre-select one category (trend key, "uncategorized" for null). */
+  initialCategoryId?: string | null;
+  /** Drill-down entry: pre-select the kind. */
+  initialKind?: RecordKind;
+}) {
   const { status, expenses, error, refresh } = useExpenses();
   const { profile } = useProfile();
   const currency = expenses[0]?.currency ?? profile.currency ?? "USD";
 
   const [granularity, setGranularity] = useState<"month" | "year">("month");
-  const [kind, setKind] = useState<RecordKind>("expense");
+  const [kind, setKind] = useState<RecordKind>(initialKind ?? "expense");
   const [monthRange, setMonthRange] = useState<(typeof MONTH_RANGES)[number]>(12);
   // null = auto: top 5 categories by total in the visible range.
-  const [selected, setSelected] = useState<string[] | null>(null);
+  // A drill-down entry pins a single category until the user changes view/kind.
+  const validInitialCategory =
+    initialCategoryId &&
+    (initialCategoryId === "uncategorized" || getCategoryById(initialCategoryId))
+      ? initialCategoryId
+      : null;
+  const [selected, setSelected] = useState<string[] | null>(
+    validInitialCategory ? [validInitialCategory] : null
+  );
 
   const months = useMemo(
     () => availableMonths(expenses).slice(0, monthRange).reverse(),
