@@ -4,6 +4,7 @@ import {
   LEGACY_CATEGORY_MIGRATION,
   UNCATEGORIZED_LABEL,
 } from "./constants";
+import { translate } from "./i18n";
 import type { Category, Expense, RecordKind } from "./types";
 
 export function getCategoryById(id: string | null | undefined): Category | null {
@@ -40,6 +41,20 @@ export function normalizeRecordKind(kind: unknown): RecordKind {
 
 export function categoryLabel(id: string | null | undefined): string {
   return getCategoryById(id)?.name ?? UNCATEGORIZED_LABEL;
+}
+
+/**
+ * The display name of a category in the current UI language
+ * ("category.<id>" in the dictionary), falling back to the stored English
+ * name. Use this anywhere a category name is rendered.
+ */
+export function categoryName(id: string | null | undefined): string {
+  const category = getCategoryById(id);
+  if (!category) return translate("category.others");
+  const translated = translate(`category.${category.id}`);
+  // translate() returns the key itself when nothing matches; the stored
+  // English name is the fallback, never the raw key.
+  return translated === `category.${category.id}` ? category.name : translated;
 }
 
 export function sortExpensesByRecency(expenses: Expense[]): Expense[] {
