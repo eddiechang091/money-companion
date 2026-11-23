@@ -6,7 +6,11 @@ import {
   normalizeInsightResponse,
   INSIGHT_SCHEMA_VERSION,
 } from "@/lib/aiSchema";
-import { buildInsightContext } from "@/lib/aiContext";
+import { buildInsightContext, buildTrendInsightContext } from "@/lib/aiContext";
+import { buildTrendFallbackResponse } from "@/features/ai/fallback";
+import { buildTrendInsightMessages } from "@/features/ai/prompts";
+import { createTrendInsightService } from "@/features/ai/trendInsight";
+import { categoryMonthlySeries } from "@/lib/analytics";
 import { buildFallbackResponse } from "@/features/ai/fallback";
 import { buildInsightMessages, buildRepairMessages } from "@/features/ai/prompts";
 import { createInsightService } from "@/features/ai/insight";
@@ -416,5 +420,203 @@ describe("createInsightService", () => {
     const service = createInsightService(llm);
     const result = await service.getInsight(expense, expenses, budgets);
     expect(result.isFallback).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildTrendInsightContext
+// ---------------------------------------------------------------------------
+describe("buildTrendInsightContext", () => {
+  const records: Expense[] = [
+    makeExpense({ id: "g1", date: "2026-08-05", amount: 400, categoryId: "groceries-fresh" }),
+    makeExpense({ id: "g2", date: "2026-09-05", amount: 440, categoryId: "groceries-fresh" }),
+    makeExpense({ id: "g3", date: "2026-10-05", amount: 440, categoryId: "groceries-fresh" }),
+    makeExpense({ id: "d1", date: "2026-08-12", amount: 160, categoryId: "dining-out" }),
+    makeExpense({ id: "d2", date: "2026-09-12", amount: 180, categoryId: "dining-out" }),
+    makeExpense({ id: "d3", date: "2026-10-12", amount: 180, categoryId: "dining-out" }),
+    makeExpense({ id: "s1", date: "2026-08-20", amount: 45, categoryId: "subscriptions-digital" }),
+    makeExpense({ id: "s2", date: "2026-09-20", amount: 75, categoryId: "subscriptions-digital" }),
+    makeExpense({ id: "s3", date: "2026-10-20", amount: 75, categoryId: "subscriptions-digital" }),
+    makeExpense({ id: "i1", date: "2026-09-01", amount: 4200, categoryId: "main-salary", kind: "income" }),
+    makeExpense({ id: "i2", date: "2026-10-01", amount: 4200, categoryId: "main-salary", kind: "income" }),
+  ];
+  const months = ["2026-08", "2026-09", "2026-10"];
+  const budgets: MonthlyBudget[] = [
+    { id: "b1", categoryId: null, amount: 1500, currency: "CAD", period: "monthly", createdAt: "2026-08-01T00:00:00.000Z", updatedAt: "2026-08-01T00:00:00.000Z" },
+    { id: "b2", categoryId: "groceries-fresh", amount: 500, currency: "CAD", period: "monthly", createdAt: "2026-08-01T00:00:00.000Z", updatedAt: "2026-08-01T00:00:00.000Z" },
+  ];
+
+  function buildCtx(visibleIds: string[], kind: "expense" | "income" = "expense") {
+    const series = categoryMonthlySeries(records, kind, months);
+    return buildTrendInsightContext(records, series, visibleIds, kind, "month", "CAD", budgets);
+  }
+
+  it("sums In/Out/Net per period and overall", () => {
+    const ctx = buildCtx(["groceries-fresh", "dining-out", "subscriptions-digital"]);
+    expect(ctx.rangeLabel).toBe("Aug ’26 – Oct ’26");
+    expect(ctx.periods).toHaveLength(3);
+    expect(ctx.periods[0]).toEqual({ label: "Aug ’26", totalIn: 0, totalOut: 605, net: -605 });
+    expect(ctx.periods[2]).toEqual({ label: "Oct ’26", totalIn: 4200, totalOut: 695, net: 3505 });
+    expect(ctx.totals).toEqual({ totalIn: 8400, totalOut: 1995, net: 6405 });
+  });
+
+  it("reports latest vs previous per visible category", () => {
+    const ctx = buildCtx(["subscriptions-digital"]);
+    expect(ctx.categories).toHaveLength(1);
+    expect(ctx.categories[0]).toMatchObject({
+      category: "Subscriptions & Digital",
+      total: 195,
+      latest: 75,
+      previous: 75,
+      deltaPct: 0,
+    });
+  });
+
+  it("only includes the categories the user is looking at", () => {
+    const ctx = buildCtx(["dining-out"]);
+    expect(ctx.categories.map((c) => c.categoryId)).toEqual(["dining-out"]);
+  });
+
+  it("compares the overall budget against the latest month", () => {
+    const ctx = buildCtx(["groceries-fresh"]);
+    expect(ctx.overallBudget).toMatchObject({ limit: 1500, latestMonthSpent: 695, status: "on-track" });
+  });
+
+  it("compares visible category budgets against the latest month", () => {
+    const ctx = buildCtx(["groceries-fresh"]);
+    expect(ctx.categoryBudgets).toHaveLength(1);
+    expect(ctx.categoryBudgets[0]).toMatchObject({
+      category: "Groceries & Fresh",
+      limit: 500,
+      spent: 440,
+      pct: 88,
+      status: "watch",
+    });
+  });
+
+  it("omits budgets when none exist", () => {
+    const series = categoryMonthlySeries(records, "expense", months);
+    const ctx = buildTrendInsightContext(records, series, ["groceries-fresh"], "expense", "month", "CAD", []);
+    expect(ctx.overallBudget).toBeNull();
+    expect(ctx.categoryBudgets).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildTrendFallbackResponse
+// ---------------------------------------------------------------------------
+describe("buildTrendFallbackResponse", () => {
+  function trendCtx(partial: Partial<import("@/lib/aiContext").TrendInsightContext>): import("@/lib/aiContext").TrendInsightContext {
+    return {
+      user: { currency: "CAD" },
+      granularity: "month",
+      kind: "expense",
+      rangeLabel: "Aug ’26 – Oct ’26",
+      periods: [],
+      categories: [],
+      totals: { totalIn: 8400, totalOut: 1995, net: 6405 },
+      overallBudget: null,
+      categoryBudgets: [],
+      ...partial,
+    };
+  }
+
+  it("names the biggest mover and never invents figures", () => {
+    const ctx = trendCtx({
+      categories: [
+        { categoryId: "subscriptions-digital", category: "Subscriptions & Digital", total: 195, latest: 75, previous: 45, deltaPct: 66.7 },
+        { categoryId: "groceries-fresh", category: "Groceries & Fresh", total: 1280, latest: 440, previous: 440, deltaPct: 0 },
+      ],
+    });
+    const result = buildTrendFallbackResponse(ctx);
+    expect(result.isFallback).toBe(true);
+    expect(result.headline).toContain("Subscriptions & Digital");
+    expect(result.headline).toContain("66.7%");
+    expect(result.headline).toContain("$75");
+  });
+
+  it("says so plainly when there is nothing to compare", () => {
+    const result = buildTrendFallbackResponse(trendCtx({ categories: [] }));
+    expect(result.headline).toContain("Not much to compare yet");
+  });
+
+  it("notes an over-budget latest month without shaming", () => {
+    const ctx = trendCtx({
+      categories: [{ categoryId: "groceries-fresh", category: "Groceries & Fresh", total: 1280, latest: 440, previous: 440, deltaPct: 0 }],
+      overallBudget: { limit: 500, latestMonthSpent: 695, pct: 100, status: "over" },
+    });
+    const result = buildTrendFallbackResponse(ctx);
+    expect(result.financialObservation).toContain("budget is over");
+    expect(result.financialObservation).not.toMatch(/bad|shame|should have/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// createTrendInsightService
+// ---------------------------------------------------------------------------
+describe("createTrendInsightService", () => {
+  const ctx = {
+    user: { currency: "CAD" },
+    granularity: "month" as const,
+    kind: "expense" as const,
+    rangeLabel: "Aug ’26 – Oct ’26",
+    periods: [{ label: "Oct ’26", totalIn: 4200, totalOut: 695, net: 3505 }],
+    categories: [{ categoryId: "groceries-fresh", category: "Groceries & Fresh", total: 1280, latest: 440, previous: 390, deltaPct: 12.8 }],
+    totals: { totalIn: 8400, totalOut: 1995, net: 6405 },
+    overallBudget: null,
+    categoryBudgets: [],
+  };
+
+  it("returns the parsed LLM reply", async () => {
+    const llm = mockLlm([JSON.stringify(VALID_RESPONSE)]);
+    const service = createTrendInsightService(llm);
+    const result = await service.getTrendInsight(ctx);
+    expect(result.isFallback).toBe(false);
+    expect(result.headline).toBe(VALID_RESPONSE.headline);
+    expect(llm.calls[0].messages[1].content).toContain("Aug ’26 – Oct ’26");
+    expect(llm.calls[0].messages[1].content).toContain("Only totals");
+  });
+
+  it("falls back to the local summary when the LLM is down", async () => {
+    const llm = mockLlm([new Error("boom")]);
+    const service = createTrendInsightService(llm);
+    const result = await service.getTrendInsight(ctx);
+    expect(result.isFallback).toBe(true);
+    expect(result.headline).toContain("Groceries & Fresh");
+  });
+
+  it("repairs a bad reply, then falls back", async () => {
+    const llm = mockLlm(["not json", JSON.stringify(VALID_RESPONSE)]);
+    const service = createTrendInsightService(llm);
+    const result = await service.getTrendInsight(ctx);
+    expect(result.isFallback).toBe(false);
+    expect(result.headline).toBe(VALID_RESPONSE.headline);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildTrendInsightMessages
+// ---------------------------------------------------------------------------
+describe("buildTrendInsightMessages", () => {
+  it("sends the aggregates and states the no-transactions boundary", () => {
+    const ctx = {
+      user: { currency: "CAD" },
+      granularity: "month" as const,
+      kind: "expense" as const,
+      rangeLabel: "Aug ’26 – Oct ’26",
+      periods: [{ label: "Oct ’26", totalIn: 4200, totalOut: 695, net: 3505 }],
+      categories: [{ categoryId: "groceries-fresh", category: "Groceries & Fresh", total: 1280, latest: 440, previous: 440, deltaPct: 0 }],
+      totals: { totalIn: 8400, totalOut: 1995, net: 6405 },
+      overallBudget: null,
+      categoryBudgets: [],
+    };
+    const messages = buildTrendInsightMessages(ctx);
+    expect(messages).toHaveLength(2);
+    expect(messages[0].role).toBe("system");
+    const user = messages[1].content;
+    expect(user).toContain("Aug ’26 – Oct ’26");
+    expect(user).toContain("Only totals are included");
+    expect(user).toContain("Never invent figures");
+    expect(user).toContain("Groceries & Fresh");
   });
 });

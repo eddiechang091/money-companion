@@ -1,10 +1,13 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { useExpenses } from "@/services/expenses/useExpenses";
+import { useBudgets } from "@/services/budgets/useBudgets";
 import { useProfile } from "@/services/profile/useProfile";
+import { buildTrendInsightContext } from "@/lib/aiContext";
+import { useTrendInsight } from "@/features/ai/useTrendInsight";
 import {
   availableMonths,
   availableYears,
@@ -39,8 +42,10 @@ export function TrendsPage({
   initialKind?: RecordKind;
 }) {
   const { status, expenses, error, refresh } = useExpenses();
+  const { budgets } = useBudgets();
   const { profile } = useProfile();
   const currency = expenses[0]?.currency ?? profile.currency ?? "USD";
+  const trendInsight = useTrendInsight();
 
   const [granularity, setGranularity] = useState<"month" | "year">("month");
   const [kind, setKind] = useState<RecordKind>(initialKind ?? "expense");
@@ -114,6 +119,26 @@ export function TrendsPage({
     [series, visibleIds]
   );
   const prevLabel = series.length >= 2 ? series[series.length - 2].label : null;
+
+  // A previous analysis goes stale as soon as the viewed data changes.
+  const insightKey = [granularity, kind, monthRange, visibleIds.join(",")].join("|");
+  useEffect(() => {
+    trendInsight.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insightKey]);
+
+  function handleAnalyze() {
+    const ctx = buildTrendInsightContext(
+      rangeRecords,
+      series,
+      visibleIds,
+      kind,
+      granularity,
+      currency,
+      budgets
+    );
+    void trendInsight.analyze(ctx);
+  }
 
   function switchGranularity(g: "month" | "year") {
     setGranularity(g);
@@ -201,6 +226,7 @@ export function TrendsPage({
           </EmptyState>
         </Card>
       ) : (
+        <>
         <Card
           title={granularity === "month" ? "Monthly trends by category" : "Yearly trends by category"}
           action={controls}
@@ -294,6 +320,53 @@ export function TrendsPage({
             </>
           )}
         </Card>
+        {/* AI insight — opt-in, aggregates only, below the chart card. */}
+        {trendInsight.status === "idle" ? (
+          <div className="trend-insight-cta">
+            <Button variant="secondary" onClick={handleAnalyze}>
+              Analyze trends
+            </Button>
+            <p className="muted" style={{ fontSize: 13 }}>
+              Lucky Cat looks at the totals above — only totals are shared, no individual
+              transactions.
+            </p>
+          </div>
+        ) : trendInsight.status === "loading" ? (
+          <Card>
+            <LoadingState label="Asking Lucky Cat…" />
+          </Card>
+        ) : trendInsight.status === "error" ? (
+          <Card>
+            <ErrorState action={<Button onClick={handleAnalyze}>Retry</Button>}>
+              The analysis didn&rsquo;t come back — try again in a moment.
+            </ErrorState>
+          </Card>
+        ) : trendInsight.result ? (
+          <Card title="Lucky Cat's take">
+            <p className="bubble-headline">{trendInsight.result.headline}</p>
+            {trendInsight.result.financialObservation ? (
+              <p className="bubble-text muted">{trendInsight.result.financialObservation}</p>
+            ) : null}
+            {trendInsight.result.suggestion ? (
+              <p className="bubble-text">{trendInsight.result.suggestion}</p>
+            ) : null}
+            {trendInsight.result.followUpQuestion ? (
+              <p className="bubble-text muted">{trendInsight.result.followUpQuestion}</p>
+            ) : null}
+            {trendInsight.result.isFallback ? (
+              <p className="trend-insight-note">
+                Made on your device — Lucky Cat was unreachable, so this is a local summary of
+                the same totals.
+              </p>
+            ) : null}
+            <div className="trend-insight-cta">
+              <Button variant="secondary" onClick={handleAnalyze}>
+                Analyze again
+              </Button>
+            </div>
+          </Card>
+        ) : null}
+        </>
       )}
     </>
   );

@@ -3,7 +3,7 @@
 export const PROMPT_VERSION = "1.3";
 
 import type { LlmMessage } from "@/services/anna/llm";
-import type { InsightContext } from "@/lib/aiContext";
+import type { InsightContext, TrendInsightContext } from "@/lib/aiContext";
 
 export const SYSTEM_PROMPT = `You are Lucky Cat, the friendly AI companion inside a personal money tracker.
 
@@ -83,5 +83,31 @@ export function buildRepairMessages(
         "The response above is not valid JSON or is missing required fields (headline is required). " +
         "Please respond again with ONLY a valid JSON object. No markdown, no explanation — just the JSON.",
     },
+  ];
+}
+
+/**
+ * Trend analysis prompt: the same Lucky Cat voice and the same JSON
+ * shape as the expense insight, but the context is the range the user
+ * is looking at on the Trends page (aggregates only — no individual
+ * transactions). Objective about the numbers, gentle in wording.
+ */
+export function buildTrendInsightMessages(ctx: TrendInsightContext): LlmMessage[] {
+  const contextJson = JSON.stringify(ctx, null, 2);
+  const scope =
+    ctx.granularity === "month"
+      ? `the months the user is looking at (${ctx.rangeLabel})`
+      : `the years the user is looking at (${ctx.rangeLabel})`;
+  const userContent = `Here is the trend context for ${scope}. Only totals are included — no individual transactions.
+
+${contextJson}
+
+${SCHEMA_REMINDER}
+
+Give a short trend analysis: headline (1–2 sentences, never starts with a percentage), financialObservation (the most important pattern — what is rising or falling, and what seems to be driving it), suggestion (one gentle, forward-looking idea for the coming ${ctx.granularity === "month" ? "month" : "year"} — optional, never pushy), followUpQuestion (max 10 words, first person, or null). Be objective about the numbers but gentle in wording — never shame spending, and remember a rise can be a planned purchase or a good month. Never invent figures or transactions not in the data. If the data is too thin to say much, say so instead of padding.`;
+
+  return [
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "user", content: userContent },
   ];
 }
