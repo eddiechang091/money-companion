@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidIsoDate, money, monthKey, parseAmountInput } from "@/lib/utils";
+import { compactMoney, isValidIsoDate, money, monthKey, parseAmountInput } from "@/lib/utils";
 
 describe("money", () => {
   it("formats a number as currency", () => {
@@ -7,6 +7,20 @@ describe("money", () => {
   });
   it("handles non-finite input", () => {
     expect(money(Number.NaN)).toContain("0.00");
+  });
+});
+
+describe("compactMoney", () => {
+  it("keeps small amounts whole", () => {
+    expect(compactMoney(500, "USD")).toBe("$500");
+    expect(compactMoney(0, "CAD")).toContain("0");
+  });
+  it("compacts thousands", () => {
+    expect(compactMoney(1142, "USD")).toBe("$1.1K");
+    expect(compactMoney(4200, "CAD")).toContain("4.2K");
+  });
+  it("handles non-finite input", () => {
+    expect(compactMoney(Number.NaN, "USD")).toBe("$0");
   });
 });
 

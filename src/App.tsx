@@ -3,6 +3,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { useRoute } from "@/router";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { ExpensesPage } from "@/features/expenses/ExpensesPage";
+import { TrendsPage } from "@/features/trends/TrendsPage";
 import { AddExpensePage } from "@/features/expenses/AddExpensePage";
 import { BudgetsPage } from "@/features/budgets/BudgetsPage";
 import { ProfilePage } from "@/features/profile/ProfilePage";
@@ -64,6 +65,8 @@ function renderRoute(route: string, navigate: (path: string) => void) {
       return <DashboardPage onNavigate={navigate} />;
     case "/expenses":
       return <ExpensesPage onNavigate={navigate} />;
+    case "/trends":
+      return <TrendsPage onNavigate={navigate} />;
     case "/add-expense":
       return <AddExpensePage onNavigate={navigate} />;
     case "/add-income":

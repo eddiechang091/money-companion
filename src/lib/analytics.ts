@@ -175,6 +175,130 @@ export function monthlyTotals(
   return months;
 }
 
+/** Stable chart key for a category id ("uncategorized" for Others). */
+export function trendKey(categoryId: string | null): string {
+  return categoryId ?? "uncategorized";
+}
+
+/** One point of a per-category trend line: per-category totals for a month or a year. */
+export interface CategoryTrendRow {
+  date: string;
+  label: string;
+  [categoryId: string]: number | string;
+}
+
+/** Compact axis label for a YYYY-MM key ("Nov ’25"). */
+function shortMonthLabel(key: string): string {
+  const parts = key.split("-").map(Number);
+  const y = parts[0];
+  const m = parts[1];
+  if (!y || !m) return key;
+  const month = new Date(y, m - 1, 1).toLocaleString("en", { month: "short" });
+  return `${month} ’${String(y).slice(2)}`;
+}
+
+function accumulateCategoryTotals(
+  expenses: Expense[],
+  kind: RecordKind,
+  bucketOf: (expense: Expense) => string | null
+): Map<string, Map<string, number>> {
+  const buckets = new Map<string, Map<string, number>>();
+  for (const expense of expenses) {
+    if (recordKind(expense) !== kind) continue;
+    if (!Number.isFinite(expense.amount) || expense.amount < 0) continue;
+    const bucket = bucketOf(expense);
+    if (!bucket) continue;
+    const key = trendKey(expense.categoryId);
+    const row = buckets.get(bucket) ?? new Map<string, number>();
+    row.set(key, (row.get(key) ?? 0) + expense.amount);
+    buckets.set(bucket, row);
+  }
+  return buckets;
+}
+
+function trendRows(
+  buckets: Map<string, Map<string, number>>,
+  keys: string[],
+  labelOf: (key: string) => string
+): CategoryTrendRow[] {
+  // Every category seen anywhere gets a value in every row (0 when absent),
+  // so lines stay continuous instead of breaking on empty months.
+  const allKeys = new Set<string>();
+  for (const totals of buckets.values()) {
+    for (const key of totals.keys()) allKeys.add(key);
+  }
+  return keys.map((key) => {
+    const totals = buckets.get(key);
+    const row: CategoryTrendRow = { date: key, label: labelOf(key) };
+    for (const cat of allKeys) {
+      row[cat] = Math.round(((totals?.get(cat)) ?? 0) * 100) / 100;
+    }
+    return row;
+  });
+}
+
+/**
+ * Per-category totals for each month in `months` (oldest first). Months
+ * with no spending still get a row, so lines stay continuous.
+ */
+export function categoryMonthlySeries(
+  expenses: Expense[],
+  kind: RecordKind,
+  months: string[]
+): CategoryTrendRow[] {
+  const buckets = accumulateCategoryTotals(expenses, kind, (e) =>
+    /^\d{4}-\d{2}$/.test(e.date.slice(0, 7)) ? e.date.slice(0, 7) : null
+  );
+  return trendRows(buckets, months, shortMonthLabel);
+}
+
+/** Per-category totals for each year in `years` (oldest first). */
+export function categoryYearlySeries(
+  expenses: Expense[],
+  kind: RecordKind,
+  years: string[]
+): CategoryTrendRow[] {
+  const buckets = accumulateCategoryTotals(expenses, kind, (e) =>
+    /^\d{4}$/.test(e.date.slice(0, 4)) ? e.date.slice(0, 4) : null
+  );
+  return trendRows(buckets, years, (y) => y);
+}
+
+export interface TrendPointChange {
+  categoryId: string;
+  current: number;
+  previous: number;
+  delta: number;
+  /** Percent change vs the previous point; null when the previous point is 0. */
+  deltaPct: number | null;
+}
+
+/**
+ * Latest point vs the previous point, per category (month-over-month in
+ * the month view, year-over-year in the year view). Needs at least two
+ * points; otherwise there is nothing to compare against.
+ */
+export function latestPointChanges(
+  rows: CategoryTrendRow[],
+  categoryIds: string[]
+): TrendPointChange[] {
+  if (rows.length < 2) return [];
+  const current = rows[rows.length - 1];
+  const previous = rows[rows.length - 2];
+  return categoryIds.map((id) => {
+    const cur = Math.round(((current[id] as number) ?? 0) * 100) / 100;
+    const prev = Math.round(((previous[id] as number) ?? 0) * 100) / 100;
+    const delta = Math.round((cur - prev) * 100) / 100;
+    return {
+      categoryId: id,
+      current: cur,
+      previous: prev,
+      delta,
+      deltaPct: prev > 0 ? Math.round((delta / prev) * 1000) / 10 : null,
+    };
+  });
+}
+
 export function dailyTotals(expenses: Expense[], key: string): DayTotal[] {
   if (!/^\d{4}-\d{2}$/.test(key)) return [];
   const year = Number(key.slice(0, 4));

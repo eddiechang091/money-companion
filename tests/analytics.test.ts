@@ -11,6 +11,10 @@ import {
   availableMonths,
   availableYears,
   monthlyTotals,
+  categoryMonthlySeries,
+  categoryYearlySeries,
+  latestPointChanges,
+  trendKey,
 } from "@/lib/analytics";
 import type { Expense } from "@/lib/types";
 
@@ -507,5 +511,82 @@ describe("chart period helpers", () => {
   it("monthlyTotals rejects bad year keys", () => {
     expect(monthlyTotals(sample, "2026-10")).toEqual([]);
     expect(monthlyTotals(sample, "")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// categoryMonthlySeries / categoryYearlySeries
+// ---------------------------------------------------------------------------
+describe("category trend series", () => {
+  const sample = [
+    makeExpense({ id: "a", date: "2026-08-05", amount: 10, categoryId: "groceries-fresh" }),
+    makeExpense({ id: "b", date: "2026-08-20", amount: 5, categoryId: "groceries-fresh" }),
+    makeExpense({ id: "c", date: "2026-10-02", amount: 20, categoryId: "dining-out" }),
+    makeExpense({ id: "d", date: "2026-10-09", amount: 30, categoryId: null }),
+    makeExpense({ id: "e", date: "2026-10-11", amount: 100, kind: "income", categoryId: "main-salary" }),
+    makeExpense({ id: "f", date: "2025-12-25", amount: 40, categoryId: "groceries-fresh" }),
+  ];
+
+  it("trendKey maps null to uncategorized", () => {
+    expect(trendKey(null)).toBe("uncategorized");
+    expect(trendKey("dining-out")).toBe("dining-out");
+  });
+
+  it("monthly series aggregates per category with zeros for empty months", () => {
+    const rows = categoryMonthlySeries(sample, "expense", ["2026-08", "2026-09", "2026-10"]);
+    expect(rows).toHaveLength(3);
+    expect(rows[0].date).toBe("2026-08");
+    expect(rows[0].label).toBe("Aug ’26");
+    expect(rows[0]["groceries-fresh"]).toBe(15);
+    expect(rows[0]["dining-out"]).toBe(0);
+    expect(rows[1]["groceries-fresh"]).toBe(0);
+    expect(rows[2]["dining-out"]).toBe(20);
+    expect(rows[2]["uncategorized"]).toBe(30);
+    // Income never leaks into the expense series.
+    expect(rows[2]["main-salary"]).toBeUndefined();
+  });
+
+  it("yearly series aggregates per category per year", () => {
+    const rows = categoryYearlySeries(sample, "expense", ["2025", "2026"]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].date).toBe("2025");
+    expect(rows[0].label).toBe("2025");
+    expect(rows[0]["groceries-fresh"]).toBe(40);
+    expect(rows[1]["groceries-fresh"]).toBe(15);
+    expect(rows[1]["dining-out"]).toBe(20);
+  });
+
+  it("income series only counts income records", () => {
+    const rows = categoryMonthlySeries(sample, "income", ["2026-10"]);
+    expect(rows[0]["main-salary"]).toBe(100);
+    expect(rows[0]["groceries-fresh"]).toBeUndefined();
+  });
+});
+
+describe("latestPointChanges", () => {
+  const rows = [
+    { date: "2026-09", label: "Sep ’26", "groceries-fresh": 400, "dining-out": 100 },
+    { date: "2026-10", label: "Oct ’26", "groceries-fresh": 440, "dining-out": 0 },
+    { date: "2026-11", label: "Nov ’26", "groceries-fresh": 440, "dining-out": 50 },
+  ];
+
+  it("compares the latest point with the previous one", () => {
+    const changes = latestPointChanges(rows, ["groceries-fresh", "dining-out"]);
+    expect(changes).toHaveLength(2);
+    expect(changes[0]).toEqual({
+      categoryId: "groceries-fresh",
+      current: 440,
+      previous: 440,
+      delta: 0,
+      deltaPct: 0,
+    });
+    expect(changes[1].current).toBe(50);
+    expect(changes[1].previous).toBe(0);
+    expect(changes[1].deltaPct).toBeNull();
+  });
+
+  it("returns nothing with fewer than two points", () => {
+    expect(latestPointChanges(rows.slice(0, 1), ["groceries-fresh"])).toEqual([]);
+    expect(latestPointChanges([], ["groceries-fresh"])).toEqual([]);
   });
 });
