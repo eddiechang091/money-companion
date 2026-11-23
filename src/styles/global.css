@@ -319,6 +319,18 @@ select option {
   gap: 8px;
   min-width: 0;
 }
+button.cat-row {
+  background: none;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+button.cat-row:hover .cat-name,
+button.cat-row:focus-visible .cat-name { text-decoration: underline; }
 .cat-icon { font-size: 17px; line-height: 1; text-align: center; }
 .cat-name { font-size: 13px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cat-bar { min-width: 0; }

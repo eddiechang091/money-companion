@@ -6,6 +6,17 @@ export function normalizeHash(hash: string): string {
   return raw.charAt(0) === "/" ? raw : "/" + raw;
 }
 
+export interface ParsedRoute {
+  path: string;
+  params: URLSearchParams;
+}
+
+/** Split a route like "/trends?category=groceries-fresh" into path + query. */
+export function parseRoute(route: string): ParsedRoute {
+  const [path, query = ""] = route.split("?");
+  return { path, params: new URLSearchParams(query) };
+}
+
 export function useRoute(): [string, (path: string) => void] {
   const [route, setRoute] = useState<string>(() => normalizeHash(window.location.hash));
 

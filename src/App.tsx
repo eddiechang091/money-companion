@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { ToastProvider } from "@/components/ui/Toast";
-import { useRoute } from "@/router";
+import { InstallPrompt } from "@/components/ui/InstallPrompt";
+import { useRoute, parseRoute } from "@/router";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { ExpensesPage } from "@/features/expenses/ExpensesPage";
 import { TrendsPage } from "@/features/trends/TrendsPage";
@@ -12,6 +13,8 @@ import { NotFoundPage } from "@/features/NotFoundPage";
 import { ExpensesProvider } from "@/services/expenses/useExpenses";
 import { ProfileProvider } from "@/services/profile/useProfile";
 import { CurrencyGate } from "@/components/ui/CurrencyGate";
+import { AuthGate } from "@/features/auth/AuthGate";
+import { UsernameGate } from "@/features/auth/UsernameGate";
 import { BudgetsProvider } from "@/services/budgets/useBudgets";
 import { CatProvider } from "@/services/cat/useCat";
 import { BadgeHost } from "@/features/gamification/BadgeHost";
@@ -34,25 +37,33 @@ function ThemedBackground() {
 
 export function App() {
   const [route, navigate] = useRoute();
+  // Nav highlight matches the bare path, so a drill-down query
+  // ("/trends?category=…") still highlights Trends.
+  const { path } = parseRoute(route);
 
   return (
     <ToastProvider>
       <ThemeProvider>
       <ProfileProvider>
+      <AuthGate>
+      <UsernameGate>
       <CurrencyGate>
       <ExpensesProvider>
         <BudgetsProvider>
           <CatProvider>
           <ThemedBackground />
-          <AppShell route={route} onNavigate={navigate}>
+          <AppShell route={path} onNavigate={navigate}>
             {renderRoute(route, navigate)}
           </AppShell>
           <BadgeHost />
           <CatCompanionHost />
+          <InstallPrompt />
           </CatProvider>
         </BudgetsProvider>
       </ExpensesProvider>
       </CurrencyGate>
+      </UsernameGate>
+      </AuthGate>
       </ProfileProvider>
       </ThemeProvider>
     </ToastProvider>
@@ -60,13 +71,28 @@ export function App() {
 }
 
 function renderRoute(route: string, navigate: (path: string) => void) {
-  switch (route) {
+  const { path, params } = parseRoute(route);
+  switch (path) {
     case "/dashboard":
       return <DashboardPage onNavigate={navigate} />;
     case "/expenses":
       return <ExpensesPage onNavigate={navigate} />;
-    case "/trends":
-      return <TrendsPage onNavigate={navigate} />;
+    case "/trends": {
+      const kindParam = params.get("kind");
+      const initialKind =
+        kindParam === "income" || kindParam === "expense" ? kindParam : undefined;
+      // Key by the full route (including query) so a drill-down to a
+      // different category remounts and applies its entry selection —
+      // useState initializers only run on mount.
+      return (
+        <TrendsPage
+          key={route}
+          onNavigate={navigate}
+          initialCategoryId={params.get("category")}
+          initialKind={initialKind}
+        />
+      );
+    }
     case "/add-expense":
       return <AddExpensePage onNavigate={navigate} />;
     case "/add-income":
