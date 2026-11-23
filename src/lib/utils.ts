@@ -34,6 +34,50 @@ export function compactMoney(amount: number, currency = "USD"): string {
   }
 }
 
+/** Compact number with no currency ("10K", "7.5K", "0") — for axis ticks
+    where the unit is shown once, at the top of the axis. */
+export function compactNumber(amount: number): string {
+  const safe = Number.isFinite(amount) ? amount : 0;
+  const locale = getIntlLocale();
+  try {
+    return new Intl.NumberFormat(locale, {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(safe);
+  } catch {
+    return String(Math.round(safe));
+  }
+}
+
+/** Amount with grouping and 2 decimals, no currency symbol ("10,016.99") —
+    for In/Out/Net lines where the unit is shown once, in parentheses. */
+export function plainMoney(amount: number): string {
+  const safe = Number.isFinite(amount) ? amount : 0;
+  const locale = getIntlLocale();
+  try {
+    return new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(safe);
+  } catch {
+    return safe.toFixed(2);
+  }
+}
+
+/** The currency's own symbol ("CA$", "$", "€") — for the single unit label. */
+export function currencySymbol(code: string): string {
+  const locale = getIntlLocale();
+  try {
+    const parts = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: code,
+    }).formatToParts(0);
+    return parts.find((p) => p.type === "currency")?.value ?? code;
+  } catch {
+    return code;
+  }
+}
+
 /** Localized currency name ("Canadian dollar", "dollar canadien", …) via Intl. */
 export function currencyDisplayName(code: string): string {
   try {
