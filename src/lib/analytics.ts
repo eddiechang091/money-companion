@@ -151,6 +151,25 @@ export function availableYears(expenses: Expense[]): string[] {
   return [...years].sort().reverse();
 }
 
+/**
+ * The month a page should open on: the current month when it has data,
+ * otherwise the latest month with data, otherwise the current month
+ * (fresh account — the empty state is the right thing to show there).
+ * Without this, an empty current month hides every older transaction.
+ */
+export function defaultMonthKey(expenses: Expense[]): string {
+  const now = currentMonthKey();
+  const months = availableMonths(expenses);
+  return months.includes(now) ? now : months[0] ?? now;
+}
+
+/** Same fallback for the year view. */
+export function defaultYearKey(expenses: Expense[]): string {
+  const now = String(new Date().getFullYear());
+  const years = availableYears(expenses);
+  return years.includes(now) ? now : years[0] ?? now;
+}
+
 /** Per-month expense totals for a year (12 bars, Jan–Dec). */
 export function monthlyTotals(
   expenses: Expense[],

@@ -3,8 +3,9 @@ import { Card } from "@/components/ui/Card";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { LoadingState } from "@/components/ui/States";
 import {
-  currentMonthKey,
   dailyFlow,
+  defaultMonthKey,
+  defaultYearKey,
   filterByKind,
   filterByMonth,
   filterByYear,
@@ -28,7 +29,14 @@ const SpendingChart = lazy(() => import("@/components/ui/SpendingChart"));
 
 type KindFilter = RecordKind | "all";
 
-export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function ExpensesPage({
+  onNavigate,
+  initialMonthKey,
+}: {
+  onNavigate: (path: string) => void;
+  /** Month from the route (?month=YYYY-MM), e.g. Dashboard "View all". */
+  initialMonthKey?: string | null;
+}) {
   const { status, expenses, error, refresh, deleteExpense, isPending } = useExpenses();
   const { budgets } = useBudgets();
   const { profile } = useProfile();
@@ -39,15 +47,22 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
   const currency = expenses[0]?.currency ?? profile.currency ?? "USD";
 
   // Period + kind controls. Everything on this page — chart, summary, list —
-  // follows the selected period and kind. Default period is the current month.
+  // follows the selected period and kind. The opening month is the route's
+  // ?month=… when given (Dashboard "View all"), otherwise the current month
+  // when it has data, otherwise the latest month with data — an empty
+  // current month must not hide older transactions.
   const [chartMode, setChartMode] = useState<"month" | "year">("month");
   const [monthKey, setMonthKey] = useState<string | null>(null);
   const [yearKey, setYearKey] = useState<string | null>(null);
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const months = useMemo(() => availableMonths(expenses), [expenses]);
   const years = useMemo(() => availableYears(expenses), [expenses]);
-  const activeMonth = monthKey ?? currentMonthKey();
-  const activeYear = yearKey ?? String(new Date().getFullYear());
+  const initialMonth =
+    initialMonthKey && /^\d{4}-(0[1-9]|1[0-2])$/.test(initialMonthKey)
+      ? initialMonthKey
+      : undefined;
+  const activeMonth = monthKey ?? initialMonth ?? defaultMonthKey(expenses);
+  const activeYear = yearKey ?? defaultYearKey(expenses);
   const periodRecords =
     chartMode === "month" ? filterByMonth(expenses, activeMonth) : filterByYear(expenses, activeYear);
   const chartData =

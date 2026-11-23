@@ -11,7 +11,7 @@ import {
   availableMonths,
   calculateBudgetProgress,
   comparePeriods,
-  currentMonthKey,
+  defaultMonthKey,
   filterByMonth,
   sumByKind,
   totalsByCategory,
@@ -50,11 +50,12 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   const isLoading = expStatus === "loading" || budgetStatus === "loading";
 
   // Month switcher: everything on this page follows the selected month.
-  // Default is the current month.
+  // Default is the current month when it has data, otherwise the latest
+  // month with data — an empty current month must not hide older activity.
   const [monthKey, setMonthKey] = useState<string | null>(null);
   const [breakdownKind, setBreakdownKind] = useState<RecordKind>("expense");
   const months = useMemo(() => availableMonths(expenses), [expenses]);
-  const now = monthKey ?? currentMonthKey();
+  const now = monthKey ?? defaultMonthKey(expenses);
   const currency = expenses[0]?.currency ?? DEFAULT_CURRENCY;
 
   const monthRecords = filterByMonth(expenses, now);
@@ -161,7 +162,7 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
             {recentExpenses.length > 0 ? (
               <div className="dashboard-recent">
                 <p className="dashboard-recent-title muted">Recent</p>
-                <RecentExpenses expenses={recentExpenses} onNavigate={onNavigate} />
+                <RecentExpenses expenses={recentExpenses} monthKey={now} onNavigate={onNavigate} />
               </div>
             ) : null}
           </div>
