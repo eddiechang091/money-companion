@@ -676,4 +676,6 @@ export const zhCN: Dict = {
   "delight.fallback12": "陌生人一个真诚的微笑，能悄悄改变你一整天。",
   "delight.fallback13": "雨落在干燥路面上的气味有个名字：潮土油（petrichor）。现在你知道了。",
   "delight.fallback14": "完成一件小事也值得肯定。为小小的胜利庆祝吧。",
+  "expenses.onlyCategory": "仅显示：{category}",
+  "expenses.clearCategoryFilter": "清除分类筛选",
 };

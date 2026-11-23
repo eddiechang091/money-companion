@@ -42,6 +42,16 @@ export function filterByKind(expenses: Expense[], kind: RecordKind): Expense[] {
   return expenses.filter((expense) => recordKind(expense) === kind);
 }
 
+/**
+ * Records of one category, by trend key ("uncategorized" = Others, null id).
+ * A null/empty key means no filtering.
+ */
+export function filterByCategory(expenses: Expense[], key: string | null): Expense[] {
+  if (!key) return expenses;
+  if (key === "uncategorized") return expenses.filter((expense) => expense.categoryId === null);
+  return expenses.filter((expense) => expense.categoryId === key);
+}
+
 /** Money out only (income records excluded). */
 export function sumExpenses(expenses: Expense[]): number {
   return sumByKind(expenses, "expense");
@@ -197,6 +207,34 @@ export function monthlyTotals(
 /** Stable chart key for a category id ("uncategorized" for Others). */
 export function trendKey(categoryId: string | null): string {
   return categoryId ?? "uncategorized";
+}
+
+/**
+ * One clicked point on a per-category trend line.
+ * `periodKey` is the row's `date` ("2026-11" or "2026").
+ */
+export interface TrendPointClick {
+  periodKey: string;
+  categoryId: string;
+  value: number;
+}
+
+/**
+ * Resolve a recharts Line-dot click into a trend point. Recharts calls a
+ * Line's onClick with the dot's props: dataKey (the series = trend key),
+ * value, and payload (the row datum). A $0 point has no transactions to
+ * show, so it resolves to null.
+ */
+export function resolveTrendPointClick(data: unknown): TrendPointClick | null {
+  if (!data || typeof data !== "object") return null;
+  const d = data as { dataKey?: unknown; value?: unknown; payload?: unknown };
+  const categoryId = typeof d.dataKey === "string" && d.dataKey.length > 0 ? d.dataKey : null;
+  const payload = (d.payload ?? null) as { date?: unknown } | null;
+  const periodKey =
+    payload && typeof payload.date === "string" && payload.date.length > 0 ? payload.date : null;
+  const value = typeof d.value === "number" ? d.value : null;
+  if (!categoryId || !periodKey || value === null || value <= 0) return null;
+  return { periodKey, categoryId, value };
 }
 
 /** One point of a per-category trend line: per-category totals for a month or a year. */

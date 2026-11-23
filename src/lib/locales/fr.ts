@@ -676,4 +676,6 @@ export const fr: Dict = {
   "delight.fallback12": "Un vrai sourire d'un inconnu peut discrètement changer le cours de ta journée.",
   "delight.fallback13": "L'odeur de la pluie sur le pavé sec a un nom : le pétrichor. Maintenant tu sais.",
   "delight.fallback14": "Terminer quelque chose de petit, ça compte aussi. Célèbre les petites victoires.",
+  "expenses.onlyCategory": "Affichage : {category} uniquement",
+  "expenses.clearCategoryFilter": "Effacer le filtre de catégorie",
 };
