@@ -1,6 +1,6 @@
 import type { ConversationContext } from "./conversationContext";
 import { categoryName, getCategoryById } from "@/lib/categories";
-import { translate } from "@/lib/i18n";
+import { getLocale, translate, type Locale } from "@/lib/i18n";
 
 type SuggestionSet = readonly string[];
 
@@ -79,10 +79,13 @@ export function isUsableFollowUp(question: string): boolean {
 }
 
 /** Extract follow-up questions from the last N assistant messages. */
-function recentFollowUps(messages: ConversationMessage[], n = 2): string[] {
+function recentFollowUps(messages: ConversationMessage[], n = 2, locale: Locale = getLocale()): string[] {
   const followUps: string[] = [];
   for (let i = messages.length - 1; i >= 0 && followUps.length < n; i--) {
     const m = messages[i];
+    // A follow-up is only offered in the language its reply was written in.
+    // Messages stored before replies were tagged carry no locale and are skipped.
+    if (m.locale !== locale) continue;
     if (m.role === "assistant" && m.result?.followUpQuestion) {
       const q = m.result.followUpQuestion.trim();
       if (q && isUsableFollowUp(q) && !followUps.includes(q)) followUps.push(q);
@@ -95,7 +98,8 @@ export function buildSuggestedQuestions(
   ctx: ConversationContext,
   hasMessages: boolean,
   userMessages: string[] = [],
-  allMessages: ConversationMessage[] = []
+  allMessages: ConversationMessage[] = [],
+  locale: Locale = getLocale()
 ): string[] {
   if (!hasMessages) return [...welcomeSuggestions()];
 
@@ -106,7 +110,7 @@ export function buildSuggestedQuestions(
   };
 
   // At least 2 follow-up questions based on previous AI answers
-  for (const q of recentFollowUps(allMessages, 2)) pushIfNew(q);
+  for (const q of recentFollowUps(allMessages, 2, locale)) pushIfNew(q);
 
   // Category-specific suggestions from the active expense
   const catId = ctx.currentExpense?.categoryId ?? null;

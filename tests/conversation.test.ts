@@ -258,6 +258,28 @@ describe("makeAssistantMessage", () => {
     expect(msg.text).not.toContain(MOCK_RESULT.followUpQuestion!);
   });
 
+  it("tags the message with the current UI language", () => {
+    const msg = makeAssistantMessage(MOCK_RESULT);
+    expect(msg.locale).toBe("en");
+  });
+
+  it("only offers a follow-up in the language its reply was written in", () => {
+    const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "dining-out" });
+    const ctx = buildConversationContext([expense], [], "CAD", expense, MONTH);
+    const msg = makeAssistantMessage(MOCK_RESULT);
+    const spanish = { ...msg, locale: "es" as const };
+    expect(buildSuggestedQuestions(ctx, true, [], [spanish], "en")).not.toContain(MOCK_RESULT.followUpQuestion!);
+    expect(buildSuggestedQuestions(ctx, true, [], [spanish], "es")).toContain(MOCK_RESULT.followUpQuestion!);
+  });
+
+  it("skips a follow-up from an untagged (legacy) message", () => {
+    const expense = makeExpense({ id: "e1", date: "2026-09-15", amount: 50, categoryId: "dining-out" });
+    const ctx = buildConversationContext([expense], [], "CAD", expense, MONTH);
+    const msg = makeAssistantMessage(MOCK_RESULT);
+    const legacy = { ...msg, locale: undefined };
+    expect(buildSuggestedQuestions(ctx, true, [], [legacy], "en")).not.toContain(MOCK_RESULT.followUpQuestion!);
+  });
+
   it("sets role to assistant and attaches result", () => {
     const msg = makeAssistantMessage(MOCK_RESULT);
     expect(msg.role).toBe("assistant");

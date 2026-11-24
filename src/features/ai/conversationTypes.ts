@@ -1,4 +1,5 @@
 import type { InsightResult } from "@/lib/aiSchema";
+import type { Locale } from "@/lib/i18n";
 
 export const CONVERSATION_STORAGE_VERSION = 1;
 
@@ -15,6 +16,8 @@ export interface ConversationMessage {
   text: string;
   /** Structured AI response (assistant messages only). */
   result?: InsightResult;
+  /** UI language the reply was written in (assistant messages only). Absent on messages stored before replies were tagged. */
+  locale?: Locale;
   /** Expense ID this message is linked to, if any. */
   expenseId?: string;
   createdAt: string;

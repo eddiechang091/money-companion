@@ -195,7 +195,7 @@ export function useConversation(
       if (!cancelled) {
         const ctx = buildCtx();
         const messages = saved?.messages ?? [];
-        const suggestions = buildSuggestedQuestions(ctx, messages.length > 0, userTexts(messages), messages);
+        const suggestions = buildSuggestedQuestions(ctx, messages.length > 0, userTexts(messages), messages, locale);
         dispatch({ type: "load-done", messages, suggestions, ctx });
       }
     })();
@@ -208,7 +208,7 @@ export function useConversation(
   useEffect(() => {
     if (state.status !== "ready") return;
     const ctx = buildCtx();
-    const suggestions = buildSuggestedQuestions(ctx, state.messages.length > 0, userTexts(state.messages), state.messages);
+    const suggestions = buildSuggestedQuestions(ctx, state.messages.length > 0, userTexts(state.messages), state.messages, locale);
     dispatch({ type: "ctx-update", ctx, suggestions });
   }, [buildCtx, state.status, locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -229,7 +229,7 @@ export function useConversation(
         const result = await callLlm(trimmed, ctx, historyBeforeSend);
         const reply = makeAssistantMessage(result, activeExpense?.id);
         const allMessages = [...historyBeforeSend, userMsg, reply];
-        const suggestions = buildSuggestedQuestions(ctx, true, userTexts(allMessages), allMessages);
+        const suggestions = buildSuggestedQuestions(ctx, true, userTexts(allMessages), allMessages, locale);
         dispatch({ type: "send-ok", reply, suggestions });
         await saveConversation(allMessages);
         // Celebrate badge unlocks immediately (good talk, chatterbox…).
@@ -257,7 +257,7 @@ export function useConversation(
     dispatch({ type: "clear" });
     await clearConversation();
     const ctx = buildCtx();
-    const suggestions = buildSuggestedQuestions(ctx, false);
+    const suggestions = buildSuggestedQuestions(ctx, false, [], [], locale);
     dispatch({ type: "ctx-update", ctx, suggestions });
   }, [buildCtx]);
 
