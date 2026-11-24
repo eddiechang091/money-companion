@@ -85,7 +85,7 @@ export default function CategoryTrendChart({
   return (
     <div className="chart-wrap chart-wrap-tall" aria-hidden="true">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
+        <LineChart data={data} margin={{ top: 28, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey="label"
