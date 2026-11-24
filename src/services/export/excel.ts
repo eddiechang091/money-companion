@@ -2,7 +2,7 @@ import * as XLSX from "xlsx";
 import type { Expense } from "@/lib/types";
 import { recordKind } from "@/lib/types";
 import { sumByKind } from "@/lib/analytics";
-import { categoryLabel } from "@/lib/categories";
+import { categoryName } from "@/lib/categories";
 import { translate } from "@/lib/i18n";
 
 export interface ExcelExportOptions {
@@ -17,8 +17,8 @@ export function exportExpensesExcel({ expenses, monthKey, currency }: ExcelExpor
   const rows = expenses.map((e) => ({
     [translate("form.date")]: e.date,
     [translate("form.type")]: recordKind(e) === "income" ? translate("common.income") : translate("export.typeExpense"),
-    [translate("form.description")]: e.description || categoryLabel(e.categoryId),
-    [translate("form.category")]: categoryLabel(e.categoryId),
+    [translate("form.description")]: e.description || categoryName(e.categoryId),
+    [translate("form.category")]: categoryName(e.categoryId),
     [translate("form.amount")]: e.amount,
     [translate("form.currency")]: e.currency,
     [translate("export.paymentMethod")]: e.paymentMethod ?? "",
