@@ -1,5 +1,6 @@
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { getLocale } from "@/lib/i18n";
 import type { InsightResult } from "@/lib/aiSchema";
 import {
   CONVERSATION_STORAGE_VERSION,
@@ -91,6 +92,7 @@ export function makeAssistantMessage(
     role: "assistant",
     text: parts.join("\n\n"),
     result,
+    locale: getLocale(),
     expenseId,
     createdAt: new Date().toISOString(),
   };

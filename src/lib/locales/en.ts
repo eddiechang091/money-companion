@@ -406,6 +406,7 @@ export const en: Dict = {
   "cat.litterClean": "Litter box cleaned. So fresh!",
   "cat.wokeUp": "Yaaawn… I'm awake! Want to play?",
   "cat.companion": "Lucky cat companion",
+  "cat.name": "Lucky Cat",
   "cat.joy": "Joy {value}",
   "cat.joyLabel": "Joy",
   "cat.streak": "Streak {value}",

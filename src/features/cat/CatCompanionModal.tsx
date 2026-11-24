@@ -237,7 +237,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
     <div className="cat-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label={t("cat.companion")}>
       <div className="cat-modal cat-modal--tama" onClick={(e) => e.stopPropagation()}>
         <div className="cat-modal-header">
-          <span className="cat-modal-title">🐱 Lucky Cat</span>
+          <span className="cat-modal-title">🐱 {t("cat.name")}</span>
           <div className="cat-happiness" title={t("cat.joy", { value: state.happiness })}>
             <span className="cat-happiness-label">{t("cat.joyLabel")}</span>
             <div className="cat-happiness-bar">

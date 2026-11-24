@@ -75,7 +75,7 @@ export const es: Dict = {
   "settings.preferences": "Preferencias",
   "settings.language": "Idioma",
   "settings.languageDescription":
-    "Toda la app cambia a este idioma: menús, gráficos y las respuestas de Lucky Cat.",
+    "Toda la app cambia a este idioma: menús, gráficos y las respuestas del Gato de la suerte.",
   "settings.theme": "Tema de la app",
   "settings.defaultCurrency": "Moneda predeterminada",
   "settings.currencyDescription":
@@ -160,12 +160,12 @@ export const es: Dict = {
   "trends.analyze": "Analizar tendencias",
   "trends.analyzeAgain": "Analizar de nuevo",
   "trends.analyzeNote":
-    "Lucky Cat mira los totales de arriba: solo se comparten los totales, no las transacciones una a una.",
-  "trends.asking": "Preguntando a Lucky Cat…",
-  "trends.takeTitle": "La opinión de Lucky Cat",
+    "El Gato de la suerte mira los totales de arriba: solo se comparten los totales, no las transacciones una a una.",
+  "trends.asking": "Preguntando al Gato de la suerte…",
+  "trends.takeTitle": "La opinión del Gato de la suerte",
   "trends.localNote":
-    "Hecho en tu dispositivo: Lucky Cat no estaba disponible, así que esto es un resumen local de los mismos totales.",
-  "trends.analyzeFailed": "Lucky Cat no pudo mirar las tendencias ahora mismo.",
+    "Hecho en tu dispositivo: el Gato de la suerte no estaba disponible, así que esto es un resumen local de los mismos totales.",
+  "trends.analyzeFailed": "El Gato de la suerte no pudo mirar las tendencias ahora mismo.",
 
   "budgets.title": "Presupuestos",
   "budgets.lede": "Límites mensuales sencillos.",
@@ -354,7 +354,7 @@ export const es: Dict = {
   "profile.status.busy": "Ocupado",
   "profile.status.away": "Ausente",
   "avatar.cat-cute": "Gato Mochi",
-  "avatar.lucky-cat": "Lucky Cat",
+  "avatar.lucky-cat": "Gato de la suerte",
   "avatar.fox": "Zorro",
   "avatar.panda": "Panda",
   "avatar.shiba": "Shiba",
@@ -393,6 +393,7 @@ export const es: Dict = {
   "cat.litterClean": "Arenero limpio. ¡Qué fresco!",
   "cat.wokeUp": "Bostezo… ¡Estoy despierto! ¿Jugamos?",
   "cat.companion": "Compañero gato de la suerte",
+  "cat.name": "Gato de la suerte",
   "cat.joy": "Alegría {value}",
   "cat.joyLabel": "Alegría",
   "cat.streak": "Racha {value}",
