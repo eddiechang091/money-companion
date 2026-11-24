@@ -1,4 +1,4 @@
-import { useLanguage } from "@/lib/i18n";
+import { getIntlLocale, useLanguage } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -12,7 +12,7 @@ import { useTheme } from "@/services/theme/useTheme";
 
 function monthLabel(key: string): string {
   const [y, m] = key.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("en", { month: "long", year: "numeric" });
+  return new Date(y, m - 1, 1).toLocaleDateString(getIntlLocale(), { month: "long", year: "numeric" });
 }
 
 /** Distinct months present in the data, newest first. */
