@@ -75,7 +75,7 @@ export const fr: Dict = {
   "settings.preferences": "Préférences",
   "settings.language": "Langue",
   "settings.languageDescription":
-    "Toute l'application passe dans cette langue — menus, graphiques et les réponses de Lucky Cat.",
+    "Toute l'application passe dans cette langue — menus, graphiques et les réponses du Chat porte-bonheur.",
   "settings.theme": "Thème de l'application",
   "settings.defaultCurrency": "Devise par défaut",
   "settings.currencyDescription":
@@ -160,12 +160,12 @@ export const fr: Dict = {
   "trends.analyze": "Analyser les tendances",
   "trends.analyzeAgain": "Analyser de nouveau",
   "trends.analyzeNote":
-    "Lucky Cat regarde les totaux ci-dessus — seuls les totaux sont partagés, pas les transactions une par une.",
-  "trends.asking": "On demande à Lucky Cat…",
-  "trends.takeTitle": "Le mot de Lucky Cat",
+    "Le Chat porte-bonheur regarde les totaux ci-dessus — seuls les totaux sont partagés, pas les transactions une par une.",
+  "trends.asking": "On demande au Chat porte-bonheur…",
+  "trends.takeTitle": "Le mot du Chat porte-bonheur",
   "trends.localNote":
-    "Fait sur votre appareil — Lucky Cat était injoignable, voici donc un résumé local des mêmes totaux.",
-  "trends.analyzeFailed": "Lucky Cat n'a pas pu regarder les tendances pour l'instant.",
+    "Fait sur votre appareil — le Chat porte-bonheur était injoignable, voici donc un résumé local des mêmes totaux.",
+  "trends.analyzeFailed": "Le Chat porte-bonheur n'a pas pu regarder les tendances pour l'instant.",
 
   "budgets.title": "Budgets",
   "budgets.lede": "Des limites mensuelles simples.",
@@ -354,7 +354,7 @@ export const fr: Dict = {
   "profile.status.busy": "Occupé",
   "profile.status.away": "Absent",
   "avatar.cat-cute": "Chat Mochi",
-  "avatar.lucky-cat": "Lucky Cat",
+  "avatar.lucky-cat": "Chat porte-bonheur",
   "avatar.fox": "Renard",
   "avatar.panda": "Panda",
   "avatar.shiba": "Shiba",
@@ -393,6 +393,7 @@ export const fr: Dict = {
   "cat.litterClean": "Litière nettoyée. Tellement frais !",
   "cat.wokeUp": "Bâââillement… Je suis réveillé ! On joue ?",
   "cat.companion": "Compagnon chat porte-bonheur",
+  "cat.name": "Chat porte-bonheur",
   "cat.joy": "Joie {value}",
   "cat.joyLabel": "Joie",
   "cat.streak": "Série {value}",

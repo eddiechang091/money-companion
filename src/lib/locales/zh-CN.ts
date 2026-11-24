@@ -75,7 +75,7 @@ export const zhCN: Dict = {
   "settings.preferences": "偏好设置",
   "settings.language": "语言",
   "settings.languageDescription":
-    "整个 App 都会切换到这门语言，包括菜单、图表和 Lucky Cat 的回复。",
+    "整个 App 都会切换到这门语言，包括菜单、图表和幸运猫的回复。",
   "settings.theme": "App 主题",
   "settings.defaultCurrency": "默认货币",
   "settings.currencyDescription":
@@ -160,12 +160,12 @@ export const zhCN: Dict = {
   "trends.analyze": "分析趋势",
   "trends.analyzeAgain": "重新分析",
   "trends.analyzeNote":
-    "Lucky Cat 只看上面的汇总数字，只分享汇总，不会看到逐笔交易。",
-  "trends.asking": "正在问 Lucky Cat…",
-  "trends.takeTitle": "Lucky Cat 的看法",
+    "幸运猫只看上面的汇总数字，只分享汇总，不会看到逐笔交易。",
+  "trends.asking": "正在问幸运猫…",
+  "trends.takeTitle": "幸运猫的看法",
   "trends.localNote":
-    "由你的设备生成——Lucky Cat 暂时连不上，所以这是同一份汇总的本地小结。",
-  "trends.analyzeFailed": "Lucky Cat 现在看不了趋势。",
+    "由你的设备生成——幸运猫暂时连不上，所以这是同一份汇总的本地小结。",
+  "trends.analyzeFailed": "幸运猫现在看不了趋势。",
 
   "budgets.title": "预算",
   "budgets.lede": "简单的每月限额。",
@@ -354,7 +354,7 @@ export const zhCN: Dict = {
   "profile.status.busy": "忙碌",
   "profile.status.away": "离开",
   "avatar.cat-cute": "麻薯猫",
-  "avatar.lucky-cat": "Lucky Cat",
+  "avatar.lucky-cat": "幸运猫",
   "avatar.fox": "狐狸",
   "avatar.panda": "熊猫",
   "avatar.shiba": "柴犬",
@@ -393,6 +393,7 @@ export const zhCN: Dict = {
   "cat.litterClean": "猫砂盆清理干净了，好清爽！",
   "cat.wokeUp": "哈——欠……我醒啦！要一起玩吗？",
   "cat.companion": "招财猫伙伴",
+  "cat.name": "幸运猫",
   "cat.joy": "快乐 {value}",
   "cat.joyLabel": "快乐",
   "cat.streak": "连续 {value}",
