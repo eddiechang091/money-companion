@@ -2,7 +2,7 @@ import { translate } from "@/lib/i18n";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Expense, MonthlyBudget } from "@/lib/types";
-import { categoryLabel } from "@/lib/categories";
+import { categoryName } from "@/lib/categories";
 import { totalsByCategory, sumExpenses } from "@/lib/analytics";
 import { money } from "@/lib/utils";
 import { THEME_BACKGROUNDS } from "@/services/theme/themeBackgrounds";
@@ -101,7 +101,7 @@ function summary(doc: jsPDF, opts: StatementOptions, y: number): number {
     y += 6;
     doc.setFont("helvetica", "normal");
     for (const c of byCat.slice(0, 8)) {
-      doc.text(`${categoryLabel(c.categoryId)}: ${money(c.total, opts.currency)}`, MARGIN + 4, y);
+      doc.text(`${categoryName(c.categoryId)}: ${money(c.total, opts.currency)}`, MARGIN + 4, y);
       y += 5.5;
     }
   }
@@ -113,8 +113,8 @@ function transactionsTable(doc: jsPDF, opts: StatementOptions, startY: number): 
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((e) => [
       e.date,
-      e.description || categoryLabel(e.categoryId),
-      categoryLabel(e.categoryId),
+      e.description || categoryName(e.categoryId),
+      categoryName(e.categoryId),
       money(e.amount, e.currency),
     ]);
 

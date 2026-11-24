@@ -3,6 +3,7 @@ import { recordKind } from "./types";
 import { UNCATEGORIZED_LABEL } from "./constants";
 import { getCategoryById } from "./categories";
 import { isValidIsoDate, monthKey } from "./utils";
+import { getIntlLocale } from "./i18n";
 
 export interface CategoryTotal {
   categoryId: string | null;
@@ -197,7 +198,7 @@ export function monthlyTotals(
   const months: Array<{ date: string; label: string; total: number }> = [];
   for (let m = 1; m <= 12; m += 1) {
     const key = `${year}-${String(m).padStart(2, "0")}`;
-    const label = new Date(Number(year), m - 1, 1).toLocaleString("en", { month: "short" });
+    const label = new Date(Number(year), m - 1, 1).toLocaleString(getIntlLocale(), { month: "short" });
     const raw = totals.get(key) ?? 0;
     months.push({ date: key, label, total: Math.round(raw * 100) / 100 });
   }
@@ -254,7 +255,7 @@ function shortMonthLabel(key: string): string {
   const y = parts[0];
   const m = parts[1];
   if (!y || !m) return key;
-  const month = new Date(y, m - 1, 1).toLocaleString("en", { month: "short" });
+  const month = new Date(y, m - 1, 1).toLocaleString(getIntlLocale(), { month: "short" });
   return `${month} ’${String(y).slice(2)}`;
 }
 
@@ -431,7 +432,7 @@ export function monthlyFlow(expenses: Expense[], year: string): FlowDatum[] {
   const months: FlowDatum[] = [];
   for (let m = 1; m <= 12; m += 1) {
     const key = `${year}-${String(m).padStart(2, "0")}`;
-    const label = new Date(Number(year), m - 1, 1).toLocaleString("en", { month: "short" });
+    const label = new Date(Number(year), m - 1, 1).toLocaleString(getIntlLocale(), { month: "short" });
     let expense = 0;
     let income = 0;
     for (const [date, entry] of totals) {

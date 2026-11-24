@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import type { Expense } from "@/lib/types";
-import { categoriesForKind, categoryLabel, categoryName } from "@/lib/categories";
+import { categoriesForKind, categoryName } from "@/lib/categories";
 import { useLanguage } from "@/lib/i18n";
 import { getIntlLocale } from "@/lib/utils";
 import { useProfile } from "@/services/profile/useProfile";
@@ -551,7 +551,7 @@ export function ImportDialog({
                           <td className="amount">{formatMoney(s.row.amount, currency)}</td>
                           <td>
                             {disabled ? (
-                              <span style={{ color: "var(--text-muted)" }}>{categoryLabel(categoryOf(s))}</span>
+                              <span style={{ color: "var(--text-muted)" }}>{categoryName(categoryOf(s))}</span>
                             ) : (
                               <select
                                 className="input"
@@ -592,7 +592,7 @@ export function ImportDialog({
                         <span className={statusClassName(s)}>{statusLabel(s, t)}</span>
                       </div>
                       {disabled ? (
-                        <p className="import-card__category-text">{categoryLabel(categoryOf(s))}</p>
+                        <p className="import-card__category-text">{categoryName(categoryOf(s))}</p>
                       ) : (
                         <select
                           className="input"

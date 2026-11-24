@@ -11,6 +11,7 @@ import {
   type TooltipProps,
 } from "recharts";
 import { compactNumber, currencySymbol, money } from "@/lib/utils";
+import { categoryName } from "@/lib/categories";
 import { resolveTrendPointClick, type TrendPointClick } from "@/lib/analytics";
 import type { CategoryTrendRow } from "@/lib/analytics";
 
@@ -54,7 +55,7 @@ export default function CategoryTrendChart({
         {shown.map((c) => (
           <span key={c.id}>
             <span className="lg-dot" style={{ background: c.color }} />
-            {c.name}&nbsp;&nbsp;{money(datum[c.id] as number, currency)}
+            {categoryName(c.id)}&nbsp;&nbsp;{money(datum[c.id] as number, currency)}
           </span>
         ))}
       </div>
@@ -84,7 +85,7 @@ export default function CategoryTrendChart({
   return (
     <div className="chart-wrap chart-wrap-tall" aria-hidden="true">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
+        <LineChart data={data} margin={{ top: 28, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey="label"

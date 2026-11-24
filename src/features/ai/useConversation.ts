@@ -10,6 +10,7 @@ import { parseInsightResponse, type InsightResult } from "@/lib/aiSchema";
 import { getLlmService } from "@/services/anna/llm";
 import { refreshBadges } from "@/features/gamification/awardBadges";
 import { DEFAULT_CURRENCY } from "@/lib/constants";
+import { useLanguage } from "@/lib/i18n";
 import { buildConversationContext } from "./conversationContext";
 import { buildConversationMessages, buildConversationRepairMessages } from "./conversationPrompts";
 import {
@@ -169,6 +170,7 @@ export function useConversation(
   dispatch: Dispatch<Action>;
 } {
   const [state, dispatch] = useReducer(reducer, INITIAL);
+  const { locale } = useLanguage();
   const sendingRef = useRef(false);
   const currency = expenses[0]?.currency ?? DEFAULT_CURRENCY;
 
@@ -208,7 +210,7 @@ export function useConversation(
     const ctx = buildCtx();
     const suggestions = buildSuggestedQuestions(ctx, state.messages.length > 0, userTexts(state.messages), state.messages);
     dispatch({ type: "ctx-update", ctx, suggestions });
-  }, [buildCtx, state.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [buildCtx, state.status, locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMessage = useCallback(
     async (text: string) => {

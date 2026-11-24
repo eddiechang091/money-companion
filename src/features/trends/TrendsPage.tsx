@@ -22,7 +22,6 @@ import {
   trendKey,
 } from "@/lib/analytics";
 import { getCategoryById } from "@/lib/categories";
-import { UNCATEGORIZED_LABEL } from "@/lib/constants";
 import { currencySymbol, money, plainMoney } from "@/lib/utils";
 import type { RecordKind } from "@/lib/types";
 
@@ -44,7 +43,7 @@ export function TrendsPage({
   initialKind?: RecordKind;
 }) {
   const { status, expenses, error, refresh } = useExpenses();
-  const { t } = useLanguage();
+  const { locale, t } = useLanguage();
   const { budgets } = useBudgets();
   const { profile } = useProfile();
   const currency = expenses[0]?.currency ?? profile.currency ?? "USD";
@@ -93,11 +92,11 @@ export function TrendsPage({
         const cat = id === "uncategorized" ? null : getCategoryById(id);
         return {
           id,
-          name: cat?.name ?? UNCATEGORIZED_LABEL,
+          name: categoryName(id),
           color: cat?.color ?? "var(--text-muted)",
         };
       }),
-    [totals]
+    [totals, locale]
   );
   const allIds = useMemo(() => allCategories.map((c) => c.id), [allCategories]);
   const visibleIds = selected ?? allIds.slice(0, TOP_DEFAULT);

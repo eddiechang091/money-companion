@@ -57,7 +57,7 @@ function StatBar({ icon, label, value, color }: { icon: string; label: string; v
 }
 
 export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionModalProps) {
-  const { t } = useLanguage();
+  const { locale, t } = useLanguage();
   const { state, loaded, checkIn, canCheckIn, feed, play, groom, cleanLitter, toggleSleep, maybeHappyDrop } = useCat();
   const { theme } = useTheme();
   const themeArt = THEME_CAT_ART[theme] ?? null;
@@ -98,6 +98,15 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Re-translate the default bubble when the language changes.
+  // Interaction bubbles (fed, checked in, …) are set at the moment of
+  // the interaction, so they are already current; only the default
+  // lede / asleep text can go stale.
+  useEffect(() => {
+    if (open) setBubble(state.asleep ? t("cat.asleep") : t("cat.lede"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
 
   // Revert to idle/sleep pose after a few seconds.
   const revertPose = (ms = 3500) => {
